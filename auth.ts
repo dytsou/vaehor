@@ -226,16 +226,23 @@ const authConfig: NextAuthConfig = {
             isPassValid = constantTimeEqual(password, envPass);
           }
 
-          logger.info(
-            {
-              inputEmail: normalizedInputEmail,
-              isAdminDb,
-              isAdminEnv,
-              isAdmin,
-              isPassValid,
-            },
-            "[Auth] Login attempt",
-          );
+          if (process.env.NODE_ENV === "production") {
+            logger.info(
+              { inputEmail: normalizedInputEmail },
+              "[Auth] Login attempt",
+            );
+          } else {
+            logger.info(
+              {
+                inputEmail: normalizedInputEmail,
+                isAdminDb,
+                isAdminEnv,
+                isAdmin,
+                isPassValid,
+              },
+              "[Auth] Login attempt",
+            );
+          }
 
           if (isAdmin && isPassValid) {
             emitAuthActivity("LOGIN_SUCCESS", {

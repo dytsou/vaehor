@@ -9,6 +9,7 @@ import {
 import { isProtected } from "@/lib/auth";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { jwtVerify } from "jose";
+import { logger } from "@/lib/logger";
 
 const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
 const getMimeQuery = (mimeType?: string | null) => {
@@ -173,13 +174,9 @@ export const GET = createPublicRoute(
         files: filteredFiles.filter((f) => f !== null),
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan tidak dikenal.";
-      console.error("Global Search API Error:", errorMessage);
+      logger.error({ err: error }, "Global search API failed");
       return NextResponse.json(
-        { error: "Failed to perform global search.", details: errorMessage },
+        { error: "Failed to perform global search." },
         { status: 500 },
       );
     }

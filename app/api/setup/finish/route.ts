@@ -6,6 +6,9 @@ import path from "path";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { invalidateAccessToken } from "@/lib/drive";
 import { isAppConfigured } from "@/lib/config";
+import { verifySetupSecret } from "@/lib/setup-secret";
+import { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 const setupFinishSchema = z.object({
@@ -22,21 +25,7 @@ const SETUP_ENV_KEYS = [
   "NEXT_PUBLIC_ROOT_FOLDER_ID",
 ] as const;
 
-export function isAllowedSetupRequestOrigin(request: Request): boolean {
-  const origin = request.headers.get("origin");
-  if (!origin) {
-    return false;
-  }
-
-  try {
-    const originUrl = new URL(origin);
-    const requestUrl = new URL(request.url);
-
-    return originUrl.origin === requestUrl.origin;
-  } catch {
-    return false;
-  }
-}
+export { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
 
 export function escapeEnvValue(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/\r/g, "").replace(/\n/g, "");
@@ -55,6 +44,11 @@ export function hasPersistedSetupConfig(envContent: string): boolean {
 export const POST = createPublicRoute(
   async ({ body, request }) => {
     try {
+      const secretCheck = verifySetupSecret(request);
+      if (secretCheck) {
+        return secretCheck;
+      }
+
       if (!isAllowedSetupRequestOrigin(request)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -164,9 +158,11 @@ export const POST = createPublicRoute(
           : "Gagal menulis ke .env secara otomatis. Silakan salin nilai ini secara manual.",
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Internal Server Error";
-      return NextResponse.json({ error: errorMessage }, { status: 500 });
+      logger.error({ err: error }, "Setup finish failed");
+      return NextResponse.json(
+        { error: "Internal Server Error" },
+        { status: 500 },
+      );
     }
   },
   { rateLimit: false, bodySchema: setupFinishSchema },

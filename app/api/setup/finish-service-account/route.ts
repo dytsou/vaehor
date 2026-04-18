@@ -6,6 +6,9 @@ import path from "path";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { invalidateAccessToken } from "@/lib/drive";
 import { isAppConfigured } from "@/lib/config";
+import { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
+import { verifySetupSecret } from "@/lib/setup-secret";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 function escapeForDoubleQuotedEnv(value: string): string {
@@ -31,8 +34,17 @@ const setupFinishServiceAccountSchema = z
   );
 
 export const POST = createPublicRoute(
-  async ({ body }) => {
+  async ({ body, request }) => {
     try {
+      const secretCheck = verifySetupSecret(request);
+      if (secretCheck) {
+        return secretCheck;
+      }
+
+      if (!isAllowedSetupRequestOrigin(request)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       const isConfigured = await isAppConfigured();
       if (isConfigured) {
         return NextResponse.json(
@@ -115,9 +127,11 @@ export const POST = createPublicRoute(
           : "Could not write .env automatically. Copy the values below manually.",
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Internal Server Error";
-      return NextResponse.json({ error: errorMessage }, { status: 500 });
+      logger.error({ err: error }, "Setup finish (service account) failed");
+      return NextResponse.json(
+        { error: "Internal Server Error" },
+        { status: 500 },
+      );
     }
   },
   { rateLimit: false, bodySchema: setupFinishServiceAccountSchema },

@@ -124,15 +124,31 @@ export async function validateDownloadRequest(request: NextRequest): Promise<{
     };
   }
 
-  // Google Drive file IDs are URL path segments; disallow characters that can
-  // change the path structure or introduce ambiguity.
-  const fileIdPattern = /^[a-zA-Z0-9_-]+$/;
-  if (!fileIdPattern.test(fileId) || fileId.length > 255) {
-    return {
-      context: createEmptyDownloadContext(),
-      session,
-      error: { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 },
-    };
+  if (fileId.startsWith("local-storage:")) {
+    const localRest = fileId.slice("local-storage:".length);
+    if (
+      localRest.length === 0 ||
+      localRest.length > 4096 ||
+      localRest.includes("..") ||
+      /[\0\r\n]/.test(localRest)
+    ) {
+      return {
+        context: createEmptyDownloadContext(),
+        session,
+        error: { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 },
+      };
+    }
+  } else {
+    // Google Drive file IDs are URL path segments; disallow characters that can
+    // change the path structure or introduce ambiguity.
+    const fileIdPattern = /^[a-zA-Z0-9_-]+$/;
+    if (!fileIdPattern.test(fileId) || fileId.length > 255) {
+      return {
+        context: createEmptyDownloadContext(),
+        session,
+        error: { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 },
+      };
+    }
   }
 
   const userRole = session?.user?.role;

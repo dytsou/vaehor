@@ -133,10 +133,12 @@ export class KVRateLimiter {
         "Rate limit check failed",
       );
 
+      const failClosed = this.type === "AUTH" || this.type === "ADMIN";
+
       return {
-        success: true,
+        success: !failClosed,
         limit: this.limitCount,
-        remaining: this.limitCount - 1,
+        remaining: failClosed ? 0 : this.limitCount - 1,
         reset: now + this.windowSeconds * 1000,
       };
     }

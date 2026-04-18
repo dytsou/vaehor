@@ -472,7 +472,11 @@
     "nextAuthOptional": "Google 登入（可選）",
     "nextAuthOptionalDesc": "若你使用 Google 登入，請填入 Google Cloud Console 的 OAuth Client ID 與 Secret。",
     "fillServiceAccountFields": "請輸入服務帳號電子郵件、私鑰與根資料夾 ID。",
-    "copied": "已複製！"
+    "copied": "已複製！",
+    "setupTokenLabel": "設定權杖",
+    "setupTokenHint": "伺服器管理員必須在環境中設定 SETUP_SECRET。請在完成設定前於此輸入相同值。",
+    "setupTokenPlaceholder": "貼上部署時提供的設定權杖",
+    "setupTokenRequired": "需要設定權杖。請在伺服器 .env 加入 SETUP_SECRET 並於此輸入。"
   },
   "DetailsPanel": {
     "copied": "已複製！",

@@ -702,7 +702,7 @@ Zee-Index supports multiple languages via `next-intl`:
 2. Translate all strings
 3. Add `"xx"` to the supported locales list in `lib/i18n-config.ts` (`LOCALES`)
 4. Ensure the language file exists in `messages/xx.json`
-5. Add `"xx"` to the locales array in `middleware.ts`:
+5. Add `"xx"` to the locales array in `proxy.ts` (Next.js 16 request proxy; see [Proxy](https://nextjs.org/docs/app/getting-started/proxy)):
    ```typescript
    const intlMiddleware = createMiddleware({
      locales: ["en", "id", "xx"],
@@ -765,7 +765,7 @@ zee-index/
 ├── docker-compose.yml            # Production stack
 ├── Dockerfile                    # Multi-stage optimized build
 ├── Caddyfile                     # Reverse proxy config
-├── middleware.ts                  # Auth, i18n, rate limiting
+├── proxy.ts                       # Auth, i18n, rate limiting (Next.js 16 proxy)
 └── next.config.mjs               # Next.js + security headers
 ```
 

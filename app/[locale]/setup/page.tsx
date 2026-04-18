@@ -41,6 +41,15 @@ export default function SetupPage() {
     serviceAccountKey: "",
     rootFolderId: "",
   });
+  const [requiresSetupToken, setRequiresSetupToken] = useState(false);
+  const [setupToken, setSetupToken] = useState("");
+
+  useEffect(() => {
+    void fetch("/api/setup/status")
+      .then((r) => r.json() as Promise<{ requiresSetupToken?: boolean }>)
+      .then((d) => setRequiresSetupToken(Boolean(d.requiresSetupToken)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (setupMode !== "oauth") return;
@@ -58,6 +67,24 @@ export default function SetupPage() {
       }
     }
   }, [step, setupMode]);
+
+  const ensureSetupTokenIfRequired = async (): Promise<boolean> => {
+    if (requiresSetupToken && !setupToken.trim()) {
+      await alert(t("setupTokenRequired"), {
+        title: t("incompleteInput"),
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const setupFetchHeaders = (): HeadersInit => {
+    const h: Record<string, string> = { "Content-Type": "application/json" };
+    if (requiresSetupToken && setupToken.trim()) {
+      h["X-Setup-Secret"] = setupToken.trim();
+    }
+    return h;
+  };
 
   const handleAuthorize = async () => {
     if (!formData.clientId || !formData.clientSecret) {
@@ -78,11 +105,14 @@ export default function SetupPage() {
   };
 
   const handleFinishSetup = async () => {
+    if (!(await ensureSetupTokenIfRequired())) {
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/setup/finish", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: setupFetchHeaders(),
         body: JSON.stringify({
           ...formData,
           redirectUri: `${window.location.origin}/setup`,
@@ -124,11 +154,15 @@ export default function SetupPage() {
       return;
     }
 
+    if (!(await ensureSetupTokenIfRequired())) {
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/setup/finish-service-account", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: setupFetchHeaders(),
         body: JSON.stringify({
           serviceAccountEmail: saForm.serviceAccountEmail.trim(),
           serviceAccountKey: saForm.serviceAccountKey,
@@ -252,6 +286,26 @@ export default function SetupPage() {
               >
                 2
               </div>
+            </div>
+          )}
+
+          {requiresSetupToken && !showSummary && (
+            <div className="mb-6 rounded-xl border border-border bg-muted/20 p-4 space-y-2">
+              <label className="text-sm font-medium" htmlFor="setup-token">
+                {t("setupTokenLabel")}
+              </label>
+              <input
+                id="setup-token"
+                type="password"
+                autoComplete="off"
+                value={setupToken}
+                onChange={(e) => setSetupToken(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                placeholder={t("setupTokenPlaceholder")}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("setupTokenHint")}
+              </p>
             </div>
           )}
 

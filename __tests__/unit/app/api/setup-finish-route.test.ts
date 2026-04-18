@@ -48,6 +48,15 @@ vi.mock("@/lib/config", () => ({
   isAppConfigured: mockIsAppConfigured,
 }));
 
+vi.mock("@/lib/setup-secret", () => ({
+  verifySetupSecret: () => null,
+  requiresSetupSecret: () => false,
+}));
+
+vi.mock("@/lib/logger", () => ({
+  logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+}));
+
 import {
   POST,
   escapeEnvValue,

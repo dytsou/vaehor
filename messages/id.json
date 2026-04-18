@@ -477,7 +477,11 @@
     "nextAuthOptional": "Login Google (opsional)",
     "nextAuthOptionalDesc": "Jika Anda memakai login Google untuk pengguna, isi OAuth Client ID dan Secret dari Google Cloud Console.",
     "fillServiceAccountFields": "Mohon isi email service account, private key, dan Root Folder ID.",
-    "copied": "Disalin!"
+    "copied": "Disalin!",
+    "setupTokenLabel": "Token penyiapan",
+    "setupTokenHint": "Administrator server harus mengatur SETUP_SECRET di lingkungan. Masukkan nilai yang sama di sini sebelum menyelesaikan penyiapan.",
+    "setupTokenPlaceholder": "Tempel token penyiapan dari deployment",
+    "setupTokenRequired": "Token penyiapan wajib. Tambahkan SETUP_SECRET ke .env server dan masukkan di sini."
   },
   "DetailsPanel": {
     "copied": "Disalin!",

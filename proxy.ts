@@ -103,7 +103,7 @@ export async function proxy(request: NextRequest) {
 
   if (
     PUBLIC_PATHS.has(pathnameWithoutLocale) ||
-    PUBLIC_API_PREFIXES.some((p) => pathname.startsWith(p))
+    PUBLIC_API_PREFIXES.some((p) => pathnameWithoutLocale.startsWith(p))
   ) {
     return isApi ? NextResponse.next() : intlMiddleware(request);
   }

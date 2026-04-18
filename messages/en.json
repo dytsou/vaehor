@@ -477,7 +477,11 @@
     "nextAuthOptional": "Google sign-in (optional)",
     "nextAuthOptionalDesc": "If you use Google login for users, set the OAuth client ID and secret from Google Cloud Console.",
     "fillServiceAccountFields": "Please enter service account email, private key, and root folder ID.",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "setupTokenLabel": "Setup token",
+    "setupTokenHint": "Your server administrator must set SETUP_SECRET in the environment. Enter that same value here before completing setup.",
+    "setupTokenPlaceholder": "Paste setup token from deployment",
+    "setupTokenRequired": "A setup token is required. Add SETUP_SECRET to the server .env and enter it here."
   },
   "DetailsPanel": {
     "copied": "Copied!",
