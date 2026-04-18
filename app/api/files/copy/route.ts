@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { createAdminRoute } from "@/lib/api-middleware";
+import { createEditorRoute } from "@/lib/api-middleware";
 import { getAccessToken, getFileDetailsFromDrive } from "@/lib/drive";
 import { z } from "zod";
 import { invalidateFolderCache } from "@/lib/cache";
@@ -13,7 +13,7 @@ const copySchema = z.object({
   newName: z.string().optional(),
 });
 
-export const POST = createAdminRoute(
+export const POST = createEditorRoute(
   async ({ body, session }) => {
     try {
       const { fileId, destinationId, newName } = body;

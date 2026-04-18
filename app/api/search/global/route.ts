@@ -7,7 +7,6 @@ import {
   searchFilesInFolder,
 } from "@/lib/drive";
 import { isProtected } from "@/lib/auth";
-import { validateShareToken } from "@/lib/auth";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { jwtVerify } from "jose";
 
@@ -53,16 +52,21 @@ export const dynamic = "force-dynamic";
 
 export const GET = createPublicRoute(
   async ({ request, session }) => {
-    const isShareAuth = await validateShareToken(request);
+    const { searchParams } = new URL(request.url);
 
-    if (!session && !isShareAuth) {
+    if (searchParams.has("share_token")) {
+      return NextResponse.json(
+        { error: "Global search is not available with a share link." },
+        { status: 403 },
+      );
+    }
+
+    if (!session) {
       return NextResponse.json(
         { error: "Authentication required." },
         { status: 401 },
       );
     }
-
-    const { searchParams } = new URL(request.url);
     const rawSearchTerm = searchParams.get("q");
     const searchType = searchParams.get("searchType") || "name";
     const mimeType = searchParams.get("mimeType");

@@ -5,15 +5,17 @@ const {
   mockAuth,
   mockCheckRateLimit,
   mockJwtVerify,
-  mockKvGet,
-  mockFindUnique,
+  mockAuthenticateShareRequest,
+  mockShareGrantsAccessToFile,
+  mockShouldBlockDueToPreventDownload,
   mockIsAccessRestricted,
 } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockCheckRateLimit: vi.fn(),
   mockJwtVerify: vi.fn(),
-  mockKvGet: vi.fn(),
-  mockFindUnique: vi.fn(),
+  mockAuthenticateShareRequest: vi.fn(),
+  mockShareGrantsAccessToFile: vi.fn(),
+  mockShouldBlockDueToPreventDownload: vi.fn(),
   mockIsAccessRestricted: vi.fn(),
 }));
 
@@ -29,18 +31,10 @@ vi.mock("jose", () => ({
   jwtVerify: mockJwtVerify,
 }));
 
-vi.mock("@/lib/kv", () => ({
-  kv: {
-    get: mockKvGet,
-  },
-}));
-
-vi.mock("@/lib/db", () => ({
-  db: {
-    shareLink: {
-      findUnique: mockFindUnique,
-    },
-  },
+vi.mock("@/lib/share-scope", () => ({
+  authenticateShareRequest: mockAuthenticateShareRequest,
+  shareGrantsAccessToFile: mockShareGrantsAccessToFile,
+  shouldBlockDueToPreventDownload: mockShouldBlockDueToPreventDownload,
 }));
 
 vi.mock("@/lib/securityUtils", () => ({
@@ -62,8 +56,9 @@ describe("lib/services/download", () => {
     process.env.NEXTAUTH_URL = "http://localhost:3000";
     mockAuth.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({ success: true });
-    mockKvGet.mockResolvedValue(null);
-    mockFindUnique.mockResolvedValue(null);
+    mockAuthenticateShareRequest.mockResolvedValue(null);
+    mockShareGrantsAccessToFile.mockResolvedValue(true);
+    mockShouldBlockDueToPreventDownload.mockReturnValue(false);
     mockIsAccessRestricted.mockResolvedValue(false);
   });
 
@@ -124,8 +119,10 @@ describe("lib/services/download", () => {
     });
 
     it("rejects revoked share tokens", async () => {
-      mockJwtVerify.mockResolvedValueOnce({ payload: { jti: "share-1" } });
-      mockKvGet.mockResolvedValueOnce("1");
+      mockAuthenticateShareRequest.mockResolvedValueOnce({
+        error: ERROR_MESSAGES.SHARE_LINK_REVOKED,
+        status: 401,
+      });
 
       const request = new NextRequest(
         "http://localhost:3000/api/download?fileId=file-1&share_token=token",

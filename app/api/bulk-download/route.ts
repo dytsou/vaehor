@@ -17,10 +17,18 @@ const bulkDownloadSchema = z.object({
 export const POST = createPublicRoute(
   async ({ body, session }) => {
     try {
+      if (!session?.user) {
+        return NextResponse.json(
+          { error: "Authentication required for bulk download." },
+          { status: 401 },
+        );
+      }
+
       const { fileIds } = body;
 
       const accessToken = await getAccessToken();
       const zip = new JSZip();
+      let addedCount = 0;
 
       for (const fileId of fileIds) {
         if (session?.user?.role !== "ADMIN") {
@@ -51,10 +59,19 @@ export const POST = createPublicRoute(
         if (fileResponse.ok) {
           const fileBuffer = await fileResponse.arrayBuffer();
           zip.file(fileName, fileBuffer);
+          addedCount += 1;
         }
       }
 
+      if (addedCount === 0) {
+        return NextResponse.json(
+          { error: "No files could be included in the archive." },
+          { status: 400 },
+        );
+      }
+
       const zipBlob = await zip.generateAsync({ type: "blob" });
+
       const headers = new Headers();
       headers.set("Content-Type", "application/zip");
       headers.set("Content-Disposition", 'attachment; filename="download.zip"');

@@ -5,27 +5,18 @@ import { ZeeFile } from "@/types/storage";
 import { isPrivateFolder } from "@/lib/auth";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { getProtectedFolderIdsCached } from "@/lib/securityUtils";
-import { validateShareToken } from "@/lib/auth";
 import { RequestError, getErrorMessage } from "@/lib/errors";
 import { jwtVerify } from "jose";
+import {
+  authenticateShareRequest,
+  shareGrantsAccessToFolder,
+} from "@/lib/share-scope";
 
 export const dynamic = "force-dynamic";
 
 export const GET = createPublicRoute(
   async ({ request, session }) => {
     try {
-      const isShareAuth = await validateShareToken(request);
-
-      if (
-        new URL(request.url).searchParams.has("share_token") &&
-        !isShareAuth
-      ) {
-        return NextResponse.json(
-          { error: "Invalid share token or login required." },
-          { status: 401 },
-        );
-      }
-
       const { searchParams } = new URL(request.url);
       const rawFolderId =
         searchParams.get("folderId") || process.env.NEXT_PUBLIC_ROOT_FOLDER_ID;
@@ -51,11 +42,38 @@ export const GET = createPublicRoute(
         );
       }
 
+      const hasShareToken = searchParams.has("share_token");
+      let shareScoped = false;
+
+      if (hasShareToken) {
+        const shareRes = await authenticateShareRequest(request);
+        if (!shareRes || "error" in shareRes) {
+          return NextResponse.json(
+            {
+              error:
+                (shareRes && "error" in shareRes && shareRes.error) ||
+                "Invalid share token or login required.",
+            },
+            {
+              status: shareRes && "error" in shareRes ? shareRes.status : 401,
+            },
+          );
+        }
+        const allowed = await shareGrantsAccessToFolder(shareRes, folderId);
+        if (!allowed) {
+          return NextResponse.json(
+            { error: "This share link does not allow access to this folder." },
+            { status: 403 },
+          );
+        }
+        shareScoped = true;
+      }
+
       const canSeeAll = userRole === "ADMIN";
       const isRestricted = await isAccessRestricted(folderId, [], userEmail);
 
       const isLocalStorage = folderId.startsWith("local-storage:");
-      if (!canSeeAll && isRestricted) {
+      if (!canSeeAll && isRestricted && !shareScoped) {
         if (isLocalStorage) {
           const { checkLocalStorageAccess } = await import("@/lib/auth");
           const hasLocalAccess = await checkLocalStorageAccess(request);
@@ -174,14 +192,16 @@ export const GET = createPublicRoute(
         nextPageToken: driveResponse.nextPageToken,
       };
 
-      import("@/lib/activityLogger").then((m) => {
-        m.logActivity("SHARE_LINK_ACCESSED", {
-          itemName: "Folder View",
-          itemId: folderId,
-          userEmail: session?.user?.email || "Guest",
-          status: "success",
+      if (shareScoped) {
+        import("@/lib/activityLogger").then((m) => {
+          m.logActivity("SHARE_LINK_ACCESSED", {
+            itemName: "Folder View",
+            itemId: folderId,
+            userEmail: session?.user?.email || "Guest",
+            status: "success",
+          });
         });
-      });
+      }
 
       return NextResponse.json(responseData);
     } catch (error: unknown) {

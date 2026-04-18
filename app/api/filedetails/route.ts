@@ -1,23 +1,43 @@
 import { NextResponse } from "next/server";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { getAnyFileDetails } from "@/lib/storage";
-import { validateShareToken } from "@/lib/auth";
 import { isAccessRestricted } from "@/lib/securityUtils";
+import {
+  authenticateShareRequest,
+  shareGrantsAccessToFile,
+  type ShareAuthOk,
+} from "@/lib/share-scope";
 
 export const dynamic = "force-dynamic";
 
 export const GET = createPublicRoute(
   async ({ request, session }) => {
-    const isShareAuth = await validateShareToken(request);
+    const { searchParams } = new URL(request.url);
+    const hasShareToken = searchParams.has("share_token");
+    let shareAuthOk: ShareAuthOk | undefined;
 
-    if (!session && !isShareAuth) {
+    if (hasShareToken) {
+      const shareRes = await authenticateShareRequest(request);
+      if (!shareRes || "error" in shareRes) {
+        return NextResponse.json(
+          {
+            error:
+              (shareRes && "error" in shareRes && shareRes.error) ||
+              "Invalid share token.",
+          },
+          {
+            status: shareRes && "error" in shareRes ? shareRes.status : 401,
+          },
+        );
+      }
+      shareAuthOk = shareRes;
+    } else if (!session) {
       return NextResponse.json(
         { error: "Authentication required." },
         { status: 401 },
       );
     }
 
-    const { searchParams } = new URL(request.url);
     const fileIdRaw = searchParams.get("fileId");
     if (!fileIdRaw) {
       return NextResponse.json(
@@ -26,6 +46,16 @@ export const GET = createPublicRoute(
       );
     }
     const fileId = decodeURIComponent(fileIdRaw);
+
+    if (shareAuthOk) {
+      const allowed = await shareGrantsAccessToFile(shareAuthOk, fileId);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "This share link does not allow access to this file." },
+          { status: 403 },
+        );
+      }
+    }
 
     const isAdmin = session?.user?.role === "ADMIN";
 
@@ -42,7 +72,7 @@ export const GET = createPublicRoute(
           { status: 401 },
         );
       }
-    } else if (!isAdmin) {
+    } else if (!isAdmin && !shareAuthOk) {
       const isRestricted = await isAccessRestricted(fileId);
       if (isRestricted) {
         return NextResponse.json({ error: "Access Denied" }, { status: 403 });

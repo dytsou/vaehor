@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { getAccessToken, DriveFile } from "@/lib/drive";
-import { validateShareToken } from "@/lib/auth";
+import {
+  authenticateShareRequest,
+  shareGrantsAccessToFolder,
+} from "@/lib/share-scope";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { jwtVerify } from "jose";
 import { kv } from "@/lib/kv";
@@ -55,11 +58,42 @@ const getDateQuery = (modifiedTime?: string | null) => {
 export const dynamic = "force-dynamic";
 export const GET = createPublicRoute(
   async ({ request, session }) => {
-    await validateShareToken(request);
-
     const { searchParams } = new URL(request.url);
+    const hasShareToken = searchParams.has("share_token");
     const rawSearchTerm = searchParams.get("q");
     const folderId = searchParams.get("folderId");
+
+    if (hasShareToken && !folderId) {
+      return NextResponse.json(
+        {
+          error: "Folder-scoped search is required when using a share link.",
+        },
+        { status: 403 },
+      );
+    }
+
+    if (hasShareToken && folderId) {
+      const shareRes = await authenticateShareRequest(request);
+      if (!shareRes || "error" in shareRes) {
+        return NextResponse.json(
+          {
+            error:
+              (shareRes && "error" in shareRes && shareRes.error) ||
+              "Invalid share token.",
+          },
+          {
+            status: shareRes && "error" in shareRes ? shareRes.status : 401,
+          },
+        );
+      }
+      const allowed = await shareGrantsAccessToFolder(shareRes, folderId);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "This share link does not allow search in this folder." },
+          { status: 403 },
+        );
+      }
+    }
     const searchType = searchParams.get("searchType") || "name";
     const mimeType = searchParams.get("mimeType");
     const modifiedTime = searchParams.get("modifiedTime");
@@ -85,6 +119,7 @@ export const GET = createPublicRoute(
       modifiedTime,
       minSize,
       isAdmin: session?.user?.role === "ADMIN",
+      share: hasShareToken,
     })}`;
 
     let cachedData = null;

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { getAccessToken } from "@/lib/drive";
-import { validateShareToken } from "@/lib/auth";
+import {
+  authenticateShareRequest,
+  shareGrantsAccessToFolder,
+} from "@/lib/share-scope";
 import { kv } from "@/lib/kv";
 
 export const dynamic = "force-dynamic";
@@ -102,11 +105,52 @@ async function fetchWithRetry(
 
 export const GET = createPublicRoute(
   async ({ request, session }) => {
-    const isShareAuth = await validateShareToken(request);
-
     const { searchParams } = new URL(request.url);
     const rawFolderId = searchParams.get("folderId");
     const locale = searchParams.get("locale") || "en";
+
+    const hasShareToken = searchParams.has("share_token");
+    let shareScoped = false;
+
+    if (hasShareToken && !rawFolderId) {
+      return NextResponse.json(
+        {
+          error:
+            locale === "id"
+              ? "Parameter folderId tidak ditemukan."
+              : "Parameter folderId not found.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (hasShareToken && rawFolderId) {
+      const cleanId = decodeURIComponent(rawFolderId)
+        .split("&")[0]
+        .split("?")[0]
+        .trim();
+      const shareRes = await authenticateShareRequest(request);
+      if (!shareRes || "error" in shareRes) {
+        return NextResponse.json(
+          {
+            error:
+              (shareRes && "error" in shareRes && shareRes.error) ||
+              "Invalid share token.",
+          },
+          {
+            status: shareRes && "error" in shareRes ? shareRes.status : 401,
+          },
+        );
+      }
+      const allowed = await shareGrantsAccessToFolder(shareRes, cleanId);
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "This share link does not allow access to this path." },
+          { status: 403 },
+        );
+      }
+      shareScoped = true;
+    }
 
     const isPriv = rawFolderId
       ? (process.env.PRIVATE_FOLDER_IDS || "")
@@ -114,7 +158,7 @@ export const GET = createPublicRoute(
           .includes(rawFolderId.trim())
       : false;
 
-    if (isPriv && !session && !isShareAuth) {
+    if (isPriv && !session && !shareScoped) {
       return NextResponse.json(
         { error: "Authentication required.", protected: true },
         { status: 401 },

@@ -35,7 +35,9 @@ export async function getProtectedFolderIdsCached(): Promise<string[]> {
     return cachedProtectedIds;
   } catch (e) {
     logger.error({ err: e }, "Failed to fetch restricted IDs");
-    return cachedProtectedIds || [];
+    // Fail closed: never return an empty list on first load failure (would treat
+    // DB-protected folders as public). Fall back to env-configured private IDs.
+    return cachedProtectedIds ?? getPrivateFolderIds();
   }
 }
 
@@ -77,7 +79,7 @@ export async function isAccessRestricted(
   }
 
   if (visited.has(fileId)) {
-    return false;
+    return true;
   }
   visited.add(fileId);
 

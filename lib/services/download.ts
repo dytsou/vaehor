@@ -2,17 +2,19 @@ import { type NextRequest } from "next/server";
 import type { ShareLink as DbShareLink } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
 import { jwtVerify } from "jose";
-import { kv } from "@/lib/kv";
 import { auth } from "@/auth";
-import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { isAccessRestricted } from "@/lib/securityUtils";
+import {
+  authenticateShareRequest,
+  shareGrantsAccessToFile,
+  shouldBlockDueToPreventDownload,
+  type ShareAuthOk,
+} from "@/lib/share-scope";
 import { logger } from "@/lib/logger";
 import type { DriveFile } from "@/lib/drive";
-import { getErrorMessage } from "@/lib/errors";
 import {
   EXPORT_TYPE_MAP,
-  REDIS_KEYS,
   ERROR_MESSAGES,
   GOOGLE_DRIVE_API_BASE_URL,
 } from "@/lib/constants";
@@ -79,52 +81,36 @@ export async function validateDownloadRequest(request: NextRequest): Promise<{
 
   const session = await auth();
   let shareRecord: DbShareLink | undefined;
+  let shareAuthOk: ShareAuthOk | undefined;
 
   if (shareToken) {
-    try {
-      const shareSecretKey = process.env.SHARE_SECRET_KEY;
-      if (shareSecretKey && shareSecretKey.length >= 32) {
-        const secret = new TextEncoder().encode(shareSecretKey);
-        const { payload } = await jwtVerify(shareToken, secret);
-        const isBlocked = await kv.get(
-          `${REDIS_KEYS.SHARE_BLOCKED}${payload.jti}`,
-        );
-        if (isBlocked) throw new Error(ERROR_MESSAGES.SHARE_LINK_REVOKED);
-
-        shareRecord =
-          (await db.shareLink.findUnique({
-            where: { jti: payload.jti as string },
-          })) || undefined;
-
-        if (shareRecord) {
-          if (
-            shareRecord.maxUses !== null &&
-            shareRecord.views >= shareRecord.maxUses
-          ) {
-            throw new Error(
-              "Batas maksimum unduhan/akses untuk tautan ini telah tercapai.",
-            );
-          }
-          if (
-            shareRecord.preventDownload &&
-            !range &&
-            request.headers.get("sec-fetch-dest") === "document"
-          ) {
-            throw new Error("Unduhan dinonaktifkan untuk file ini.");
-          }
-        }
-
-        if (payload.loginRequired && !session) {
-          throw new Error("Login required.");
-        }
-      }
-    } catch (error: unknown) {
+    const shareRes = await authenticateShareRequest(request);
+    if (!shareRes) {
+      return {
+        context: createEmptyDownloadContext(),
+        session,
+        error: { error: ERROR_MESSAGES.INVALID_SHARE_TOKEN, status: 401 },
+      };
+    }
+    if ("error" in shareRes) {
+      return {
+        context: createEmptyDownloadContext(),
+        session,
+        error: { error: shareRes.error, status: shareRes.status },
+      };
+    }
+    shareAuthOk = shareRes;
+    shareRecord = shareRes.shareRecord;
+    if (
+      shareRecord.preventDownload &&
+      shouldBlockDueToPreventDownload(request)
+    ) {
       return {
         context: createEmptyDownloadContext(),
         session,
         error: {
-          error: getErrorMessage(error, ERROR_MESSAGES.INVALID_SHARE_TOKEN),
-          status: 401,
+          error: "Unduhan dinonaktifkan untuk file ini.",
+          status: 403,
         },
       };
     }
@@ -150,6 +136,17 @@ export async function validateDownloadRequest(request: NextRequest): Promise<{
   }
 
   const userRole = session?.user?.role;
+
+  if (shareToken && shareAuthOk) {
+    const scopeOk = await shareGrantsAccessToFile(shareAuthOk, fileId);
+    if (!scopeOk) {
+      return {
+        context: createEmptyDownloadContext(),
+        session,
+        error: { error: ERROR_MESSAGES.ACCESS_DENIED, status: 403 },
+      };
+    }
+  }
 
   if (fileId.startsWith("local-storage:") && userRole !== "ADMIN") {
     const hasAccess = await import("@/lib/auth").then((m) =>

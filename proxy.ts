@@ -98,6 +98,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isConfigured && pathnameWithoutLocale.startsWith("/setup")) {
+    return NextResponse.redirect(new URL(`/${DEFAULT_LOCALE}`, request.url));
   }
 
   if (
