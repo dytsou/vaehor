@@ -48,6 +48,23 @@ function parseEnvManualDrives(envValue: string): ManualDrive[] {
   }, []);
 }
 
+/** Walk from folderId toward root; return first bearer in folderTokens on the path. */
+function resolveFolderBearer(
+  folderId: string,
+  tree: FlatTree,
+  folderTokens: Record<string, string>,
+): string | undefined {
+  let id: string | null = folderId;
+  const seen = new Set<string>();
+  while (id && !seen.has(id)) {
+    seen.add(id);
+    const direct = folderTokens[id];
+    if (direct) return direct;
+    id = tree[id]?.parentId ?? null;
+  }
+  return undefined;
+}
+
 export function useSidebarController() {
   const router = useRouter();
   const pathname = usePathname();
@@ -61,6 +78,7 @@ export function useSidebarController() {
   const refreshKey = useAppStore((state) => state.refreshKey);
   const user = useAppStore((state) => state.user);
   const shareToken = useAppStore((state) => state.shareToken);
+  const folderTokens = useAppStore((state) => state.folderTokens);
   const setNavigatingId = useAppStore((state) => state.setNavigatingId);
   const isAuthHealthy = useAppStore((state) => state.isGoogleAuthHealthy);
   const setAuthHealth = useAppStore((state) => state.setGoogleAuthHealth);
@@ -183,12 +201,33 @@ export function useSidebarController() {
   useScrollLock(isSidebarOpen && isMobile && !shareToken);
 
   const fetchSubfolders = useCallback(
-    async (parentId: string): Promise<FolderNode[]> => {
+    async (
+      parentId: string,
+      treeForBearer?: FlatTree,
+    ): Promise<FolderNode[]> => {
       try {
+        const treeSnapshot = treeForBearer ?? treeRef.current;
+        const bearer = resolveFolderBearer(
+          parentId,
+          treeSnapshot,
+          folderTokens,
+        );
+
         const data = await queryClient.fetchQuery<FolderContentsResponse>({
-          queryKey: ["folder-contents", parentId],
+          queryKey: ["folder-contents", parentId, shareToken, bearer],
           queryFn: async () => {
-            const response = await fetch(`/api/files?folderId=${parentId}`);
+            const url = new URL(`${window.location.origin}/api/files`);
+            url.searchParams.append("folderId", parentId);
+            if (shareToken) {
+              url.searchParams.append("share_token", shareToken);
+            }
+
+            const headers = new Headers();
+            if (bearer) {
+              headers.append("Authorization", `Bearer ${bearer}`);
+            }
+
+            const response = await fetch(url.toString(), { headers });
             if (response.status === 401 || response.status === 403) {
               return { files: [] };
             }
@@ -216,7 +255,7 @@ export function useSidebarController() {
         return [];
       }
     },
-    [queryClient],
+    [queryClient, shareToken, folderTokens],
   );
 
   const toggleNode = useCallback(
@@ -368,7 +407,7 @@ export function useSidebarController() {
           }
 
           if (node.isFolder && node.childIds.length === 0 && !node.hasLoaded) {
-            const children = await fetchSubfolders(folderId);
+            const children = await fetchSubfolders(folderId, nextTree);
             nextTree[folderId] = {
               ...nextTree[folderId],
               childIds: children.map((child) => child.id),
