@@ -1,0 +1,52 @@
+name: SonarQube
+
+on:
+  push:
+    branches: [trunk, main, master]
+  pull_request:
+    branches: [trunk, main, master]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  sonarqube:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    # Skip when SonarQube is not configured yet (set repository secrets/variables first).
+    if: ${{ vars.SONAR_HOST_URL != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build MCP package
+        run: pnpm --filter @zee-index/mcp build
+
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Unit tests with coverage
+        run: pnpm test:coverage
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
