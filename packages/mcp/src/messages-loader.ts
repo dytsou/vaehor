@@ -3,9 +3,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Shipped under `packages/mcp/messages/` — bundled with npm package for standalone publish. */
-const LOCALES = ["en", "id", "zh-TW"] as const;
+export type McpLocale = "en" | "id" | "zh-TW";
 
-export type McpLocale = (typeof LOCALES)[number];
+const LOCALES: readonly McpLocale[] = ["en", "id", "zh-TW"];
 
 export type McpToolKey =
   | "zee_health"

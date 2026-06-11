@@ -483,7 +483,6 @@ export function useFileBrowserController({
       isBulkMode,
       view,
       dragOverBreadcrumb: dragAndDrop.dragOverBreadcrumb,
-      activeFileId,
       onBreadcrumbClick: handleBreadcrumbClick,
       onBreadcrumbDragOver: dragAndDrop.handleBreadcrumbDragOver,
       onBreadcrumbDragLeave: dragAndDrop.handleBreadcrumbDragLeave,
@@ -508,12 +507,6 @@ export function useFileBrowserController({
       onRequestFileClick: () => setIsFileRequestModalOpen(true),
       onToggleBulkMode: () => setBulkMode(!isBulkMode),
       onSetView: setView,
-      onDetailsClick: () => {
-        const file = files.find((item) => item.id === activeFileId);
-        if (file) {
-          setDetailsFile(file);
-        }
-      },
       sort,
       onSortChange: setSort,
       onPrefetchFolder: handlePrefetchFolder,

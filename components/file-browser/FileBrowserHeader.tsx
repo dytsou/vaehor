@@ -39,8 +39,6 @@ interface FileBrowserHeaderProps {
   onShareFolderClick: () => void;
   onToggleBulkMode: () => void;
   onSetView: (view: "list" | "grid" | "gallery") => void;
-  onDetailsClick: (e?: React.MouseEvent) => void;
-  activeFileId: string | null;
   onRequestFileClick: () => void;
   sort: { key: string; order: "asc" | "desc" };
   onSortChange: (key: "name" | "size" | "modifiedTime") => void;
@@ -62,8 +60,6 @@ export default function FileBrowserHeader({
   onShareFolderClick,
   onToggleBulkMode,
   onSetView,
-  onDetailsClick,
-  activeFileId,
   onRequestFileClick,
   sort,
   onSortChange,
