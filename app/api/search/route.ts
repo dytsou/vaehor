@@ -72,6 +72,7 @@ export const GET = createPublicRoute(
       );
     }
 
+    let shareCtx: Awaited<ReturnType<typeof authenticateShareRequest>> = null;
     if (hasShareToken && folderId) {
       const shareRes = await authenticateShareRequest(request);
       if (!shareRes || "error" in shareRes) {
@@ -93,6 +94,7 @@ export const GET = createPublicRoute(
           { status: 403 },
         );
       }
+      shareCtx = shareRes;
     }
     const searchType = searchParams.get("searchType") || "name";
     const mimeType = searchParams.get("mimeType");
@@ -111,6 +113,8 @@ export const GET = createPublicRoute(
       : "";
     const searchTerm = sanitizedSearchTerm.replace(/'/g, "''");
 
+    const useSearchCache = session?.user?.role === "ADMIN" && !hasShareToken;
+
     const cacheKey = `search:${JSON.stringify({
       q: searchTerm,
       folderId,
@@ -119,13 +123,14 @@ export const GET = createPublicRoute(
       modifiedTime,
       minSize,
       isAdmin: session?.user?.role === "ADMIN",
-      share: hasShareToken,
     })}`;
 
     let cachedData = null;
-    try {
-      cachedData = await kv.get(cacheKey);
-    } catch {}
+    if (useSearchCache) {
+      try {
+        cachedData = await kv.get(cacheKey);
+      } catch {}
+    }
 
     if (cachedData) {
       return NextResponse.json(cachedData);
@@ -231,14 +236,27 @@ export const GET = createPublicRoute(
         }),
       );
 
+      let visibleFiles = filteredFiles.filter((f) => f !== null);
+      if (
+        shareCtx &&
+        !("error" in shareCtx) &&
+        shareCtx.parsed.kind === "file"
+      ) {
+        visibleFiles = visibleFiles.filter(
+          (f) => f !== null && f.id === shareCtx.parsed.fileId,
+        );
+      }
+
       const result = {
-        files: filteredFiles.filter((f) => f !== null),
+        files: visibleFiles,
         nextPageToken: data.nextPageToken,
       };
 
-      try {
-        await kv.set(cacheKey, result, { ex: CACHE_TTL });
-      } catch {}
+      if (useSearchCache) {
+        try {
+          await kv.set(cacheKey, result, { ex: CACHE_TTL });
+        } catch {}
+      }
 
       return NextResponse.json(result);
     } catch (error: unknown) {

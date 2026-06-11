@@ -204,12 +204,12 @@ flowchart TB
 
 ### Prerequisites
 
-| Requirement                                                    | Version      | Required              |
-| -------------------------------------------------------------- | ------------ | --------------------- |
-| [Docker](https://docs.docker.com/get-docker/) + Docker Compose | Latest       | ✅ Yes                |
-| [Git](https://git-scm.com/)                                    | Latest       | ✅ Yes                |
-| [Node.js](https://nodejs.org/) + pnpm                          | 20.x+ / 9.x+ | 🔶 Only for local dev |
-| Google Cloud Project                                           | —            | ✅ Yes                |
+| Requirement                                                    | Version    | Required              |
+| -------------------------------------------------------------- | ---------- | --------------------- |
+| [Docker](https://docs.docker.com/get-docker/) + Docker Compose | Latest     | ✅ Yes                |
+| [Git](https://git-scm.com/)                                    | Latest     | ✅ Yes                |
+| [Node.js](https://nodejs.org/) + pnpm                          | 24.x / 11+ | 🔶 Only for local dev |
+| Google Cloud Project                                           | —          | ✅ Yes                |
 
 ---
 

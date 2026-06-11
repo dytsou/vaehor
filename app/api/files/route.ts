@@ -10,6 +10,7 @@ import { jwtVerify } from "jose";
 import {
   authenticateShareRequest,
   shareGrantsAccessToFolder,
+  type ShareAuthOk,
 } from "@/lib/share-scope";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +45,7 @@ export const GET = createPublicRoute(
 
       const hasShareToken = searchParams.has("share_token");
       let shareScoped = false;
+      let shareCtx: ShareAuthOk | null = null;
 
       if (hasShareToken) {
         const shareRes = await authenticateShareRequest(request);
@@ -67,6 +69,7 @@ export const GET = createPublicRoute(
           );
         }
         shareScoped = true;
+        shareCtx = shareRes;
       }
 
       const canSeeAll = userRole === "ADMIN";
@@ -187,8 +190,15 @@ export const GET = createPublicRoute(
         };
       });
 
+      let responseFiles = processedFiles;
+      if (shareCtx?.parsed.kind === "file") {
+        responseFiles = processedFiles.filter(
+          (file) => file.id === shareCtx.parsed.fileId,
+        );
+      }
+
       const responseData = {
-        files: processedFiles,
+        files: responseFiles,
         nextPageToken: driveResponse.nextPageToken,
       };
 
