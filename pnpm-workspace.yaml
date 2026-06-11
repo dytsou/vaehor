@@ -1,3 +1,30 @@
 packages:
   - "packages/*"
 
+overrides:
+  "@eslint/plugin-kit": 0.3.4
+  brace-expansion@1.1.12: 1.1.13
+  brace-expansion@2.0.2: 2.0.3
+  dompurify: 3.3.2
+  flatted: 3.4.2
+  lodash: 4.18.0
+  minimatch@3.1.2: 3.1.4
+  minimatch@5.1.6: 5.1.8
+  picomatch: 4.0.4
+  ajv@6.12.6: 6.14.0
+  ajv@8.17.1: 8.18.0
+  serialize-javascript: 7.0.5
+  webpack: 5.104.1
+  yaml: 2.8.3
+
+allowBuilds:
+  "@parcel/watcher": true
+  "@prisma/engines": true
+  "@swc/core": true
+  canvas: true
+  core-js: true
+  esbuild: true
+  prisma: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true

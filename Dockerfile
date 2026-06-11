@@ -1,5 +1,5 @@
 # Stage 1: Base
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 RUN set -eux; \
   for i in 1 2 3 4 5; do \
   if apk add --no-cache libc6-compat openssl; then \
@@ -18,7 +18,7 @@ WORKDIR /app
 
 # Stage 2: Dependencies
 FROM base AS deps
-COPY pnpm-lock.yaml ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 COPY package.json ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile
@@ -29,7 +29,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
 # Optimization: Copy prisma and package.json first to cache generation if schema hasn't changed
-COPY package.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
 RUN pnpm prisma generate
 
@@ -52,7 +52,7 @@ ENV NEXT_PUBLIC_LOCAL_STORAGE_NAME=$NEXT_PUBLIC_LOCAL_STORAGE_NAME
 RUN --mount=type=cache,target=/app/.next/cache pnpm run build
 
 # Stage 4: Runner
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
