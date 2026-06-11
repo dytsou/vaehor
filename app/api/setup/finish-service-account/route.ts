@@ -8,6 +8,7 @@ import { invalidateAccessToken } from "@/lib/drive";
 import { isAppConfigured } from "@/lib/config";
 import { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
 import { verifySetupSecret } from "@/lib/setup-secret";
+import { hasPersistedSetupConfig } from "@/app/api/setup/finish/route";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 
@@ -45,8 +46,18 @@ export const POST = createPublicRoute(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
+      const envPath = path.join(process.cwd(), ".env");
+      let envContent = "";
+      try {
+        if (fs.existsSync(envPath)) {
+          envContent = fs.readFileSync(envPath, "utf-8");
+        }
+      } catch (e) {
+        console.error("Failed to read .env:", e);
+      }
+
       const isConfigured = await isAppConfigured();
-      if (isConfigured) {
+      if (isConfigured || hasPersistedSetupConfig(envContent)) {
         return NextResponse.json(
           {
             error:
@@ -63,17 +74,6 @@ export const POST = createPublicRoute(
         clientId,
         clientSecret,
       } = body;
-
-      const envPath = path.join(process.cwd(), ".env");
-      let envContent = "";
-
-      try {
-        if (fs.existsSync(envPath)) {
-          envContent = fs.readFileSync(envPath, "utf-8");
-        }
-      } catch (e) {
-        console.error("Failed to read .env:", e);
-      }
 
       const updateEnv = (key: string, value: string) => {
         const regex = new RegExp(`^${key}=.*$`, "m");

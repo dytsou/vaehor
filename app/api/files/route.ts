@@ -10,6 +10,7 @@ import { jwtVerify } from "jose";
 import {
   authenticateShareRequest,
   shareGrantsAccessToFolder,
+  shareGrantsAccessToFile,
   type ShareAuthOk,
 } from "@/lib/share-scope";
 
@@ -197,6 +198,16 @@ export const GET = createPublicRoute(
         responseFiles = processedFiles.filter(
           (file) => file.id === sharedFileId,
         );
+      } else if (shareParsed?.kind === "collection" && shareCtx) {
+        const accessChecks = await Promise.all(
+          processedFiles.map(async (file) => ({
+            file,
+            allowed: await shareGrantsAccessToFile(shareCtx, file.id as string),
+          })),
+        );
+        responseFiles = accessChecks
+          .filter((entry) => entry.allowed)
+          .map((entry) => entry.file);
       }
 
       const responseData = {

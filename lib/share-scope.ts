@@ -95,7 +95,11 @@ export async function authenticateShareRequest(
 
     if (payload.loginRequired || shareRecord.loginRequired) {
       const session = await auth();
-      if (!session) {
+      if (
+        !session ||
+        session.user?.role === "GUEST" ||
+        session.user?.isGuest === true
+      ) {
         return { error: "Login required.", status: 401 };
       }
     }
