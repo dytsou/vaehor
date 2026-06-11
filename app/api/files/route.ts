@@ -191,9 +191,11 @@ export const GET = createPublicRoute(
       });
 
       let responseFiles = processedFiles;
-      if (shareCtx?.parsed.kind === "file") {
+      const shareParsed = shareCtx?.parsed;
+      if (shareParsed?.kind === "file") {
+        const { fileId: sharedFileId } = shareParsed;
         responseFiles = processedFiles.filter(
-          (file) => file.id === shareCtx.parsed.fileId,
+          (file) => file.id === sharedFileId,
         );
       }
 

@@ -237,13 +237,12 @@ export const GET = createPublicRoute(
       );
 
       let visibleFiles = filteredFiles.filter((f) => f !== null);
-      if (
-        shareCtx &&
-        !("error" in shareCtx) &&
-        shareCtx.parsed.kind === "file"
-      ) {
+      const shareParsed =
+        shareCtx && !("error" in shareCtx) ? shareCtx.parsed : null;
+      if (shareParsed?.kind === "file") {
+        const { fileId: sharedFileId } = shareParsed;
         visibleFiles = visibleFiles.filter(
-          (f) => f !== null && f.id === shareCtx.parsed.fileId,
+          (f) => f !== null && f.id === sharedFileId,
         );
       }
 
