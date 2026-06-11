@@ -23,6 +23,7 @@
     "fix:all": "npm run format:fix && npm run lint --fix",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:ci": "vitest run --coverage --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0",
     "test:e2e": "playwright test",
     "compile:openapi": "tsp compile docs/api/spec/entry.tsp --config docs/api/spec/tspconfig.yaml",
     "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js",

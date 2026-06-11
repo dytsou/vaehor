@@ -1,3 +1,4 @@
+import { startOfToday } from "date-fns";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
@@ -53,23 +54,23 @@ describe("app/api/admin/stats route", () => {
   });
 
   it("returns aggregated admin stats from activity logs", async () => {
-    const now = Date.now();
+    const todayStart = startOfToday().getTime();
     mockFindMany.mockResolvedValue([
       {
         type: "DOWNLOAD",
-        timestamp: now - 60 * 60 * 1000,
+        timestamp: todayStart + 10 * 60 * 60 * 1000,
         itemName: "movie.mp4",
         userEmail: "admin@example.com",
       },
       {
         type: "DOWNLOAD",
-        timestamp: now - 2 * 60 * 60 * 1000,
+        timestamp: todayStart + 11 * 60 * 60 * 1000,
         itemName: "movie.mp4",
         userEmail: "admin@example.com",
       },
       {
         type: "UPLOAD",
-        timestamp: now - 3 * 60 * 60 * 1000,
+        timestamp: todayStart + 12 * 60 * 60 * 1000,
         itemName: "draft.docx",
         userEmail: "admin@example.com",
       },

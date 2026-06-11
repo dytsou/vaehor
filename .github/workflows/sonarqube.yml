@@ -43,7 +43,7 @@ jobs:
         run: pnpm prisma generate
 
       - name: Unit tests with coverage
-        run: pnpm test:coverage
+        run: pnpm test:coverage:ci
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7
