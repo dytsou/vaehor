@@ -1,9 +1,36 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import { NextRequest } from "next/server";
+
+vi.mock("@/auth", () => ({
+  auth: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    shareLink: {
+      findUnique: vi.fn(),
+    },
+  },
+}));
+
+vi.mock("@/lib/kv", () => ({
+  kv: {
+    get: vi.fn(),
+  },
+}));
+
+vi.mock("@/lib/drive", () => ({
+  getFileDetailsFromDrive: vi.fn(),
+}));
+
+vi.mock("jose", () => ({
+  jwtVerify: vi.fn(),
+}));
+
 import {
   parseShareLinkPath,
   shouldBlockDueToPreventDownload,
 } from "@/lib/share-scope";
-import { NextRequest } from "next/server";
 
 describe("lib/share-scope", () => {
   describe("parseShareLinkPath", () => {
