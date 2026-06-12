@@ -17,9 +17,11 @@ jobs:
     # Skip when SonarQube is not configured yet (set repository secrets/variables first).
     if: ${{ vars.SONAR_HOST_URL != '' }}
     steps:
-      - uses: ./.github/actions/setup-project
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - uses: ./.github/actions/setup-project
 
       - name: Unit tests with coverage
         run: pnpm test:coverage:ci

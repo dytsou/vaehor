@@ -1,20 +1,9 @@
 name: Setup project
-description: Checkout, install dependencies, and prepare the workspace for CI jobs.
-
-inputs:
-  fetch-depth:
-    description: Git checkout depth (use 0 for SonarQube SCM history).
-    required: false
-    default: "1"
+description: Install dependencies and prepare the workspace for CI jobs.
 
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: ${{ inputs.fetch-depth }}
-
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
