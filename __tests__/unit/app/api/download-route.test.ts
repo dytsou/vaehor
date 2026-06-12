@@ -31,6 +31,10 @@ const {
   mockLoggerWarn: vi.fn(),
 }));
 
+vi.mock("@/auth", () => ({
+  auth: vi.fn(),
+}));
+
 vi.mock("@/lib/api-middleware", () => ({
   createPublicRoute: (
     handler: (context: { request: NextRequest }) => Promise<Response>,
@@ -41,11 +45,16 @@ vi.mock("@/lib/api-middleware", () => ({
   },
 }));
 
-vi.mock("@/lib/services/download", () => ({
-  validateDownloadRequest: mockValidateDownloadRequest,
-  prepareGoogleDriveUrl: mockPrepareGoogleDriveUrl,
-  prepareResponseHeaders: mockPrepareResponseHeaders,
-}));
+vi.mock("@/lib/services/download", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/services/download")>();
+  return {
+    ...actual,
+    validateDownloadRequest: mockValidateDownloadRequest,
+    prepareGoogleDriveUrl: mockPrepareGoogleDriveUrl,
+    prepareResponseHeaders: mockPrepareResponseHeaders,
+  };
+});
 
 vi.mock("@/lib/drive", () => ({
   getAccessToken: mockGetAccessToken,
@@ -89,7 +98,7 @@ import { ERROR_MESSAGES } from "@/lib/constants";
 function createContext(overrides?: {
   fileId?: string;
   range?: string | null;
-  shareRecord?: { jti: string } | undefined;
+  shareRecord?: { jti: string };
   email?: string;
 }) {
   return {
@@ -132,7 +141,7 @@ describe("app/api/download route", () => {
     mockLogActivity.mockResolvedValue(undefined);
     mockTrackBandwidth.mockResolvedValue(undefined);
 
-    global.fetch = vi.fn().mockResolvedValue(
+    globalThis.fetch = vi.fn().mockResolvedValue(
       new Response("data", {
         status: 200,
         headers: {
@@ -140,7 +149,7 @@ describe("app/api/download route", () => {
           "Content-Type": "video/mp4",
         },
       }),
-    ) as unknown as typeof fetch;
+    );
   });
 
   it("returns validation error payload from download service", async () => {
@@ -183,7 +192,7 @@ describe("app/api/download route", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Accept-Ranges")).toBe("bytes");
     expect(response.headers.get("Content-Length")).toBe("4");
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it("streams file and records activity on successful GET", async () => {
@@ -213,7 +222,7 @@ describe("app/api/download route", () => {
   });
 
   it("returns upstream api error when google drive fetch fails", async () => {
-    global.fetch = vi.fn().mockResolvedValue(
+    globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
           error: { message: "Upstream denied" },
@@ -223,7 +232,7 @@ describe("app/api/download route", () => {
           headers: { "Content-Type": "application/json" },
         },
       ),
-    ) as unknown as typeof fetch;
+    );
 
     const response = await GET(
       new NextRequest("http://localhost:3000/api/download?fileId=file-123"),

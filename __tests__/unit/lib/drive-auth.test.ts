@@ -60,7 +60,7 @@ describe("lib/drive/auth", () => {
           expires_in: 3600,
         }),
       };
-      global.fetch = vi.fn().mockResolvedValue(mockResponse);
+      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const token = await getAccessToken();
       expect(token).toBe("new-access-token");
@@ -86,7 +86,7 @@ describe("lib/drive/auth", () => {
         refreshToken: "token",
       });
 
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         json: async () => ({
           error: "invalid_client",
@@ -105,7 +105,7 @@ describe("lib/drive/auth", () => {
         refreshToken: "token",
       });
 
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         json: async () => ({
           error: "invalid_grant",
@@ -123,7 +123,7 @@ describe("lib/drive/auth", () => {
         refreshToken: "token",
       });
 
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
           access_token: "fallback-token",

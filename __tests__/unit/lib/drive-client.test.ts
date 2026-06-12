@@ -16,7 +16,7 @@ describe("lib/drive/client", () => {
   describe("fetchWithRetry", () => {
     it("returns response on success", async () => {
       const mockResponse = { ok: true, status: 200 };
-      global.fetch = vi.fn().mockResolvedValue(mockResponse);
+      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await fetchWithRetry("https://api.test.com", {
         headers: { Authorization: "Bearer token" },
@@ -28,7 +28,7 @@ describe("lib/drive/client", () => {
 
     it("returns 404 without retrying", async () => {
       const mockResponse = { ok: false, status: 404 };
-      global.fetch = vi.fn().mockResolvedValue(mockResponse);
+      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await fetchWithRetry(
         "https://api.test.com",
@@ -42,7 +42,7 @@ describe("lib/drive/client", () => {
     });
 
     it("retries on 500 errors", async () => {
-      global.fetch = vi
+      globalThis.fetch = vi
         .fn()
         .mockResolvedValueOnce({ ok: false, status: 500 })
         .mockResolvedValueOnce({ ok: false, status: 500 })
@@ -60,7 +60,7 @@ describe("lib/drive/client", () => {
     });
 
     it("retries on 429 rate limit errors", async () => {
-      global.fetch = vi
+      globalThis.fetch = vi
         .fn()
         .mockResolvedValueOnce({ ok: false, status: 429 })
         .mockResolvedValueOnce({ ok: true, status: 200 });
@@ -78,7 +78,7 @@ describe("lib/drive/client", () => {
 
     it("returns non-retryable error responses directly", async () => {
       const mockResponse = { ok: false, status: 403 };
-      global.fetch = vi.fn().mockResolvedValue(mockResponse);
+      globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
 
       const result = await fetchWithRetry(
         "https://api.test.com",
@@ -92,7 +92,7 @@ describe("lib/drive/client", () => {
     });
 
     it("throws after exhausting retries on network error", async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+      globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
       await expect(
         fetchWithRetry(
@@ -107,7 +107,7 @@ describe("lib/drive/client", () => {
     });
 
     it("throws final error message after exhausting all retries", async () => {
-      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500 });
 
       await expect(
         fetchWithRetry(

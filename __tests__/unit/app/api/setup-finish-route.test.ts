@@ -72,10 +72,10 @@ describe("app/api/setup/finish route", () => {
     mockReadFileSync.mockReturnValue("");
     mockWriteFileSync.mockImplementation(() => {});
     mockInvalidateAccessToken.mockResolvedValue(undefined);
-    global.fetch = vi.fn().mockResolvedValue({
+    globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ refresh_token: "refresh-token-value" }),
-    }) as unknown as typeof fetch;
+    });
   });
 
   it("accepts only same-origin setup requests", () => {
@@ -165,7 +165,7 @@ describe("app/api/setup/finish route", () => {
     );
 
     expect(response.status).toBe(403);
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
   it("does not return secrets when writing .env succeeds", async () => {
