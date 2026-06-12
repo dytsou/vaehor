@@ -9,6 +9,8 @@ import {
   verifyShareTokenString,
 } from "@/lib/auth";
 import type { SubtitleTrack } from "@/lib/subtitles";
+import type { ZeeFile } from "@/types/storage";
+import type { Session } from "next-auth";
 
 const FileError = ({
   message,
@@ -34,19 +36,39 @@ const FileError = ({
 const createSlug = (name: string) =>
   encodeURIComponent(name.replace(/\s+/g, "-").toLowerCase());
 
-export default async function FilePage(props: {
-  params: Promise<{ folderId: string; fileId: string; locale: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  const params = await props.params;
-  const searchParams = await props.searchParams;
-  const t = await getTranslations("FilePage");
-  let file = null;
-  let error = null;
+type FilePageParams = {
+  folderId: string;
+  fileId: string;
+  locale: string;
+};
 
-  const session = await auth();
-  const shareToken = searchParams?.share_token as string | undefined;
+type FilePageLoadResult = {
+  file: ZeeFile | null;
+  prevFileUrl?: string;
+  nextFileUrl?: string;
+  subtitleTracks: SubtitleTrack[];
+  error: string | null;
+};
 
+async function userCanAccessFolder(
+  folderId: string,
+  session: Session | null,
+): Promise<boolean> {
+  if (session?.user?.role === "ADMIN") return true;
+
+  const userEmail = session?.user?.email;
+  if (userEmail && (await hasUserAccess(userEmail, folderId))) return true;
+
+  const isPriv = isPrivateFolder(folderId);
+  const isProt = await isProtected(folderId);
+  return !isPriv && !isProt;
+}
+
+async function getAccessDeniedResponse(
+  shareToken: string | undefined,
+  folderId: string,
+  session: Session | null,
+) {
   if (shareToken) {
     const isValidShare = await verifyShareTokenString(shareToken);
     if (!isValidShare) {
@@ -58,105 +80,150 @@ export default async function FilePage(props: {
         />
       );
     }
-  } else {
-    const folderId = params.folderId;
-    const isPriv = isPrivateFolder(folderId);
-    const isProt = await isProtected(folderId);
-    const userEmail = session?.user?.email;
-    const isAdmin = session?.user?.role === "ADMIN";
-
-    let hasAccess = false;
-    if (isAdmin) {
-      hasAccess = true;
-    } else if (userEmail && (await hasUserAccess(userEmail, folderId))) {
-      hasAccess = true;
-    } else if (!isPriv && !isProt) {
-      hasAccess = true;
-    }
-
-    if (!hasAccess) {
-      return (
-        <FileError
-          title="Access Denied"
-          message="You do not have permission to view this file."
-          retry="Go Home"
-        />
-      );
-    }
+    return null;
   }
 
-  let prevFileUrl: string | undefined = undefined;
-  let nextFileUrl: string | undefined = undefined;
-  let subtitleTracks: SubtitleTrack[] = [];
+  if (!(await userCanAccessFolder(folderId, session))) {
+    return (
+      <FileError
+        title="Access Denied"
+        message="You do not have permission to view this file."
+        retry="Go Home"
+      />
+    );
+  }
 
+  return null;
+}
+
+function buildFilePageUrl(
+  locale: string,
+  folderId: string,
+  file: ZeeFile,
+): string {
+  return `/${locale}/folder/${folderId}/file/${file.id}/${createSlug(file.name)}`;
+}
+
+function getNavigationUrls(
+  params: FilePageParams,
+  nonFolderFiles: ZeeFile[],
+): { prevFileUrl?: string; nextFileUrl?: string } {
+  const currentIndex = nonFolderFiles.findIndex((f) => f.id === params.fileId);
+  if (currentIndex === -1) return {};
+
+  const navigation: { prevFileUrl?: string; nextFileUrl?: string } = {};
+
+  if (currentIndex > 0) {
+    navigation.prevFileUrl = buildFilePageUrl(
+      params.locale,
+      params.folderId,
+      nonFolderFiles[currentIndex - 1],
+    );
+  }
+
+  if (currentIndex < nonFolderFiles.length - 1) {
+    navigation.nextFileUrl = buildFilePageUrl(
+      params.locale,
+      params.folderId,
+      nonFolderFiles[currentIndex + 1],
+    );
+  }
+
+  return navigation;
+}
+
+const SUBTITLE_EXTENSIONS = [".vtt", ".srt"];
+
+function isSubtitleFile(file: ZeeFile, baseName: string): boolean {
+  const fileName = file.name.toLowerCase();
+  const ext = file.name.substring(file.name.lastIndexOf("."));
+  return (
+    !file.isFolder &&
+    SUBTITLE_EXTENSIONS.includes(ext.toLowerCase()) &&
+    fileName.startsWith(baseName.toLowerCase())
+  );
+}
+
+function toSubtitleTrack(trackFile: ZeeFile): SubtitleTrack {
+  const langMatch = trackFile.name.match(/[\._]([a-z]{2,3})[\._]/i);
+  const lang = langMatch ? langMatch[1] : "en";
+
+  return {
+    src: `/api/download?fileId=${trackFile.id}`,
+    kind: "subtitles",
+    srcLang: lang,
+    label: lang.toUpperCase(),
+    default: lang === "en",
+  };
+}
+
+function getSubtitleTracks(
+  file: ZeeFile,
+  allFiles: ZeeFile[],
+): SubtitleTrack[] {
+  if (!file.mimeType.startsWith("video/")) return [];
+
+  const baseName =
+    file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+
+  const rawTracks = allFiles
+    .filter((f) => isSubtitleFile(f, baseName))
+    .map(toSubtitleTrack);
+
+  return Array.from(new Map(rawTracks.map((t) => [t.label, t])).values());
+}
+
+async function loadFilePageData(
+  params: FilePageParams,
+  t: Awaited<ReturnType<typeof getTranslations>>,
+): Promise<FilePageLoadResult> {
   try {
-    file = await getAnyFileDetails(params.fileId);
-
-    if (file && params.folderId) {
-      const { files: allFiles } = await listAllFiles({
-        folderId: params.folderId,
-        pageToken: null,
-        pageSize: 1000,
-        useCache: true,
-      });
-
-      const nonFolderFiles = allFiles.filter((f) => !f.isFolder);
-      const currentIndex = nonFolderFiles.findIndex(
-        (f) => f.id === params.fileId,
-      );
-
-      if (currentIndex > 0) {
-        const prevFile = nonFolderFiles[currentIndex - 1];
-        prevFileUrl = `/${params.locale}/folder/${params.folderId}/file/${
-          prevFile.id
-        }/${createSlug(prevFile.name)}`;
-      }
-
-      if (currentIndex !== -1 && currentIndex < nonFolderFiles.length - 1) {
-        const nextFile = nonFolderFiles[currentIndex + 1];
-        nextFileUrl = `/${params.locale}/folder/${params.folderId}/file/${
-          nextFile.id
-        }/${createSlug(nextFile.name)}`;
-      }
-
-      if (file.mimeType.startsWith("video/")) {
-        const baseName =
-          file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
-        const supportedExtensions = [".vtt", ".srt"];
-
-        const rawTracks = allFiles
-          .filter((f) => {
-            const fName = f.name.toLowerCase();
-            const ext = f.name.substring(f.name.lastIndexOf("."));
-            return (
-              !f.isFolder &&
-              supportedExtensions.includes(ext.toLowerCase()) &&
-              fName.startsWith(baseName.toLowerCase())
-            );
-          })
-          .map((trackFile) => {
-            const langMatch = trackFile.name.match(/[\._]([a-z]{2,3})[\._]/i);
-            const lang = langMatch ? langMatch[1] : "en";
-            const label = lang.toUpperCase();
-
-            return {
-              src: `/api/download?fileId=${trackFile.id}`,
-              kind: "subtitles" as const,
-              srcLang: lang,
-              label: label,
-              default: lang === "en",
-            };
-          });
-
-        subtitleTracks = Array.from(
-          new Map(rawTracks.map((t) => [t.label, t])).values(),
-        );
-      }
+    const file = await getAnyFileDetails(params.fileId);
+    if (!file || !params.folderId) {
+      return { file, subtitleTracks: [], error: null };
     }
+
+    const { files: allFiles } = await listAllFiles({
+      folderId: params.folderId,
+      pageToken: null,
+      pageSize: 1000,
+      useCache: true,
+    });
+
+    const nonFolderFiles = allFiles.filter((f) => !f.isFolder);
+
+    return {
+      file,
+      ...getNavigationUrls(params, nonFolderFiles),
+      subtitleTracks: getSubtitleTracks(file, allFiles),
+      error: null,
+    };
   } catch (err) {
     console.error("Fetch file details error:", err);
-    error = t("fetchError");
+    return { file: null, subtitleTracks: [], error: t("fetchError") };
   }
+}
+
+export default async function FilePage(props: {
+  params: Promise<{ folderId: string; fileId: string; locale: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await props.params;
+  const searchParams = await props.searchParams;
+  const t = await getTranslations("FilePage");
+
+  const session = await auth();
+  const shareToken = searchParams?.share_token as string | undefined;
+
+  const accessDenied = await getAccessDeniedResponse(
+    shareToken,
+    params.folderId,
+    session,
+  );
+  if (accessDenied) return accessDenied;
+
+  const { file, prevFileUrl, nextFileUrl, subtitleTracks, error } =
+    await loadFilePageData(params, t);
 
   if (error) {
     return (
