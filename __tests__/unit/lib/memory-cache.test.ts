@@ -145,7 +145,10 @@ describe("lib/memory-cache", () => {
       memoryCache.get("x");
 
       const stats = memoryCache.getStats();
-      expect(stats.hitRate).toMatch(/\d+(\.\d+)?%/);
+      const total = stats.hits + stats.misses;
+      const expectedHitRate =
+        total > 0 ? `${((stats.hits / total) * 100).toFixed(2)}%` : "0%";
+      expect(stats.hitRate).toBe(expectedHitRate);
     });
   });
 
