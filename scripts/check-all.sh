@@ -42,7 +42,7 @@ fi
 
 echo -e "\n${BOLD}=======================================${NC}"
 
-if [ $FAIL -eq 0 ]; then
+if [[ $FAIL -eq 0 ]]; then
     echo -e "${GREEN}${BOLD}✨ All checks passed! Ready to push.${NC}"
     exit 0
 else
