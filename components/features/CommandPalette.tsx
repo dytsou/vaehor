@@ -224,7 +224,11 @@ export default function CommandPalette() {
             value="github repo source code"
             onSelect={() =>
               runCommand(() =>
-                window.open("https://github.com/ifauzeee/Zee-Index", "_blank"),
+                window.open(
+                  "https://github.com/ifauzeee/Zee-Index",
+                  "_blank",
+                  "noopener,noreferrer",
+                ),
               )
             }
             className={itemClass}
@@ -237,7 +241,11 @@ export default function CommandPalette() {
             value="telegram grup komunitas"
             onSelect={() =>
               runCommand(() =>
-                window.open("https://t.me/RyzeeenUniverse", "_blank"),
+                window.open(
+                  "https://t.me/RyzeeenUniverse",
+                  "_blank",
+                  "noopener,noreferrer",
+                ),
               )
             }
             className={itemClass}
