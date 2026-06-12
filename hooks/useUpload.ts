@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseDroppedItems, FileEntry } from "@/lib/fileParser";
 import { useTranslations } from "next-intl";
+import { runChunkedFileUpload } from "@/hooks/chunked-file-upload";
 
 interface UseUploadProps {
   currentFolderId: string;
@@ -9,29 +10,7 @@ interface UseUploadProps {
   triggerRefresh: () => void;
 }
 
-const CHUNK_SIZE = 2 * 1024 * 1024;
 const MAX_CONCURRENT_UPLOADS = 3;
-const MAX_RETRIES = 3;
-
-const retryFetch = async (
-  url: string,
-  options: RequestInit,
-  retries = MAX_RETRIES,
-): Promise<Response> => {
-  try {
-    const res = await fetch(url, options);
-    if (!res.ok && retries > 0 && res.status >= 500) {
-      throw new Error(`Server error: ${res.status}`);
-    }
-    return res;
-  } catch (err) {
-    if (retries > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return retryFetch(url, options, retries - 1);
-    }
-    throw err;
-  }
-};
 
 export function useUpload({
   currentFolderId,
@@ -120,93 +99,20 @@ export function useUpload({
   const uploadFileChunked = useCallback(
     async (file: File, targetParentId: string) => {
       try {
-        updateUploadProgress(file.name, 0, "uploading");
-
-        const initRes = await retryFetch("/api/files/upload?type=init", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: file.name,
-            mimeType: file.type || "application/octet-stream",
-            parentId: targetParentId,
-            size: file.size,
-          }),
-        });
-
-        if (!initRes.ok) throw new Error(t("initFailed"));
-        const { uploadUrl } = await initRes.json();
-
-        if (file.size === 0) {
-          const isLocalUpload = uploadUrl.startsWith("local-storage-upload://");
-          const zeroHeaders: Record<string, string> = {
-            "Content-Type": "application/octet-stream",
-          };
-          if (isLocalUpload) {
-            zeroHeaders["Content-Range"] = "bytes 0-0/0";
-          } else {
-            zeroHeaders["Content-Length"] = "0";
-          }
-
-          const chunkRes = await retryFetch(
-            `/api/files/upload?type=chunk&uploadUrl=${encodeURIComponent(
-              uploadUrl,
-            )}&parentId=${targetParentId}`,
-            {
-              method: "POST",
-              headers: zeroHeaders,
-              body: new Uint8Array(0),
-            },
-          );
-
-          if (!chunkRes.ok) throw new Error(t("chunkFailed"));
-          const chunkData = await chunkRes.json();
-          if (chunkData.status !== "completed") {
-            throw new Error(t("chunkFailed"));
-          }
-          updateUploadProgress(file.name, 100, "success");
-          triggerRefresh();
-          setTimeout(() => {
-            removeUpload(file.name);
-          }, 5000);
-          return;
-        }
-
-        let start = 0;
-        while (start < file.size) {
-          const end = Math.min(start + CHUNK_SIZE, file.size);
-          const chunk = file.slice(start, end);
-
-          const contentRange = `bytes ${start}-${end - 1}/${file.size}`;
-
-          const chunkRes = await retryFetch(
-            `/api/files/upload?type=chunk&uploadUrl=${encodeURIComponent(
-              uploadUrl,
-            )}&parentId=${targetParentId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Range": contentRange,
-                "Content-Type": "application/octet-stream",
-              },
-              body: chunk,
-            },
-          );
-
-          if (!chunkRes.ok) throw new Error(t("chunkFailed"));
-          const chunkData = await chunkRes.json();
-          const percent = Math.round((end / file.size) * 100);
-          updateUploadProgress(file.name, percent, "uploading");
-
-          if (chunkData.status === "completed") {
-            updateUploadProgress(file.name, 100, "success");
-            triggerRefresh();
-            setTimeout(() => {
-              removeUpload(file.name);
-            }, 5000);
-            return;
-          }
-          start = end;
-        }
+        await runChunkedFileUpload(
+          file,
+          targetParentId,
+          {
+            initFailed: t("initFailed"),
+            chunkFailed: t("chunkFailed"),
+          },
+          {
+            onProgress: (percent, status, error) =>
+              updateUploadProgress(file.name, percent, status, error),
+            onComplete: triggerRefresh,
+            onRemoveLater: () => removeUpload(file.name),
+          },
+        );
       } catch (error: unknown) {
         console.error(error);
         const errorMessage =
