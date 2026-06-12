@@ -287,15 +287,20 @@ export default function FileDetail(props: FileDetailProps) {
                 )}
               </div>
             ) : controller.fileType === "image" ? (
-              <div
-                className="w-full h-full min-h-[320px] sm:min-h-[420px] lg:min-h-0 relative cursor-zoom-in group/image flex items-center justify-center"
+              <button
+                type="button"
+                className="w-full h-full min-h-[320px] sm:min-h-[420px] lg:min-h-0 relative cursor-zoom-in group/image flex items-center justify-center border-0 bg-transparent p-0"
                 onClick={() => controller.setInternalPreviewOpen(true)}
+                aria-label={`Open ${file.name} preview`}
               >
                 <ImagePreview src={controller.directLink} />
-                <div className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity">
+                <div
+                  className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity pointer-events-none"
+                  aria-hidden="true"
+                >
                   <Maximize2 size={20} />
                 </div>
-              </div>
+              </button>
             ) : (
               <FileIconPlaceholder
                 mimeType={file.mimeType}
