@@ -238,14 +238,17 @@ export default function ContextMenu({
 
   const content = (
     <AnimatePresence>
-      <div
-        className="fixed inset-0 z-[9999] select-none"
-        onClick={onClose}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onClose();
-        }}
-      >
+      <div className="fixed inset-0 z-[9999] select-none">
+        <button
+          type="button"
+          aria-label={t("cancel")}
+          className="absolute inset-0 w-full h-full border-0 bg-transparent p-0 cursor-default"
+          onClick={onClose}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            onClose();
+          }}
+        />
         <motion.div
           ref={menuRef}
           className={cn(
@@ -261,12 +264,17 @@ export default function ContextMenu({
           onClick={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.preventDefault()}
         >
-          <div
-            className="flex md:hidden items-center justify-center pt-4 pb-2"
+          <button
+            type="button"
+            aria-label={t("cancel")}
+            className="flex md:hidden items-center justify-center pt-4 pb-2 w-full border-0 bg-transparent"
             onClick={onClose}
           >
-            <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full" />
-          </div>
+            <span
+              className="w-12 h-1.5 bg-muted-foreground/20 rounded-full"
+              aria-hidden="true"
+            />
+          </button>
 
           <div className="max-h-[80vh] overflow-y-auto overscroll-contain">
             {menuContent}
