@@ -4,40 +4,13 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { authLimiter } from "@/lib/ratelimit";
 import { kv } from "@/lib/kv";
 import { REDIS_KEYS } from "@/lib/constants";
-import bcrypt from "bcryptjs";
-import type { ActivityDetails } from "@/lib/activityLogger";
-
 import type { NextAuthConfig } from "next-auth";
-
-function constantTimeEqual(a: string, b: string): boolean {
-  const encoder = new TextEncoder();
-  const encodedA = encoder.encode(a);
-  const encodedB = encoder.encode(b);
-
-  if (encodedA.length !== encodedB.length) {
-    return false;
-  }
-
-  let result = 0;
-  for (let i = 0; i < encodedA.length; i += 1) {
-    result |= encodedA[i] ^ encodedB[i];
-  }
-
-  return result === 0;
-}
-
-function normalizeAdminEmails(): string[] {
-  const envAdminsRaw = process.env.ADMIN_EMAILS || "";
-  return envAdminsRaw.split(",").map((e) =>
-    e
-      .trim()
-      .toLowerCase()
-      .replace(/^["']|["']$/g, ""),
-  );
-}
+import {
+  authorizeCredentials,
+  normalizeAdminEmails,
+} from "@/lib/services/credential-auth";
 
 async function resolveRole(
   email: string,
@@ -82,19 +55,6 @@ async function resolveRole(
   return "USER";
 }
 
-type AuthAuditType = "LOGIN_SUCCESS" | "LOGIN_FAILURE" | "RATE_LIMITED";
-
-function emitAuthActivity<T extends AuthAuditType>(
-  type: T,
-  details: ActivityDetails<T>,
-): void {
-  void import("@/lib/activityLogger")
-    .then(({ logActivity }) => logActivity(type, details))
-    .catch((error) => {
-      logger.error({ err: error, type }, "[Auth] Failed to record auth event");
-    });
-}
-
 const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(db as any),
   providers: [
@@ -128,183 +88,7 @@ const authConfig: NextAuthConfig = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
-        const forwardedFor = req?.headers?.get?.("x-forwarded-for");
-        const ip = forwardedFor
-          ? forwardedFor.split(",")[0].trim()
-          : "127.0.0.1";
-
-        const ratelimitResult = await authLimiter.check(ip);
-        if (!ratelimitResult.success) {
-          emitAuthActivity("RATE_LIMITED", {
-            userEmail:
-              typeof credentials?.email === "string"
-                ? credentials.email.toLowerCase().trim()
-                : undefined,
-            status: "blocked",
-            metadata: {
-              scope: "auth",
-              identifier: ip,
-            },
-          });
-          logger.warn({ ip }, "[Auth] Rate limit exceeded");
-          throw new Error(
-            "Terlalu banyak percobaan login. Silakan tunggu sebentar.",
-          );
-        }
-
-        const email = credentials?.email as string;
-        const password = credentials?.password as string;
-
-        if (!email || !password) {
-          emitAuthActivity("LOGIN_FAILURE", {
-            userEmail:
-              typeof email === "string"
-                ? email.toLowerCase().trim()
-                : undefined,
-            status: "failure",
-            metadata: {
-              reason: "missing_credentials",
-            },
-          });
-          logger.warn("[Auth] No credentials provided");
-          return null;
-        }
-
-        try {
-          const normalizedInputEmail = email.toLowerCase().trim();
-          const dbUser = await db.user.findUnique({
-            where: { email: normalizedInputEmail },
-          });
-
-          const normalizedEnvAdmins = normalizeAdminEmails();
-
-          const isAdminEnv = normalizedEnvAdmins.includes(normalizedInputEmail);
-          const isAdminDb = dbUser?.role === "ADMIN";
-          const [adminCount, isRedisAdmin] = await Promise.all([
-            kv.scard(REDIS_KEYS.ADMIN_USERS),
-            kv.sismember(REDIS_KEYS.ADMIN_USERS, normalizedInputEmail),
-          ]);
-
-          // Same bootstrap behavior as resolveRole(): first admin can be seeded
-          // from ADMIN_EMAILS, then all ongoing management uses admin API.
-          let isAdmin = isAdminDb || isRedisAdmin === 1;
-          if (adminCount === 0 && isAdminEnv) {
-            try {
-              await kv.sadd(REDIS_KEYS.ADMIN_USERS, ...normalizedEnvAdmins);
-              isAdmin = true;
-              logger.warn(
-                { count: normalizedEnvAdmins.length },
-                "[Auth] Seeded ADMIN_USERS from ADMIN_EMAILS (bootstrap)",
-              );
-            } catch (err) {
-              logger.error(
-                { err },
-                "[Auth] Failed to seed ADMIN_USERS from env",
-              );
-            }
-          }
-
-          const envPassHash = process.env.ADMIN_PASSWORD_HASH || "";
-          const envPass = (process.env.ADMIN_PASSWORD || "")
-            .trim()
-            .replace(/^["']|["']$/g, "");
-          const isProduction = process.env.NODE_ENV === "production";
-
-          let isPassValid = false;
-          if (isProduction && !envPassHash) {
-            logger.error(
-              { email: normalizedInputEmail },
-              "[Auth] ADMIN_PASSWORD_HASH is required in production for credential login",
-            );
-            return null;
-          }
-
-          if (envPassHash) {
-            isPassValid = await bcrypt.compare(password, envPassHash);
-          } else if (!isProduction && envPass) {
-            isPassValid = constantTimeEqual(password, envPass);
-          }
-
-          if (process.env.NODE_ENV === "production") {
-            logger.info(
-              { inputEmail: normalizedInputEmail },
-              "[Auth] Login attempt",
-            );
-          } else {
-            logger.info(
-              {
-                inputEmail: normalizedInputEmail,
-                isAdminDb,
-                isAdminEnv,
-                isAdmin,
-                isPassValid,
-              },
-              "[Auth] Login attempt",
-            );
-          }
-
-          if (isAdmin && isPassValid) {
-            emitAuthActivity("LOGIN_SUCCESS", {
-              userEmail: normalizedInputEmail,
-              userRole: "ADMIN",
-              status: "success",
-            });
-            logger.info(
-              { email: normalizedInputEmail },
-              "[Auth] Success: Credentials match",
-            );
-
-            let currentUser = dbUser;
-            if (!currentUser) {
-              logger.info(
-                { email: normalizedInputEmail },
-                "[Auth] Creating missing admin user in DB",
-              );
-              currentUser = await db.user.create({
-                data: {
-                  email: normalizedInputEmail,
-                  role: "ADMIN",
-                  name: normalizedInputEmail.split("@")[0],
-                },
-              });
-            }
-
-            return {
-              id: currentUser.id,
-              name: currentUser.name || normalizedInputEmail.split("@")[0],
-              email: normalizedInputEmail,
-              role: "ADMIN",
-            };
-          }
-
-          logger.warn(
-            { isAdmin, isPassValid, email: normalizedInputEmail },
-            "[Auth] Failed: Invalid creds or not admin",
-          );
-          emitAuthActivity("LOGIN_FAILURE", {
-            userEmail: normalizedInputEmail,
-            status: "failure",
-            metadata: {
-              reason: isAdmin
-                ? "invalid_password"
-                : "not_admin_or_invalid_credentials",
-            },
-          });
-          return null;
-        } catch (error) {
-          emitAuthActivity("LOGIN_FAILURE", {
-            userEmail: email ? email.toLowerCase().trim() : undefined,
-            status: "failure",
-            error: error instanceof Error ? error.message : "auth_exception",
-            metadata: {
-              reason: "auth_exception",
-            },
-          });
-          logger.error({ err: error }, "[Auth] Exception in authorize");
-          return null;
-        }
-      },
+      authorize: authorizeCredentials,
     }),
   ],
   pages: {
