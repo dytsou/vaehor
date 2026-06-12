@@ -141,6 +141,7 @@ vi.mock("lucide-react", async () => {
 });
 
 import FileItem from "@/components/file-browser/FileItem";
+import { formatBytes } from "@/lib/utils";
 
 describe("FileItem", () => {
   const mockFile = {
@@ -198,7 +199,10 @@ describe("FileItem", () => {
 
   it("shows file size for non-folder items", () => {
     render(<FileItem {...defaultProps} />);
-    expect(screen.getByText(/1.*MB/i)).toBeInTheDocument();
+    const expectedSize = formatBytes(Number(mockFile.size));
+    expect(
+      screen.getByText((content) => content.includes(expectedSize)),
+    ).toBeInTheDocument();
   });
 
   it("shows favorite star when file is favorite", () => {
