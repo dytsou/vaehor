@@ -6,7 +6,6 @@ import { useRouter, usePathname } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useAppStore } from "@/lib/store";
 import { useScrollLock } from "@/hooks/useScrollLock";
-import { fetchFolderPathApi } from "@/hooks/useFileFetching";
 import type { DriveFile } from "@/lib/drive";
 import { getErrorMessage } from "@/lib/errors";
 import type {
@@ -15,14 +14,16 @@ import type {
   ManualDrive,
   TreeContextType,
 } from "./types";
+import {
+  applyToggleLoadResult,
+  buildExpandedTreeForPath,
+  collectLoadedFolderIdsToResync,
+  fetchChildrenForFolders,
+  mergeResyncResultsIntoTree,
+} from "./sidebar-tree-utils";
 
 interface FolderContentsResponse {
   files?: DriveFile[];
-}
-
-interface FolderPathItem {
-  id: string;
-  name: string;
 }
 
 interface DropPayload {
@@ -282,18 +283,7 @@ export function useSidebarController() {
       const children = await fetchSubfolders(nodeId);
       setTree((prev) => {
         const nextTree = { ...prev };
-        nextTree[nodeId] = {
-          ...nextTree[nodeId],
-          childIds: children.map((child) => child.id),
-          isLoading: false,
-          isExpanded: true,
-          hasLoaded: true,
-        };
-        children.forEach((child) => {
-          if (!nextTree[child.id]) {
-            nextTree[child.id] = child;
-          }
-        });
+        applyToggleLoadResult(nextTree, nodeId, children);
         return nextTree;
       });
     },
@@ -308,50 +298,18 @@ export function useSidebarController() {
     let cancelled = false;
 
     const resyncLoadedFolderNodes = async () => {
-      const ids = new Set<string>();
-      const snapshot = treeRef.current;
-      if (currentFolderId && snapshot[currentFolderId]?.hasLoaded) {
-        ids.add(currentFolderId);
-      }
-      if (snapshot[rootFolderId]?.hasLoaded) {
-        ids.add(rootFolderId);
-      }
-
-      const results = await Promise.all(
-        [...ids].map(async (id) => ({
-          id,
-          children: await fetchSubfolders(id),
-        })),
+      const folderIds = collectLoadedFolderIdsToResync(
+        treeRef.current,
+        currentFolderId,
+        rootFolderId,
       );
+      const results = await fetchChildrenForFolders(folderIds, fetchSubfolders);
 
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
 
-      setTree((prev) => {
-        const next = { ...prev };
-        for (const { id, children } of results) {
-          if (!next[id]) continue;
-          next[id] = {
-            ...next[id],
-            childIds: children.map((c) => c.id),
-            hasLoaded: true,
-            isLoading: false,
-          };
-          children.forEach((child) => {
-            if (!next[child.id]) {
-              next[child.id] = child;
-            } else {
-              next[child.id] = {
-                ...next[child.id],
-                name: child.name,
-                isProtected: child.isProtected,
-                isFolder: child.isFolder,
-                parentId: child.parentId,
-              };
-            }
-          });
-        }
-        return next;
-      });
+      setTree((prev) => mergeResyncResultsIntoTree(prev, results));
     };
 
     void resyncLoadedFolderNodes();
@@ -375,54 +333,17 @@ export function useSidebarController() {
 
     const expandPath = async () => {
       try {
-        let pathIds: string[] = [];
+        const nextTree = await buildExpandedTreeForPath({
+          currentFolderId,
+          rootFolderId,
+          shareToken,
+          locale,
+          queryClient,
+          treeSnapshot: treeRef.current,
+          fetchSubfolders,
+        });
 
-        if (currentFolderId && currentFolderId !== rootFolderId) {
-          const pathData = await queryClient.fetchQuery({
-            queryKey: ["folderPath", currentFolderId, shareToken, locale],
-            queryFn: () =>
-              fetchFolderPathApi(currentFolderId, shareToken, locale),
-            staleTime: 5 * 60 * 1000,
-          });
-          if (Array.isArray(pathData)) {
-            pathIds = pathData.map((pathItem: FolderPathItem) => pathItem.id);
-          }
-        }
-
-        const nextTree = { ...treeRef.current };
-        let stateChanged = false;
-
-        for (const folderId of [rootFolderId, ...pathIds]) {
-          const node = nextTree[folderId];
-          if (!node) {
-            if (folderId === rootFolderId) {
-              continue;
-            }
-            break;
-          }
-
-          if (node.isFolder && !node.isExpanded) {
-            nextTree[folderId] = { ...node, isExpanded: true };
-            stateChanged = true;
-          }
-
-          if (node.isFolder && node.childIds.length === 0 && !node.hasLoaded) {
-            const children = await fetchSubfolders(folderId, nextTree);
-            nextTree[folderId] = {
-              ...nextTree[folderId],
-              childIds: children.map((child) => child.id),
-              hasLoaded: true,
-            };
-            children.forEach((child) => {
-              if (!nextTree[child.id]) {
-                nextTree[child.id] = child;
-              }
-            });
-            stateChanged = true;
-          }
-        }
-
-        if (stateChanged) {
+        if (nextTree) {
           setTree(nextTree);
         }
       } catch (error) {
@@ -430,7 +351,7 @@ export function useSidebarController() {
       }
     };
 
-    expandPath();
+    void expandPath();
   }, [
     currentFolderId,
     mounted,
