@@ -14,6 +14,7 @@ import {
   mapBandwidthToSeverity,
   publishPipelineEvent,
 } from "@/lib/events/pipeline";
+import { parseUserAgent } from "@/lib/user-agent";
 
 const PAGEVIEW_KEY = "zee-index:analytics:pageviews";
 const VISITOR_KEY = "zee-index:analytics:visitors";
@@ -63,38 +64,6 @@ function generateId(): string {
 function getDayKey(timestamp: number): string {
   const d = new Date(timestamp);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function parseUserAgent(ua: string): {
-  browser: string;
-  os: string;
-  device: string;
-} {
-  let browser = "Other";
-  let os = "Other";
-  let device = "Desktop";
-
-  if (ua.includes("Firefox/")) browser = "Firefox";
-  else if (ua.includes("Edg/")) browser = "Edge";
-  else if (ua.includes("OPR/") || ua.includes("Opera/")) browser = "Opera";
-  else if (ua.includes("Chrome/") && !ua.includes("Edg/")) browser = "Chrome";
-  else if (ua.includes("Safari/") && !ua.includes("Chrome/"))
-    browser = "Safari";
-  else if (ua.includes("bot") || ua.includes("Bot") || ua.includes("crawler"))
-    browser = "Bot";
-
-  if (ua.includes("Windows")) os = "Windows";
-  else if (ua.includes("Mac OS X") || ua.includes("Macintosh")) os = "macOS";
-  else if (ua.includes("Linux") && !ua.includes("Android")) os = "Linux";
-  else if (ua.includes("Android")) os = "Android";
-  else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
-  else if (ua.includes("CrOS")) os = "ChromeOS";
-
-  if (ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone"))
-    device = "Mobile";
-  else if (ua.includes("iPad") || ua.includes("Tablet")) device = "Tablet";
-
-  return { browser, os, device };
 }
 
 export async function trackPageView(params: {
