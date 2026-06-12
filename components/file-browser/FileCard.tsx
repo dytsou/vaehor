@@ -1,22 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, Variants } from "framer-motion";
-import Image from "next/image";
-import Link from "next/link";
-import { Folder, MoreVertical, Loader2 } from "lucide-react";
-import { formatBytes, getIcon, cn } from "@/lib/utils";
+import { cn, getIcon } from "@/lib/utils";
 import type { DriveFile } from "@/lib/drive";
 import { useAppStore } from "@/lib/store";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useTranslations } from "next-intl";
 import type {
   BrowserFile,
   FileBrowserActionEvent,
 } from "@/components/file-browser/views/types";
+import FileCardPreview from "@/components/file-browser/FileCardPreview";
+import FileCardFooter from "@/components/file-browser/FileCardFooter";
+import {
+  canAcceptFolderDrop,
+  createFileCardActionEvent,
+  handleFileCardClick,
+} from "@/components/file-browser/file-card-handlers";
 
 interface FileCardProps {
   file: BrowserFile;
@@ -38,6 +36,21 @@ interface FileCardProps {
   onFileDrop?: (e: React.DragEvent, targetFolder: DriveFile) => void;
 }
 
+const cardVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.2, ease: "easeOut" },
+  },
+  hover: {
+    scale: 1.05,
+    y: -5,
+    transition: { duration: 0.2, ease: "easeInOut" },
+  },
+  tap: { scale: 0.98, transition: { duration: 0.1 } },
+};
+
 export default function FileCard({
   file,
   onNavigate,
@@ -56,11 +69,28 @@ export default function FileCard({
 }: FileCardProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const t = useTranslations("FileCard");
+  const isFolder = file.mimeType === "application/vnd.google-apps.folder";
+  const IconComponent = getIcon(file.mimeType);
+  const isUploading = file.uploadStatus === "uploading";
+  const displayThumbnail = Boolean(
+    thumbnailSrc && !isFolder && file.hasThumbnail,
+  );
+
+  const {
+    isBulkMode,
+    selectedFiles,
+    toggleSelection,
+    setBulkMode,
+    sharePolicy,
+  } = useAppStore();
+  const isSelected = selectedFiles.some((f) => f.id === file.id);
 
   useEffect(() => {
     setIsDesktop(window.matchMedia("(pointer: fine)").matches);
   }, []);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!onPrefetchItem || file.uploadStatus || !file.isFolder) return;
@@ -80,100 +110,50 @@ export default function FileCard({
 
     return () => observer.disconnect();
   }, [file, onPrefetchItem]);
-  const t = useTranslations("FileCard");
-  const isFolder = file.mimeType === "application/vnd.google-apps.folder";
-  const IconComponent = getIcon(file.mimeType);
 
-  const {
-    isBulkMode,
-    selectedFiles,
-    toggleSelection,
-    setBulkMode,
-    sharePolicy,
-  } = useAppStore();
-  const isSelected = selectedFiles.some((f) => f.id === file.id);
-
-  const handleClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (
-      target.closest("button") ||
-      target.closest("input") ||
-      target.closest("label")
-    ) {
-      return;
-    }
-
-    if (isBulkMode || e.shiftKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleSelection(file);
-      if (!isBulkMode) setBulkMode(true);
-      return;
-    }
-
-    if (isFolder && onNavigate) {
-      e.preventDefault();
-      onNavigate(file.id);
-    } else if (onClick) {
-      onClick(file);
-    }
+  const onCardClick = (e: React.MouseEvent) => {
+    handleFileCardClick(e, {
+      file,
+      isBulkMode,
+      isFolder,
+      onNavigate,
+      onClick,
+      toggleSelection,
+      setBulkMode,
+    });
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const onCardContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (onContextMenu) {
-      onContextMenu({ clientX: e.clientX, clientY: e.clientY }, file);
-    }
+    onContextMenu?.({ clientX: e.clientX, clientY: e.clientY }, file);
   };
 
-  const displayThumbnail = thumbnailSrc && !isFolder && file.hasThumbnail;
-  const isUploading = file.uploadStatus === "uploading";
-  const createActionEvent = (
-    event: React.MouseEvent,
-  ): FileBrowserActionEvent => ({
-    preventDefault: () => event.preventDefault(),
-    stopPropagation: () => event.stopPropagation(),
-    shiftKey: event.shiftKey,
-  });
+  const onCardDragOver = (e: React.DragEvent) => {
+    if (!canAcceptFolderDrop(isFolder, isAdmin, isUploading)) return;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    if (isFolder && isAdmin && !isUploading) {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(true);
-      e.dataTransfer.dropEffect = "move";
-    }
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const onCardDrop = (e: React.DragEvent) => {
+    if (!canAcceptFolderDrop(isFolder, isAdmin, isUploading) || !onFileDrop) {
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
+    onFileDrop(e, file);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    if (isFolder && isAdmin && !isUploading && onFileDrop) {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(false);
-      onFileDrop(e, file);
+  const onCheckboxChange = () => {
+    toggleSelection(file);
+    if (!isBulkMode) {
+      setBulkMode(true);
     }
-  };
-
-  const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.2, ease: "easeOut" },
-    },
-    hover: {
-      scale: 1.05,
-      y: -5,
-      transition: { duration: 0.2, ease: "easeInOut" },
-    },
-    tap: { scale: 0.98, transition: { duration: 0.1 } },
   };
 
   return (
@@ -191,14 +171,18 @@ export default function FileCard({
         isDragOver &&
           "ring-4 ring-primary/30 bg-primary/20 scale-[1.1] z-50 shadow-2xl border-primary",
       )}
-      onClick={handleClick}
-      onContextMenu={handleContextMenu}
+      onClick={onCardClick}
+      onContextMenu={onCardContextMenu}
       onMouseEnter={onMouseEnter}
       draggable={isAdmin && !isUploading && isDesktop}
       onDragStartCapture={onDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDragOver={onCardDragOver}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+      }}
+      onDrop={onCardDrop}
       ref={containerRef}
     >
       <label
@@ -210,98 +194,41 @@ export default function FileCard({
         <input
           type="checkbox"
           checked={isSelected}
-          onChange={() => {
-            toggleSelection(file);
-            if (!isBulkMode) setBulkMode(true);
-          }}
+          onChange={onCheckboxChange}
           className="w-5 h-5 accent-primary rounded cursor-pointer"
         />
       </label>
 
       <div className="flex-1 w-full bg-muted/20 rounded flex items-center justify-center overflow-hidden relative">
-        {isNavigating ? (
-          <div className="flex flex-col items-center justify-center gap-2 text-primary">
-            <Loader2 className="w-12 h-12 animate-spin" />
-          </div>
-        ) : isUploading ? (
-          <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-            <div className="w-12 h-12 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs">{file.uploadProgress || 0}%</span>
-          </div>
-        ) : displayThumbnail ? (
-          <Image
-            src={thumbnailSrc}
-            alt={file.name}
-            fill
-            className="object-cover transition-transform group-hover:scale-105"
-            unoptimized
-            onError={() => {}}
-          />
-        ) : isFolder ? (
-          <Folder className="w-16 h-16 text-blue-500/80" />
-        ) : (
-          <IconComponent className="w-16 h-16 text-muted-foreground" />
-        )}
+        <FileCardPreview
+          isNavigating={isNavigating}
+          isUploading={isUploading}
+          displayThumbnail={displayThumbnail}
+          thumbnailSrc={thumbnailSrc}
+          fileName={file.name}
+          isFolder={isFolder}
+          IconComponent={IconComponent}
+          uploadProgress={file.uploadProgress}
+        />
       </div>
 
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-sm truncate" title={file.name}>
-            {isFolder ? (
-              <Link
-                href={`/folder/${file.id}`}
-                className="hover:underline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onNavigate) onNavigate(file.id);
-                }}
-              >
-                {file.name}
-              </Link>
-            ) : (
-              file.name
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {isFolder ? t("folder") : formatBytes(parseInt(file.size || "0"))}
-          </p>
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MoreVertical className="w-4 h-4 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            {onDetails && (
-              <DropdownMenuItem
-                onClick={(event) => onDetails(createActionEvent(event), file)}
-              >
-                {t("info")}
-              </DropdownMenuItem>
-            )}
-            {onDownload && !isFolder && !sharePolicy?.preventDownload && (
-              <DropdownMenuItem
-                onClick={(event) => onDownload(createActionEvent(event), file)}
-              >
-                {t("download")}
-              </DropdownMenuItem>
-            )}
-            {onShare && (
-              <DropdownMenuItem
-                onClick={(event) => onShare(createActionEvent(event), file)}
-              >
-                {t("share")}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem className="text-red-600">
-              {t("delete")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <FileCardFooter
+        file={file}
+        isFolder={isFolder}
+        folderLabel={t("folder")}
+        onNavigate={onNavigate}
+        onDetails={onDetails}
+        onDownload={onDownload}
+        onShare={onShare}
+        preventDownload={sharePolicy?.preventDownload}
+        createActionEvent={createFileCardActionEvent}
+        labels={{
+          info: t("info"),
+          download: t("download"),
+          share: t("share"),
+          delete: t("delete"),
+        }}
+      />
     </motion.div>
   );
 }
