@@ -155,11 +155,14 @@ export default function PDFViewer({ src }: PDFViewerProps) {
           <div className="w-64 bg-zinc-900 border-r border-white/5 overflow-y-auto p-4 space-y-4 shadow-2xl animate-in slide-in-from-left duration-300">
             <Document file={src} onLoadSuccess={onDocumentLoadSuccess}>
               {Array.from(new Array(numPages), (el, index) => (
-                <div
+                <button
                   key={`thumb_${index + 1}`}
+                  type="button"
                   onClick={() => setPageNumber(index + 1)}
+                  aria-label={`Go to page ${index + 1}`}
+                  aria-current={pageNumber === index + 1 ? "true" : undefined}
                   className={cn(
-                    "cursor-pointer rounded-lg overflow-hidden border-2 transition-all p-1 bg-zinc-800",
+                    "w-full cursor-pointer rounded-lg overflow-hidden border-2 transition-all p-1 bg-zinc-800 text-left",
                     pageNumber === index + 1
                       ? "border-primary shadow-lg ring-2 ring-primary/20 scale-95"
                       : "border-transparent hover:border-white/20",
@@ -174,7 +177,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
                   <div className="text-[10px] text-center mt-1 text-zinc-500 font-mono">
                     {index + 1}
                   </div>
-                </div>
+                </button>
               ))}
             </Document>
           </div>
