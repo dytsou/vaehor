@@ -1,0 +1,39 @@
+name: Setup project
+description: Checkout, install dependencies, and prepare the workspace for CI jobs.
+
+inputs:
+  fetch-depth:
+    description: Git checkout depth (use 0 for SonarQube SCM history).
+    required: false
+    default: "1"
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 11
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "24"
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Build MCP package
+      shell: bash
+      run: pnpm --filter @zee-index/mcp build
+
+    - name: Generate Prisma Client
+      shell: bash
+      run: pnpm prisma generate
