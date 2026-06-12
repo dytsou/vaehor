@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import path from "path";
+import path from "node:path";
 import type { ShareLink as DbShareLink } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
 import { jwtVerify } from "jose";
@@ -355,8 +355,8 @@ export async function respondWithLocalStorageDownload(
 ): Promise<Response> {
   const { getLocalFilePath } = await import("@/lib/storage/local");
   const { getMimeType } = await import("@/lib/storage/mime");
-  const { createReadStream } = await import("fs");
-  const { stat } = await import("fs/promises");
+  const { createReadStream } = await import("node:fs");
+  const { stat } = await import("node:fs/promises");
 
   const localPath = fileId.replace("local-storage:", "");
   const absolutePath = await getLocalFilePath(localPath);
@@ -534,7 +534,7 @@ export async function recordDownloadMetrics(
     },
   }).catch((e) => logger.error({ err: e }, "Gagal mencatat log aktivitas"));
 
-  const downloadSize = parseInt(fileDetails.size || "0", 10);
+  const downloadSize = Number.parseInt(fileDetails.size || "0", 10);
   if (downloadSize > 0) {
     trackBandwidth(downloadSize).catch(() => {});
   }
