@@ -50,18 +50,20 @@ export default function FolderReadme({ fileId }: FolderReadmeProps) {
 
   return (
     <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
-      <div
-        className="flex items-center justify-between px-4 py-3 bg-muted/30 border-b cursor-pointer hover:bg-muted/50 transition-colors"
+      <button
+        type="button"
+        aria-expanded={isExpanded}
+        className="flex w-full items-center justify-between border-0 border-b border-border bg-muted/30 px-4 py-3 text-left cursor-pointer transition-colors hover:bg-muted/50"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-2 text-sm font-medium">
           <BookOpen size={16} className="text-primary" />
           <span>README.md</span>
         </div>
-        <button className="text-muted-foreground hover:text-foreground">
+        <span className="text-muted-foreground" aria-hidden="true">
           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-      </div>
+        </span>
+      </button>
 
       <AnimatePresence initial={false}>
         {isExpanded && (
