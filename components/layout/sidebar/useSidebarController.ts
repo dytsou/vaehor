@@ -16,10 +16,10 @@ import type {
 } from "./types";
 import {
   applyToggleLoadResultToTree,
-  buildExpandedTreeForPath,
   collectLoadedFolderIdsToResync,
   fetchChildrenForFolders,
   mergeResyncResultsIntoTree,
+  runSidebarTreeExpandPath,
 } from "./sidebar-tree-utils";
 
 interface FolderContentsResponse {
@@ -327,27 +327,16 @@ export function useSidebarController() {
       return;
     }
 
-    const expandPath = async () => {
-      try {
-        const nextTree = await buildExpandedTreeForPath({
-          currentFolderId,
-          rootFolderId,
-          shareToken,
-          locale,
-          queryClient,
-          treeSnapshot: treeRef.current,
-          fetchSubfolders,
-        });
-
-        if (nextTree) {
-          setTree(nextTree);
-        }
-      } catch (error) {
-        console.error("Error expanding tree:", error);
-      }
-    };
-
-    void expandPath();
+    void runSidebarTreeExpandPath({
+      currentFolderId,
+      rootFolderId,
+      shareToken,
+      locale,
+      queryClient,
+      treeSnapshot: treeRef.current,
+      fetchSubfolders,
+      onExpand: setTree,
+    });
   }, [
     currentFolderId,
     mounted,

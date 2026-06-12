@@ -159,7 +159,7 @@ async function resolveFolderPathIds(
   return pathData.map((pathItem: FolderPathItem) => pathItem.id);
 }
 
-export async function buildExpandedTreeForPath(options: {
+export interface BuildExpandedTreeOptions {
   currentFolderId: string | null;
   rootFolderId: string;
   shareToken: string | null;
@@ -170,7 +170,87 @@ export async function buildExpandedTreeForPath(options: {
     parentId: string,
     treeForBearer?: FlatTree,
   ) => Promise<FolderNode[]>;
-}): Promise<FlatTree | null> {
+}
+
+type PathFolderProcessResult = "unchanged" | "changed" | "continue" | "break";
+
+function expandFolderNode(
+  nextTree: FlatTree,
+  folderId: string,
+  node: FolderNode,
+): boolean {
+  if (!node.isFolder || node.isExpanded) {
+    return false;
+  }
+
+  nextTree[folderId] = { ...node, isExpanded: true };
+  return true;
+}
+
+function folderNeedsChildLoad(node: FolderNode): boolean {
+  return node.isFolder && node.childIds.length === 0 && !node.hasLoaded;
+}
+
+async function loadFolderChildren(
+  nextTree: FlatTree,
+  folderId: string,
+  fetchSubfolders: BuildExpandedTreeOptions["fetchSubfolders"],
+): Promise<void> {
+  const children = await fetchSubfolders(folderId, nextTree);
+  applyExpandedFolderChildren(nextTree, folderId, children);
+}
+
+async function processPathFolder(
+  nextTree: FlatTree,
+  folderId: string,
+  rootFolderId: string,
+  fetchSubfolders: BuildExpandedTreeOptions["fetchSubfolders"],
+): Promise<PathFolderProcessResult> {
+  const node = nextTree[folderId];
+  if (!node) {
+    return folderId === rootFolderId ? "continue" : "break";
+  }
+
+  let changed = expandFolderNode(nextTree, folderId, node);
+
+  if (folderNeedsChildLoad(node)) {
+    await loadFolderChildren(nextTree, folderId, fetchSubfolders);
+    changed = true;
+  }
+
+  return changed ? "changed" : "unchanged";
+}
+
+async function expandTreeAlongPath(
+  nextTree: FlatTree,
+  folderIds: string[],
+  rootFolderId: string,
+  fetchSubfolders: BuildExpandedTreeOptions["fetchSubfolders"],
+): Promise<boolean> {
+  let stateChanged = false;
+
+  for (const folderId of folderIds) {
+    const result = await processPathFolder(
+      nextTree,
+      folderId,
+      rootFolderId,
+      fetchSubfolders,
+    );
+
+    if (result === "break") {
+      break;
+    }
+    if (result === "changed") {
+      stateChanged = true;
+    }
+  }
+
+  return stateChanged;
+}
+
+export async function buildExpandedTreeForPath(
+  options: BuildExpandedTreeOptions,
+): Promise<FlatTree | null> {
   const pathIds = await resolveFolderPathIds(
     options.currentFolderId,
     options.rootFolderId,
@@ -180,28 +260,27 @@ export async function buildExpandedTreeForPath(options: {
   );
 
   const nextTree = { ...options.treeSnapshot };
-  let stateChanged = false;
-
-  for (const folderId of [options.rootFolderId, ...pathIds]) {
-    const node = nextTree[folderId];
-    if (!node) {
-      if (folderId === options.rootFolderId) {
-        continue;
-      }
-      break;
-    }
-
-    if (node.isFolder && !node.isExpanded) {
-      nextTree[folderId] = { ...node, isExpanded: true };
-      stateChanged = true;
-    }
-
-    if (node.isFolder && node.childIds.length === 0 && !node.hasLoaded) {
-      const children = await options.fetchSubfolders(folderId, nextTree);
-      applyExpandedFolderChildren(nextTree, folderId, children);
-      stateChanged = true;
-    }
-  }
+  const stateChanged = await expandTreeAlongPath(
+    nextTree,
+    [options.rootFolderId, ...pathIds],
+    options.rootFolderId,
+    options.fetchSubfolders,
+  );
 
   return stateChanged ? nextTree : null;
+}
+
+export async function runSidebarTreeExpandPath(
+  options: BuildExpandedTreeOptions & {
+    onExpand: (tree: FlatTree) => void;
+  },
+): Promise<void> {
+  try {
+    const nextTree = await buildExpandedTreeForPath(options);
+    if (nextTree) {
+      options.onExpand(nextTree);
+    }
+  } catch (error) {
+    console.error("Error expanding tree:", error);
+  }
 }
