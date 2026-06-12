@@ -67,7 +67,9 @@ export function SetupStepContent(state: SetupPageState) {
           onGoHome={() => state.router.push("/")}
           onCopy={(value) => {
             navigator.clipboard.writeText(value);
-            void state.alert(state.t("copied"), { title: state.t("success") });
+            state
+              .alert(state.t("copied"), { title: state.t("success") })
+              .catch(() => {});
           }}
           t={state.t}
         />
