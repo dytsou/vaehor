@@ -125,31 +125,38 @@ export default function GlobalAudioPlayer() {
               </button>
             </div>
             <div className="overflow-y-auto p-2 space-y-1">
-              {audioQueue.map((file, idx) => (
-                <div
-                  key={`${file.id}-${idx}`}
-                  className={`flex items-center justify-between p-2 rounded-md text-xs ${
-                    file.id === activeAudioFile.id
-                      ? "bg-primary/20 text-primary font-medium"
-                      : "hover:bg-accent cursor-pointer"
-                  }`}
-                  onClick={() =>
-                    file.id !== activeAudioFile.id &&
-                    playAudio(file, audioQueue)
-                  }
-                >
-                  <div className="truncate flex-1 mr-2">{file.name}</div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFromQueue(file.id);
-                    }}
-                    className="text-muted-foreground hover:text-destructive"
+              {audioQueue.map((file, idx) => {
+                const isActive = file.id === activeAudioFile.id;
+                return (
+                  <div
+                    key={`${file.id}-${idx}`}
+                    className={`flex items-center justify-between p-2 rounded-md text-xs ${
+                      isActive
+                        ? "bg-primary/20 text-primary font-medium"
+                        : "hover:bg-accent"
+                    }`}
                   >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
+                    <button
+                      type="button"
+                      disabled={isActive}
+                      onClick={() => playAudio(file, audioQueue)}
+                      className={`truncate flex-1 mr-2 text-left text-xs ${
+                        isActive ? "cursor-default" : "cursor-pointer"
+                      }`}
+                    >
+                      {file.name}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeFromQueue(file.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label={`Remove ${file.name} from queue`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         )}
