@@ -9,7 +9,7 @@ import PinnedSection from "@/components/file-browser/PinnedSection";
 import AuthForm from "@/components/features/AuthForm";
 import LocalStorageAuthForm from "@/components/features/LocalStorageAuthForm";
 import SetupRequired from "@/components/file-browser/SetupRequired";
-import { ShieldAlert } from "lucide-react";
+import FileBrowserErrorState from "@/components/file-browser/FileBrowserErrorState";
 import type { DriveFile } from "@/lib/drive";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { useAppStore } from "@/lib/store";
@@ -158,37 +158,13 @@ export default function FileBrowserContent(props: FileBrowserContentProps) {
   }
 
   if (error && !isLocked && !error.isProtected) {
-    const isCriticalAuthError =
-      error.message.includes("Sesi Google Drive kadaluarsa") ||
-      error.message.includes("Aplikasi belum dikonfigurasi");
-
-    if (isCriticalAuthError) {
-      return (
-        <SetupRequired
-          message={error.message}
-          type={error.message.includes("kadaluarsa") ? "expired" : "config"}
-        />
-      );
-    }
-
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground w-full gap-4">
-        <div className="p-4 bg-destructive/10 rounded-full text-destructive">
-          <ShieldAlert className="w-8 h-8" />
-        </div>
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-foreground">
-            {error.status === 401
-              ? t("lockedFolder")
-              : tList("errorTitle") || "Error"}
-          </h3>
-          <p className="text-sm max-w-md mt-1">
-            {error.message ||
-              tList("errorMessage") ||
-              "Gagal mengambil data file."}
-          </p>
-        </div>
-      </div>
+      <FileBrowserErrorState
+        error={error}
+        lockedFolderLabel={t("lockedFolder")}
+        errorTitle={tList("errorTitle") || "Error"}
+        errorMessage={tList("errorMessage") || "Gagal mengambil data file."}
+      />
     );
   }
 
