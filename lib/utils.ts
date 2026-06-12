@@ -291,9 +291,9 @@ export function cleanMediaTitle(filename: string): {
     /dual[- ]?audio/gi,
     /multi/gi,
     /sub(bed|s)?/gi,
-    /\[.*?\]/g,
-    /\(.*?\)/g,
-    /\{.*?\}/g,
+    /\[[^[\]]*\]/g,
+    /\([^()]*\)/g,
+    /\{[^{}]*\}/g,
     /[._-]/g,
   ];
 

@@ -11,6 +11,9 @@ docker-compose*.yml
 node_modules
 .pnpm-store
 
+# Workspace packages (not imported by the Next.js app image)
+packages
+
 # Build artifacts
 .next
 out
@@ -50,6 +53,16 @@ docs
 .github
 .eslintcache
 .eslintignore
+eslint.config.mjs
+orval.config.js
+playwright.config.ts
+vitest.config.ts
+Caddyfile
+tmp_entrypoint.sh
+storage
+test
+CONTRIBUTING.md
+LICENSE
 
 # Logs
 *.log

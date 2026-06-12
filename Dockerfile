@@ -35,8 +35,16 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
 RUN pnpm prisma generate
 
-# Copy the rest of the application
-COPY . .
+# Explicit source copy for Next.js build (avoids COPY . . — S6470; see .dockerignore)
+COPY app ./app
+COPY components ./components
+COPY hooks ./hooks
+COPY lib ./lib
+COPY types ./types
+COPY messages ./messages
+COPY public ./public
+COPY auth.ts i18n.ts proxy.ts next.config.mjs next-env.d.ts tsconfig.json ./
+COPY postcss.config.mjs tailwind.config.ts components.json prisma.config.ts ./
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1

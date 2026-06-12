@@ -12,9 +12,11 @@ export default function RealTimeOverview() {
   const { notifications } = useAppStore();
 
   useEffect(() => {
+    let tick = 0;
     const interval = setInterval(() => {
+      tick += 1;
       setActiveUsers((prev) => {
-        const change = Math.floor(Math.random() * 3) - 1;
+        const change = (tick % 3) - 1;
         const next = prev + change;
         return next > 0 ? next : 1;
       });

@@ -13,6 +13,16 @@ import {
 
 import { useTranslations } from "next-intl";
 
+/** Deterministic placeholder values for the admin demo chart (not cryptographic). */
+function demoThroughput(
+  time: number,
+  salt: number,
+  base: number,
+  span: number,
+): number {
+  return base + ((time * 37 + salt * 13) % span);
+}
+
 const LivePerformanceChart = () => {
   const t = useTranslations("AdminPage");
   const [data, setData] = useState<any[]>([]);
@@ -20,8 +30,8 @@ const LivePerformanceChart = () => {
   useEffect(() => {
     const initialData = Array.from({ length: 20 }).map((_, i) => ({
       time: i,
-      download: Math.floor(Math.random() * 50) + 10,
-      upload: Math.floor(Math.random() * 30) + 5,
+      download: demoThroughput(i, 1, 10, 50),
+      upload: demoThroughput(i, 2, 5, 30),
     }));
     setData(initialData);
 
@@ -32,8 +42,8 @@ const LivePerformanceChart = () => {
           ...prev.slice(1),
           {
             time: lastTime + 1,
-            download: Math.floor(Math.random() * 60) + 5,
-            upload: Math.floor(Math.random() * 40) + 2,
+            download: demoThroughput(lastTime + 1, 1, 5, 60),
+            upload: demoThroughput(lastTime + 1, 2, 2, 40),
           },
         ];
         return newData;
