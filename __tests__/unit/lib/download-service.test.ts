@@ -48,6 +48,9 @@ import {
 } from "@/lib/services/download";
 import { ERROR_MESSAGES } from "@/lib/constants";
 
+/** RFC 5737 TEST-NET-3 address for rate-limit client fixtures. */
+const TEST_CLIENT_IP = "203.0.113.5";
+
 describe("lib/services/download", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -81,7 +84,10 @@ describe("lib/services/download", () => {
       const request = new NextRequest(
         "http://localhost:3000/api/download?fileId=file-1",
         {
-          headers: { range: "bytes=0-1023", "x-forwarded-for": "10.0.0.5" },
+          headers: {
+            range: "bytes=0-1023",
+            "x-forwarded-for": TEST_CLIENT_IP,
+          },
         },
       );
 
@@ -90,7 +96,7 @@ describe("lib/services/download", () => {
       expect(mockCheckRateLimit).toHaveBeenCalledWith(
         request,
         "API",
-        "10.0.0.5:file-1",
+        `${TEST_CLIENT_IP}:file-1`,
       );
     });
 
