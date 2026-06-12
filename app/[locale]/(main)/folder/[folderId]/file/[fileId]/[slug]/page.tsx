@@ -54,14 +54,14 @@ async function userCanAccessFolder(
   folderId: string,
   session: Session | null,
 ): Promise<boolean> {
-  if (session?.user?.role === "ADMIN") return true;
-
   const userEmail = session?.user?.email;
-  if (userEmail && (await hasUserAccess(userEmail, folderId))) return true;
+  const hasExplicitAccess =
+    session?.user?.role === "ADMIN" ||
+    (userEmail != null && (await hasUserAccess(userEmail, folderId)));
 
-  const isPriv = isPrivateFolder(folderId);
-  const isProt = await isProtected(folderId);
-  return !isPriv && !isProt;
+  if (hasExplicitAccess) return true;
+
+  return !isPrivateFolder(folderId) && !(await isProtected(folderId));
 }
 
 async function getAccessDeniedResponse(
