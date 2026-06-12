@@ -94,9 +94,10 @@ export default function UploadModal({
             <h3 className="text-lg font-semibold mb-4">{t("title")}</h3>
 
             <div className="space-y-6">
-              <div
+              <label
+                htmlFor="upload-modal-files"
                 className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer group",
+                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer group block",
                   isDragging
                     ? "border-primary bg-primary/10"
                     : "border-border hover:border-primary/50",
@@ -104,14 +105,14 @@ export default function UploadModal({
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDropUpload}
-                onClick={() => fileInputRef.current?.click()}
               >
                 <input
+                  id="upload-modal-files"
                   type="file"
                   multiple
                   ref={fileInputRef}
                   onChange={handleFileSelect}
-                  className="hidden"
+                  className="sr-only"
                 />
                 <input
                   type="file"
@@ -135,7 +136,7 @@ export default function UploadModal({
                 <p className="text-xs text-muted-foreground mt-1">
                   {t("orClick")}
                 </p>
-              </div>
+              </label>
 
               <div className="grid grid-cols-2 gap-3">
                 <button

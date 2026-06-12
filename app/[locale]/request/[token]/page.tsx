@@ -224,15 +224,16 @@ export default function PublicUploadPage() {
               </div>
             ) : (
               <>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
+                <label
+                  htmlFor="public-upload-files"
                   className="border-2 border-dashed border-border hover:border-primary hover:bg-primary/5 rounded-xl p-8 text-center cursor-pointer transition-all"
                 >
                   <input
+                    id="public-upload-files"
                     type="file"
                     multiple
                     ref={fileInputRef}
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleFileSelect}
                   />
                   <UploadCloud className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
@@ -240,7 +241,7 @@ export default function PublicUploadPage() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {t("fileTypes")}
                   </p>
-                </div>
+                </label>
 
                 {files.length > 0 && (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
