@@ -2,7 +2,8 @@
 
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { TreeNode, TreeContext } from "./TreeNode";
+import { TreeNode } from "./TreeNode";
+import { TreeContext } from "./tree-context";
 import NavSection from "./NavSection";
 import DriveList from "./DriveList";
 import type { ManualDrive, TreeContextType } from "./types";
