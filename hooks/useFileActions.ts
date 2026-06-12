@@ -1,8 +1,14 @@
 import { useState, useCallback } from "react";
-import type { InfiniteData } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { DriveFile } from "@/lib/drive";
 import { getErrorMessage } from "@/lib/errors";
 import { useAppStore } from "@/lib/store";
+import {
+  applyRemoveFromFileListCache,
+  applyRenameToFileListCache,
+  buildFolderFilesQueryKey,
+  type FileListQueryData,
+} from "@/hooks/file-list-cache";
 
 export type ActionState = {
   type: "rename" | "delete" | "share" | "move" | "copy" | null;
@@ -14,15 +20,6 @@ export type ContextMenuState = {
   y: number;
   file: DriveFile;
 } | null;
-
-import { useQueryClient } from "@tanstack/react-query";
-
-interface FileListPage {
-  files: DriveFile[];
-  nextPageToken?: string | null;
-}
-
-type FileListQueryData = InfiniteData<FileListPage>;
 
 export function useFileActions(currentFolderId: string) {
   const queryClient = useQueryClient();
@@ -45,6 +42,14 @@ export function useFileActions(currentFolderId: string) {
   });
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [archivePreview, setArchivePreview] = useState<DriveFile | null>(null);
+
+  const getFilesQueryKey = () =>
+    buildFolderFilesQueryKey(
+      currentFolderId,
+      shareToken,
+      folderTokens[currentFolderId],
+      refreshKey,
+    );
 
   const handleContextMenu = useCallback(
     (event: { clientX: number; clientY: number }, file: DriveFile) => {
@@ -109,28 +114,12 @@ export function useFileActions(currentFolderId: string) {
     }
 
     const fileToRename = actionState.file;
-    const queryKey = [
-      "files",
-      currentFolderId,
-      shareToken,
-      folderTokens[currentFolderId],
-      refreshKey,
-    ];
-
+    const queryKey = getFilesQueryKey();
     const previousData = queryClient.getQueryData<FileListQueryData>(queryKey);
 
-    queryClient.setQueryData<FileListQueryData>(queryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page) => ({
-          ...page,
-          files: page.files.map((f: DriveFile) =>
-            f.id === fileToRename.id ? { ...f, name: newName } : f,
-          ),
-        })),
-      };
-    });
+    queryClient.setQueryData<FileListQueryData>(queryKey, (old) =>
+      applyRenameToFileListCache(old, fileToRename.id, newName),
+    );
 
     setActionState({ type: null, file: null });
 
@@ -160,26 +149,12 @@ export function useFileActions(currentFolderId: string) {
     const fileToDelete = actionState.file;
     setActionState({ type: null, file: null });
 
-    const queryKey = [
-      "files",
-      currentFolderId,
-      shareToken,
-      folderTokens[currentFolderId],
-      refreshKey,
-    ];
-
+    const queryKey = getFilesQueryKey();
     const previousData = queryClient.getQueryData<FileListQueryData>(queryKey);
 
-    queryClient.setQueryData<FileListQueryData>(queryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page) => ({
-          ...page,
-          files: page.files.filter((f: DriveFile) => f.id !== fileToDelete.id),
-        })),
-      };
-    });
+    queryClient.setQueryData<FileListQueryData>(queryKey, (old) =>
+      applyRemoveFromFileListCache(old, fileToDelete.id),
+    );
 
     try {
       const response = await fetch("/api/files/delete", {
@@ -211,26 +186,12 @@ export function useFileActions(currentFolderId: string) {
     const fileToMove = actionState.file;
     setActionState({ type: null, file: null });
 
-    const queryKey = [
-      "files",
-      currentFolderId,
-      shareToken,
-      folderTokens[currentFolderId],
-      refreshKey,
-    ];
-
+    const queryKey = getFilesQueryKey();
     const previousData = queryClient.getQueryData<FileListQueryData>(queryKey);
 
-    queryClient.setQueryData<FileListQueryData>(queryKey, (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page) => ({
-          ...page,
-          files: page.files.filter((f: DriveFile) => f.id !== fileToMove.id),
-        })),
-      };
-    });
+    queryClient.setQueryData<FileListQueryData>(queryKey, (old) =>
+      applyRemoveFromFileListCache(old, fileToMove.id),
+    );
 
     try {
       const response = await fetch("/api/files/move", {
