@@ -2,17 +2,14 @@
 
 import { useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Pin, Folder, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import type { DriveFile } from "@/lib/drive";
-
 import { useTranslations } from "next-intl";
 
 export default function PinnedSection() {
   const { pinnedFolders, fetchPinnedFolders, currentFolderId, shareToken } =
     useAppStore();
-  const router = useRouter();
   const t = useTranslations("PinnedSection");
   const rootId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID;
 
@@ -24,10 +21,9 @@ export default function PinnedSection() {
 
   if (!isRoot || pinnedFolders.length === 0) return null;
 
-  const handleClick = (folder: DriveFile) => {
-    let url = `/folder/${folder.id}`;
-    if (shareToken) url += `?share_token=${shareToken}`;
-    router.push(url);
+  const buildFolderHref = (folderId: string) => {
+    const base = `/folder/${folderId}`;
+    return shareToken ? `${base}?share_token=${shareToken}` : base;
   };
 
   return (
@@ -39,9 +35,9 @@ export default function PinnedSection() {
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {pinnedFolders.map((folder) => (
-          <div
+          <Link
             key={folder.id}
-            onClick={() => handleClick(folder)}
+            href={buildFolderHref(folder.id)}
             className="group flex items-center gap-3 p-3 bg-card hover:bg-accent/50 border rounded-xl cursor-pointer transition-all hover:shadow-sm active:scale-95"
           >
             <div className="p-2 bg-primary/10 rounded-lg text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -59,7 +55,7 @@ export default function PinnedSection() {
               size={14}
               className="text-muted-foreground/30 group-hover:text-primary/50"
             />
-          </div>
+          </Link>
         ))}
       </div>
     </motion.div>
