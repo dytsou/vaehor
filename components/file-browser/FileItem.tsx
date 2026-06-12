@@ -130,12 +130,35 @@ function FileItem({
   };
 
   const createActionEvent = (
-    event: React.MouseEvent,
+    event: React.MouseEvent | React.KeyboardEvent,
   ): FileBrowserActionEvent => ({
     preventDefault: () => event.preventDefault(),
     stopPropagation: () => event.stopPropagation(),
     shiftKey: event.shiftKey,
   });
+
+  const handleItemActivate = (
+    event: React.MouseEvent | React.KeyboardEvent,
+  ) => {
+    if (isUploading) return;
+
+    const target = event.target as HTMLElement;
+    if (
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("label")
+    ) {
+      return;
+    }
+
+    onClick(createActionEvent(event));
+  };
+
+  const handleItemKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    handleItemActivate(event);
+  };
 
   const preventSelection = (e: React.MouseEvent) => {
     if (e.detail > 1) {
@@ -227,14 +250,8 @@ function FileItem({
           isError && "ring-2 ring-destructive/50 bg-destructive/5",
         )}
         style={{ WebkitTapHighlightColor: "transparent" }}
-        onClick={(e) => {
-          if (isUploading) return;
-
-          const target = e.target as HTMLElement;
-          if (target.closest("button") || target.closest("input")) return;
-
-          onClick(createActionEvent(e));
-        }}
+        onClick={handleItemActivate}
+        onKeyDown={handleItemKeyDown}
         onMouseDown={preventSelection}
         onDoubleClick={(e) => {
           e.preventDefault();
