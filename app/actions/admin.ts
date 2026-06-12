@@ -10,6 +10,7 @@ import {
   type AppConfigUpdate,
 } from "@/lib/app-config";
 import { getAnalyticsData } from "@/lib/analyticsTracker";
+import { sortStrings } from "@/lib/utils";
 import {
   getActivityLogs,
   getSecurityLogs,
@@ -76,7 +77,7 @@ export async function updateAdminConfigAction(
 export async function getAdminEmailsAction(): Promise<string[]> {
   await requireAdminSession();
   const admins = await kv.smembers(REDIS_KEYS.ADMIN_USERS);
-  return (admins || []).filter(Boolean).sort();
+  return sortStrings((admins || []).filter(Boolean));
 }
 
 export async function addAdminEmailAction(email: string) {
@@ -98,7 +99,7 @@ export async function removeAdminEmailAction(email: string) {
 export async function getEditorEmailsAction(): Promise<string[]> {
   await requireAdminSession();
   const editors = await kv.smembers(REDIS_KEYS.ADMIN_EDITORS);
-  return (editors || []).filter(Boolean).sort();
+  return sortStrings((editors || []).filter(Boolean));
 }
 
 export async function addEditorEmailAction(email: string) {

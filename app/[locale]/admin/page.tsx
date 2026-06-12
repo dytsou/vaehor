@@ -13,6 +13,7 @@ import {
   MANUAL_DRIVES_KEY,
   parseManualDriveRecords,
 } from "@/lib/manual-drives";
+import { sortStrings } from "@/lib/utils";
 
 export default async function AdminPage() {
   const session = await requireAdminSession();
@@ -69,8 +70,8 @@ export default async function AdminPage() {
       initialData={{
         stats,
         config,
-        adminEmails: adminEmails.sort(),
-        editorEmails: editorEmails.sort(),
+        adminEmails: sortStrings(adminEmails),
+        editorEmails: sortStrings(editorEmails),
         protectedFolders,
         userAccessPermissions: permissions,
         accessRequests,

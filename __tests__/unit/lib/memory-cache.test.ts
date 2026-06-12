@@ -38,6 +38,7 @@ describe("lib/memory-cache", () => {
 
     it("overwrites existing values", () => {
       memoryCache.set("key", "old");
+      expect(memoryCache.get("key")).toBe("old");
       memoryCache.set("key", "new");
       expect(memoryCache.get("key")).toBe("new");
     });

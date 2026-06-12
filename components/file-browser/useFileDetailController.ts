@@ -222,7 +222,9 @@ export function useFileDetailController({
     setIsFetchingEditableContent(true);
     fetch(directLink)
       .then((response) =>
-        response.ok ? response.text() : Promise.reject("Fail"),
+        response.ok
+          ? response.text()
+          : Promise.reject(new Error("Failed to fetch file content")),
       )
       .then((text) => {
         if (isEditing) {

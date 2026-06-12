@@ -190,7 +190,7 @@ export default function InfoPanel({
           value={pathLoading ? t("loading") : pathString}
         />
         <ListItem label={t("type")} value={file.mimeType} />
-        {metadata?.width && metadata?.height && (
+        {Boolean(metadata?.width && metadata?.height) && (
           <ListItem
             label={t("dimensions")}
             value={`${metadata.width} x ${metadata.height} px`}

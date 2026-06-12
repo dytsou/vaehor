@@ -1,5 +1,6 @@
 import { StateCreator } from "zustand";
 import { getErrorMessage } from "@/lib/errors";
+import { compareStrings } from "@/lib/utils";
 import { AppState, AuthSlice } from "../types";
 import {
   addAdminEmailAction,
@@ -48,7 +49,7 @@ export const createAuthSlice: StateCreator<AppState, [], [], AuthSlice> = (
     try {
       const result = await addAdminEmailAction(email);
       set((state: AppState) => ({
-        adminEmails: [...state.adminEmails, result.email].sort(),
+        adminEmails: [...state.adminEmails, result.email].sort(compareStrings),
       }));
       get().addToast({ message: result.message, type: "success" });
     } catch (error: unknown) {
@@ -96,7 +97,9 @@ export const createAuthSlice: StateCreator<AppState, [], [], AuthSlice> = (
     try {
       const result = await addEditorEmailAction(email);
       set((state: AppState) => ({
-        editorEmails: [...state.editorEmails, result.email].sort(),
+        editorEmails: [...state.editorEmails, result.email].sort(
+          compareStrings,
+        ),
       }));
       get().addToast({ message: result.message, type: "success" });
     } catch (error: unknown) {

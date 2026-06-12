@@ -17,6 +17,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function compareStrings(a: string, b: string): number {
+  return a.localeCompare(b);
+}
+
+export function sortStrings(values: Iterable<string>): string[] {
+  return [...values].sort(compareStrings);
+}
+
 export function formatBytes(bytes: number, decimals = 2): string {
   if (!+bytes) return "0 Bytes";
   const k = 1024;
