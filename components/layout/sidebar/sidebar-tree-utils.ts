@@ -50,6 +50,16 @@ export function applyToggleLoadResult(
   appendNewChildrenOnly(next, children);
 }
 
+export function applyToggleLoadResultToTree(
+  prev: FlatTree,
+  nodeId: string,
+  children: FolderNode[],
+): FlatTree {
+  const nextTree = { ...prev };
+  applyToggleLoadResult(nextTree, nodeId, children);
+  return nextTree;
+}
+
 export function applyResyncFolderChildren(
   next: FlatTree,
   folderId: string,

@@ -15,7 +15,7 @@ import type {
   TreeContextType,
 } from "./types";
 import {
-  applyToggleLoadResult,
+  applyToggleLoadResultToTree,
   buildExpandedTreeForPath,
   collectLoadedFolderIdsToResync,
   fetchChildrenForFolders,
@@ -281,11 +281,7 @@ export function useSidebarController() {
       }));
 
       const children = await fetchSubfolders(nodeId);
-      setTree((prev) => {
-        const nextTree = { ...prev };
-        applyToggleLoadResult(nextTree, nodeId, children);
-        return nextTree;
-      });
+      setTree((prev) => applyToggleLoadResultToTree(prev, nodeId, children));
     },
     [fetchSubfolders],
   );
