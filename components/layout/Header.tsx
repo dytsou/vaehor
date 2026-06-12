@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense, FC } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
 import { useTheme } from "next-themes";
 import Image from "next/image";
@@ -168,7 +169,6 @@ const MobileNav: FC<MobileNavProps> = ({
 };
 
 export default function Header() {
-  const router = useRouter();
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const triggerRefresh = useAppStore((state) => state.triggerRefresh);
@@ -235,12 +235,6 @@ export default function Header() {
 
   const publicShareLinkItems = ["theme", "refresh", "github"];
 
-  const handleLogoClick = () => {
-    if (!shareToken) {
-      router.push("/");
-    }
-  };
-
   const handleLoginClick = () => {
     signIn("google", { callbackUrl: window.location.href });
   };
@@ -282,6 +276,28 @@ export default function Header() {
     return baseHref;
   };
 
+  const logoContent = (
+    <>
+      {logoUrl ? (
+        <Image
+          src={logoUrl}
+          alt="Logo"
+          width={32}
+          height={32}
+          className="w-8 h-8 mr-3 object-contain"
+          unoptimized
+        />
+      ) : (
+        <Image
+          src={AppIcon}
+          alt="Google Drive Logo"
+          className="w-8 h-8 mr-3 dark:invert"
+        />
+      )}
+      <span className="font-bold">{appName || "Zee Index"}</span>
+    </>
+  );
+
   return (
     <>
       <header
@@ -302,31 +318,20 @@ export default function Header() {
                 <PanelLeft size={20} />
               </button>
             )}
-            <h1
-              onClick={handleLogoClick}
-              className={`text-xl font-bold flex items-center shrink-0 ${
-                !shareToken ? "cursor-pointer" : "cursor-default"
-              }`}
-              title={!shareToken ? t("backToHome") : appName}
-            >
-              {logoUrl ? (
-                <Image
-                  src={logoUrl}
-                  alt="Logo"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8 mr-3 object-contain"
-                  unoptimized
-                />
-              ) : (
-                <Image
-                  src={AppIcon}
-                  alt="Google Drive Logo"
-                  className="w-8 h-8 mr-3 dark:invert"
-                />
-              )}
-              <span className="font-bold">{appName || "Zee Index"}</span>
-            </h1>
+            {!shareToken ? (
+              <Link href="/" title={t("backToHome")} className="shrink-0">
+                <h1 className="text-xl font-bold flex items-center cursor-pointer">
+                  {logoContent}
+                </h1>
+              </Link>
+            ) : (
+              <h1
+                className="text-xl font-bold flex items-center shrink-0 cursor-default"
+                title={appName}
+              >
+                {logoContent}
+              </h1>
+            )}
           </div>
 
           <div

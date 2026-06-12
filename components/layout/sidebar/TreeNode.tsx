@@ -98,32 +98,28 @@ export const TreeNode = memo(
             />
           )}
 
-          <div
-            onClick={(e) => {
-              if (node.isFolder) {
+          {node.isFolder ? (
+            <button
+              type="button"
+              onClick={(e) => {
                 e.stopPropagation();
                 onToggle(node.id);
-              }
-            }}
-            className={cn(
-              "p-1.5 -ml-1.5 rounded-sm transition-colors flex items-center justify-center shrink-0",
-              node.isFolder
-                ? "hover:bg-muted text-muted-foreground cursor-pointer group/chevron z-10"
-                : "opacity-0 cursor-default",
-            )}
-          >
-            {node.isFolder ? (
-              node.isLoading ? (
+              }}
+              aria-expanded={node.isExpanded}
+              aria-label={node.isExpanded ? "Collapse folder" : "Expand folder"}
+              className="p-1.5 -ml-1.5 rounded-sm transition-colors flex items-center justify-center shrink-0 border-0 bg-transparent hover:bg-muted text-muted-foreground cursor-pointer group/chevron z-10"
+            >
+              {node.isLoading ? (
                 <Loader2 size={12} className="animate-spin" />
               ) : node.isExpanded ? (
                 <ChevronDown size={12} />
               ) : (
                 <ChevronRight size={12} />
-              )
-            ) : (
-              <div className="w-3" />
-            )}
-          </div>
+              )}
+            </button>
+          ) : (
+            <div className="w-3 shrink-0 opacity-0" aria-hidden="true" />
+          )}
           <div className="relative shrink-0 flex items-center justify-center w-3.5 h-3.5">
             {navigatingId === node.id ? (
               <Loader2 size={14} className="animate-spin text-primary" />
