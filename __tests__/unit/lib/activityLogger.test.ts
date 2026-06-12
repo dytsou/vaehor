@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+/** RFC 5737 TEST-NET-3 address for client-info fixtures. */
+const TEST_CLIENT_IP = "203.0.113.5";
+
 vi.mock("@/lib/db", () => ({
   db: {
     activityLog: {
@@ -17,7 +20,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("next/headers", () => ({
   headers: vi.fn().mockResolvedValue({
     get: vi.fn().mockImplementation((key: string) => {
-      if (key === "x-forwarded-for") return "192.168.1.1";
+      if (key === "x-forwarded-for") return TEST_CLIENT_IP;
       if (key === "user-agent") return "TestAgent/1.0";
       return null;
     }),
@@ -87,7 +90,7 @@ describe("activityLogger", () => {
         itemName: "file.zip",
       });
 
-      expect(result?.ipAddress).toBeDefined();
+      expect(result?.ipAddress).toBe(TEST_CLIENT_IP);
       expect(result?.userAgent).toBeDefined();
     });
 
