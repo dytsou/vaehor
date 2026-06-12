@@ -77,15 +77,16 @@ RUN set -eux; \
 RUN npm install -g prisma@7.7.0
 
 # Next standalone trace does not include bcryptjs; hash-password.sh needs it
-RUN mkdir -p /app/hash-tool && cd /app/hash-tool && npm install bcryptjs@3.0.2 --omit=dev --no-package-lock && chown -R nextjs:nodejs /app/hash-tool
+RUN mkdir -p /app/hash-tool && cd /app/hash-tool && npm install bcryptjs@3.0.2 --omit=dev --no-package-lock && \
+  chown -R nextjs:nodejs /app/hash-tool && chmod -R a-w /app/hash-tool
 
-# Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+# Copy necessary files from builder (no write bit on copied artifacts)
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/prisma ./prisma
+COPY --from=builder --chown=nextjs:nodejs --chmod=444 /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs --chmod=555 /app/scripts ./scripts
 
 # Note: Standalone mode already includes necessary node_modules in .next/standalone/node_modules
 # We no longer need to copy the entire /app/node_modules from builder.
