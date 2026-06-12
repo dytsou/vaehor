@@ -193,8 +193,9 @@ export class RedisKV implements KVClient {
       flat.push(key, this.serialize(value));
       memoryCache.set(`kv:${key}`, value, CACHE_TTL.FOLDER_CONTENT);
     }
-    if (flat.length === 0) return "OK";
-    await this.client.mset(...flat);
+    if (flat.length > 0) {
+      await this.client.mset(...flat);
+    }
     return "OK";
   }
 
