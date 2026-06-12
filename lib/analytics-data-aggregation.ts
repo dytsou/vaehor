@@ -32,7 +32,7 @@ function parseStoredPayload<T>(
   schema: z.ZodType<T>,
 ): T | undefined {
   if (typeof raw === "string") {
-    return parseSchemaValue(raw, schema);
+    return parseSchemaValue(raw, schema) ?? undefined;
   }
 
   return schema.safeParse(raw).data;
