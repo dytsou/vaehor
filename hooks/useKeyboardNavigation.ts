@@ -2,10 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import {
+  applyTypeaheadKey,
+  handleBackspaceKey,
+  isEditableKeyboardTarget,
+  moveFocusDown,
+  moveFocusUp,
+  openFocusedFile,
+  type NavigableFile,
+} from "@/hooks/keyboard-navigation-utils";
 
 interface UseKeyboardNavigationProps {
-  files: Array<{ id: string; name: string; mimeType: string }>;
-  onFileOpen?: (file: { id: string; name: string; mimeType: string }) => void;
+  files: NavigableFile[];
+  onFileOpen?: (file: NavigableFile) => void;
 }
 
 export function useKeyboardNavigation({
@@ -15,85 +24,61 @@ export function useKeyboardNavigation({
   const router = useRouter();
   const pathname = usePathname();
   const [focusedIndex, setFocusedIndex] = useState(-1);
-
   const [searchBuffer, setSearchBuffer] = useState("");
-  const searchTimeoutRef = useCallback(() => {
+
+  const resetSearchBufferSoon = useCallback(() => {
     const timer = setTimeout(() => setSearchBuffer(""), 500);
     return () => clearTimeout(timer);
   }, []);
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (
-        ["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName) ||
-        (e.target as HTMLElement).isContentEditable
-      ) {
+    (event: KeyboardEvent) => {
+      if (isEditableKeyboardTarget(event.target)) {
         return;
       }
 
-      switch (e.key) {
+      switch (event.key) {
         case "ArrowDown":
-          e.preventDefault();
-          setFocusedIndex((prev) =>
-            prev < files.length - 1 ? prev + 1 : prev,
+          event.preventDefault();
+          setFocusedIndex(moveFocusDown(files.length));
+          break;
+        case "ArrowUp":
+          event.preventDefault();
+          setFocusedIndex(moveFocusUp());
+          break;
+        case "Enter":
+          openFocusedFile(focusedIndex, files, router.push, onFileOpen);
+          break;
+        case "Backspace":
+          handleBackspaceKey(
+            event,
+            searchBuffer,
+            pathname ?? "",
+            () => setSearchBuffer((previous) => previous.slice(0, -1)),
+            () => router.back(),
           );
           break;
-
-        case "ArrowUp":
-          e.preventDefault();
-          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-          break;
-
-        case "Enter":
-          if (focusedIndex >= 0 && focusedIndex < files.length) {
-            const file = files[focusedIndex];
-            if (file.mimeType === "application/vnd.google-apps.folder") {
-              router.push(`/folder/${file.id}`);
-            } else if (onFileOpen) {
-              onFileOpen(file);
-            }
-          }
-          break;
-
-        case "Backspace":
-          if (searchBuffer.length > 0) {
-            setSearchBuffer((prev) => prev.slice(0, -1));
-          } else if (pathname !== "/" && !pathname?.startsWith("/admin")) {
-            e.preventDefault();
-            router.back();
-          }
-          break;
-
         case "Home":
-          e.preventDefault();
+          event.preventDefault();
           setFocusedIndex(0);
           break;
-
         case "End":
-          e.preventDefault();
+          event.preventDefault();
           setFocusedIndex(files.length - 1);
           break;
-
         case "Escape":
           setFocusedIndex(-1);
           setSearchBuffer("");
           break;
-
         default:
-          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            const newBuffer = searchBuffer + e.key.toLowerCase();
-            setSearchBuffer(newBuffer);
-
-            const matchIndex = files.findIndex((file) =>
-              file.name.toLowerCase().startsWith(newBuffer),
-            );
-
-            if (matchIndex !== -1) {
-              setFocusedIndex(matchIndex);
-            }
-
-            searchTimeoutRef();
-          }
+          applyTypeaheadKey(
+            event,
+            searchBuffer,
+            files,
+            setSearchBuffer,
+            setFocusedIndex,
+            resetSearchBufferSoon,
+          );
           break;
       }
     },
@@ -104,7 +89,7 @@ export function useKeyboardNavigation({
       pathname,
       onFileOpen,
       searchBuffer,
-      searchTimeoutRef,
+      resetSearchBufferSoon,
     ],
   );
 
