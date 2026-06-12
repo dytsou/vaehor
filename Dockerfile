@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.4
+
 # Stage 1: Base
 FROM node:24-alpine AS base
 RUN set -eux; \
@@ -59,9 +61,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && \
-  adduser --system --uid 1001 nextjs
-
-RUN set -eux; \
+  adduser --system --uid 1001 nextjs && \
+  set -eux; \
   for i in 1 2 3 4 5; do \
   if apk add --no-cache curl dumb-init postgresql-client openssl; then \
   break; \
@@ -73,11 +74,10 @@ RUN set -eux; \
   sleep "$((i * 2))"; \
   done
 
-# Install prisma CLI specifically for migrations in entrypoint (much smaller than full node_modules)
-RUN npm install -g prisma@7.7.0
-
-# Next standalone trace does not include bcryptjs; hash-password.sh needs it
-RUN mkdir -p /app/hash-tool && cd /app/hash-tool && npm install bcryptjs@3.0.2 --omit=dev --no-package-lock && \
+# Install prisma CLI for migrations; bcryptjs for hash-password.sh (omitted from standalone trace)
+RUN npm install -g prisma@7.7.0 && \
+  mkdir -p /app/hash-tool && cd /app/hash-tool && \
+  npm install bcryptjs@3.0.2 --omit=dev --no-package-lock && \
   chmod -R a-w /app/hash-tool
 
 # Copy necessary files from builder (root-owned, no write bit — S6504)
@@ -92,7 +92,8 @@ COPY --from=builder --chown=root:root --chmod=555 /app/scripts ./scripts
 # We no longer need to copy the entire /app/node_modules from builder.
 
 # Script to run migrations and start
-RUN cat <<'ENTRY' > /app/entrypoint.sh
+RUN <<'SETUP_ENTRYPOINT'
+cat <<'ENTRY' > /app/entrypoint.sh
 #!/bin/sh
 set -e
 if [ -n "$DATABASE_URL" ]; then
@@ -106,20 +107,28 @@ if [ -n "$DATABASE_URL" ]; then
   until PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c '\q' 2>/dev/null; do sleep 1; done
 
   echo "Ensuring database $DB_NAME exists..."
-  DB_EXISTS=$(PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" 2>/dev/null || echo "0")
+  DB_EXISTS=$(PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres \
+    -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" \
+    2>/dev/null || echo "0")
   if [ "$DB_EXISTS" != "1" ]; then
     echo "Creating database $DB_NAME..."
-    PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c "CREATE DATABASE \"$DB_NAME\"" || echo "Database may already exist"
+    PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres \
+      -c "CREATE DATABASE \"$DB_NAME\"" || echo "Database may already exist"
   fi
 fi
 echo "Running database migrations..."
 # Use global prisma installed earlier
-if [ -d "prisma/migrations" ]; then prisma migrate deploy; else prisma db push --accept-data-loss; fi || echo "Prisma migration failed, continuing..."
+if [ -d "prisma/migrations" ]; then \
+  prisma migrate deploy; \
+else \
+  prisma db push --accept-data-loss; \
+fi || echo "Prisma migration failed, continuing..."
 exec "$@"
 ENTRY
-RUN tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.fixed && \
-  mv /app/entrypoint.sh.fixed /app/entrypoint.sh && \
-  chmod +x /app/entrypoint.sh
+tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.fixed
+mv /app/entrypoint.sh.fixed /app/entrypoint.sh
+chmod +x /app/entrypoint.sh
+SETUP_ENTRYPOINT
 
 USER nextjs
 
