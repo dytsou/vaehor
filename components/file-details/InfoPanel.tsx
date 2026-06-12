@@ -75,6 +75,8 @@ export default function InfoPanel({
   const format = useFormatter();
 
   const metadata = file.imageMediaMetadata || file.videoMediaMetadata;
+  const mediaWidth = metadata?.width;
+  const mediaHeight = metadata?.height;
   const durationMillis = file.videoMediaMetadata?.durationMillis
     ? parseInt(file.videoMediaMetadata.durationMillis, 10)
     : undefined;
@@ -190,10 +192,10 @@ export default function InfoPanel({
           value={pathLoading ? t("loading") : pathString}
         />
         <ListItem label={t("type")} value={file.mimeType} />
-        {Boolean(metadata?.width && metadata?.height) && (
+        {mediaWidth != null && mediaHeight != null && (
           <ListItem
             label={t("dimensions")}
-            value={`${metadata.width} x ${metadata.height} px`}
+            value={`${mediaWidth} x ${mediaHeight} px`}
           />
         )}
         {durationMillis && (
