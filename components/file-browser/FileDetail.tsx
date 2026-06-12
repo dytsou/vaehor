@@ -2,53 +2,19 @@
 
 import React from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-import {
-  ArrowLeft,
-  Save,
-  ChevronLeft,
-  ChevronRight,
-  Maximize2,
-} from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ShareButton from "@/components/file-browser/ShareButton";
 import InfoPanel from "../file-details/InfoPanel";
-import {
-  ImagePreview,
-  EbookPreview,
-  CodePreview,
-  DefaultPreview,
-  LoadingPreview,
-  FileIconPlaceholder,
-} from "../file-details/PreviewRenderers";
 import RichMediaMetadata from "../file-details/RichMediaMetadata";
 import FileDetailModalView from "./FileDetailModalView";
+import FileDetailModalPreview from "./FileDetailModalPreview";
+import FileDetailInlinePreview from "./FileDetailInlinePreview";
+import FileDetailOverlays from "./FileDetailOverlays";
 import {
   useFileDetailController,
   type FileDetailProps,
 } from "./useFileDetailController";
-
-const VideoPlayer = dynamic(() => import("../file-details/VideoPlayer"), {
-  loading: () => <LoadingPreview />,
-});
-
-const MarkdownViewer = dynamic(() => import("../file-details/MarkdownViewer"), {
-  loading: () => <LoadingPreview />,
-});
-
-const AudioPlayer = dynamic(() => import("../file-details/AudioPlayer"), {
-  loading: () => <LoadingPreview />,
-});
-
-const ArchivePreviewModal = dynamic(
-  () => import("@/components/modals/ArchivePreviewModal"),
-);
-const ImageEditorModal = dynamic(
-  () => import("@/components/modals/ImageEditorModal"),
-);
-const FileRevisionsModal = dynamic(
-  () => import("@/components/modals/FileRevisionsModal"),
-);
 
 export default function FileDetail(props: FileDetailProps) {
   const {
@@ -79,86 +45,21 @@ export default function FileDetail(props: FileDetailProps) {
   };
 
   const previewContent = (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {(() => {
-        switch (controller.fileType) {
-          case "video":
-            return (
-              <VideoPlayer
-                src={controller.directLink}
-                title={file.name}
-                type="video"
-                poster={file.thumbnailLink}
-                webViewLink={file.webViewLink}
-                subtitleTracks={controller.authenticatedSubtitleTracks}
-                onEnded={() =>
-                  nextFileUrl && controller.router.push(nextFileUrl)
-                }
-              />
-            );
-          case "audio":
-            return (
-              <AudioPlayer
-                src={controller.directLink}
-                title={file.name}
-                mimeType={file.mimeType}
-                poster={file.thumbnailLink}
-              />
-            );
-          case "image":
-            return <ImagePreview src={controller.directLink} />;
-          case "ebook":
-            return <EbookPreview src={controller.directLink} />;
-          case "markdown":
-            if (controller.showTextPreview && controller.textContent) {
-              return (
-                <div className="w-full h-full overflow-y-auto">
-                  <MarkdownViewer content={controller.textContent} />
-                </div>
-              );
-            }
-            break;
-          case "text":
-          case "code":
-            if (controller.showTextPreview) {
-              return (
-                <CodePreview src={controller.directLink} fileName={file.name} />
-              );
-            }
-            break;
+    <FileDetailModalPreview
+      file={file}
+      fileType={controller.fileType}
+      directLink={controller.directLink}
+      onVideoEnded={() => {
+        if (nextFileUrl) {
+          controller.router.push(nextFileUrl);
         }
-
-        return (
-          <DefaultPreview
-            mimeType={file.mimeType}
-            fileName={file.name}
-            downloadUrl={controller.directLink}
-          />
-        );
-      })()}
-
-      {controller.sharePolicy?.hasWatermark &&
-        controller.fileType !== "video" &&
-        controller.fileType !== "pdf" && (
-          <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-difference w-full h-full select-none text-white/80">
-            {Array.from({ length: 15 }).map((_, index) => (
-              <div
-                key={index}
-                className="text-xl sm:text-3xl font-black -rotate-[30deg] p-6 sm:p-10 whitespace-nowrap drop-shadow-md"
-              >
-                {controller.sharePolicy?.watermarkText ||
-                  controller.user?.email ||
-                  controller.user?.name ||
-                  "Confidential View"}
-                <br />
-                <span className="text-sm sm:text-lg opacity-80">
-                  {new Date().toLocaleDateString()}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-    </div>
+      }}
+      showTextPreview={controller.showTextPreview}
+      textContent={controller.textContent}
+      subtitleTracks={controller.authenticatedSubtitleTracks}
+      sharePolicy={controller.sharePolicy}
+      watermarkFallback={controller.user?.email || controller.user?.name}
+    />
   );
 
   if (isModal) {
@@ -224,91 +125,37 @@ export default function FileDetail(props: FileDetailProps) {
               : "lg:col-span-2",
           )}
         >
-          {controller.isEditable && !controller.isTheaterMode && (
-            <div className="mb-2 flex justify-end gap-2">
-              {controller.isEditing && (
-                <button
-                  onClick={controller.handleSaveChanges}
-                  disabled={controller.isSaving}
-                  className="px-3 py-1 bg-primary text-primary-foreground rounded flex items-center gap-2"
-                >
-                  <Save size={16} />{" "}
-                  {controller.isSaving
-                    ? controller.t("saving")
-                    : controller.t("save")}
-                </button>
-              )}
-              <button
-                onClick={() => controller.setIsEditing(!controller.isEditing)}
-                className="px-3 py-1 bg-secondary rounded"
-              >
-                {controller.isEditing
-                  ? controller.t("cancel")
-                  : controller.t("editFile")}
-              </button>
-            </div>
-          )}
-
-          <div
-            className={cn(
-              "w-full flex-1 flex items-start justify-center overflow-hidden",
-              !controller.isEditing &&
-                controller.fileType !== "image" &&
-                "bg-background rounded-lg",
-            )}
-          >
-            {controller.isEditing ? (
-              controller.isFetchingEditableContent ? (
-                <LoadingPreview />
-              ) : (
-                <textarea
-                  value={controller.editableContent || ""}
-                  onChange={(event) =>
-                    controller.setEditableContent(event.target.value)
-                  }
-                  className="w-full h-full p-4 bg-background font-mono text-sm resize-none focus:outline-none border rounded-lg"
-                  spellCheck="false"
-                />
-              )
-            ) : controller.fileType === "video" ? (
-              <div className="w-full h-full bg-black rounded-xl overflow-hidden flex items-center justify-center shadow-2xl ring-1 ring-white/10">
-                {!controller.internalPreviewOpen && (
-                  <VideoPlayer
-                    src={controller.directLink}
-                    title={file.name}
-                    type="video"
-                    poster={file.thumbnailLink}
-                    webViewLink={file.webViewLink}
-                    subtitleTracks={controller.authenticatedSubtitleTracks}
-                    onEnded={() =>
-                      nextFileUrl && controller.router.push(nextFileUrl)
-                    }
-                  />
-                )}
-              </div>
-            ) : controller.fileType === "image" ? (
-              <button
-                type="button"
-                className="w-full h-full min-h-[320px] sm:min-h-[420px] lg:min-h-0 relative cursor-zoom-in group/image flex items-center justify-center border-0 bg-transparent p-0"
-                onClick={() => controller.setInternalPreviewOpen(true)}
-                aria-label={`Open ${file.name} preview`}
-              >
-                <ImagePreview src={controller.directLink} />
-                <div
-                  className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full opacity-0 group-hover/image:opacity-100 transition-opacity pointer-events-none"
-                  aria-hidden="true"
-                >
-                  <Maximize2 size={20} />
-                </div>
-              </button>
-            ) : (
-              <FileIconPlaceholder
-                mimeType={file.mimeType}
-                onPreview={() => controller.setInternalPreviewOpen(true)}
-                isPreviewable={controller.isPreviewable}
-              />
-            )}
-          </div>
+          <FileDetailInlinePreview
+            file={file}
+            fileType={controller.fileType}
+            directLink={controller.directLink}
+            isEditing={controller.isEditing}
+            isFetchingEditableContent={controller.isFetchingEditableContent}
+            editableContent={controller.editableContent}
+            onEditableContentChange={controller.setEditableContent}
+            internalPreviewOpen={controller.internalPreviewOpen}
+            onOpenPreview={() => controller.setInternalPreviewOpen(true)}
+            isPreviewable={controller.isPreviewable}
+            subtitleTracks={controller.authenticatedSubtitleTracks}
+            onVideoEnded={() => {
+              if (nextFileUrl) {
+                controller.router.push(nextFileUrl);
+              }
+            }}
+            isEditable={controller.isEditable}
+            isTheaterMode={controller.isTheaterMode}
+            isSaving={controller.isSaving}
+            onSave={controller.handleSaveChanges}
+            onToggleEditing={() =>
+              controller.setIsEditing(!controller.isEditing)
+            }
+            labels={{
+              saving: controller.t("saving"),
+              save: controller.t("save"),
+              cancel: controller.t("cancel"),
+              editFile: controller.t("editFile"),
+            }}
+          />
 
           {!controller.isEditing && (
             <>
@@ -350,36 +197,22 @@ export default function FileDetail(props: FileDetailProps) {
         </div>
       )}
 
-      {controller.internalPreviewOpen && (
-        <FileDetail
-          file={file}
-          isModal={true}
-          onCloseModal={() => controller.setInternalPreviewOpen(false)}
-          prevFileUrl={prevFileUrl}
-          nextFileUrl={nextFileUrl}
-          subtitleTracks={controller.authenticatedSubtitleTracks}
-          currentFolderId={currentFolderId}
-        />
-      )}
-      {controller.showArchivePreview && controller.isArchivePreviewable && (
-        <ArchivePreviewModal
-          file={file}
-          onClose={() => controller.setShowArchivePreview(false)}
-        />
-      )}
-      {controller.showImageEditor && (
-        <ImageEditorModal
-          file={file}
-          onClose={() => controller.setShowImageEditor(false)}
-        />
-      )}
-      {controller.showHistory && (
-        <FileRevisionsModal
-          fileId={file.id}
-          fileName={file.name}
-          onClose={() => controller.setShowHistory(false)}
-        />
-      )}
+      <FileDetailOverlays
+        file={file}
+        internalPreviewOpen={controller.internalPreviewOpen}
+        onCloseInternalPreview={() => controller.setInternalPreviewOpen(false)}
+        prevFileUrl={prevFileUrl}
+        nextFileUrl={nextFileUrl}
+        subtitleTracks={controller.authenticatedSubtitleTracks}
+        currentFolderId={currentFolderId}
+        showArchivePreview={controller.showArchivePreview}
+        isArchivePreviewable={controller.isArchivePreviewable}
+        onCloseArchivePreview={() => controller.setShowArchivePreview(false)}
+        showImageEditor={controller.showImageEditor}
+        onCloseImageEditor={() => controller.setShowImageEditor(false)}
+        showHistory={controller.showHistory}
+        onCloseHistory={() => controller.setShowHistory(false)}
+      />
     </div>
   );
 }
