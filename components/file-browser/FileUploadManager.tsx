@@ -30,32 +30,37 @@ export default function FileUploadManager() {
   return (
     <div className="fixed bottom-6 right-6 z-[100] w-80 shadow-2xl rounded-xl border bg-card overflow-hidden">
       {/* Header */}
-      <div
-        className="flex items-center justify-between p-3 bg-primary text-primary-foreground cursor-pointer select-none"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <span className="text-sm font-semibold">
-          {uploadingCount > 0
-            ? `Mengunggah ${uploadingCount} file...`
-            : `${completedCount + errorCount} Unggahan Selesai`}
-        </span>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 p-3 bg-primary text-primary-foreground select-none">
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center justify-between border-0 bg-transparent p-0 text-left text-sm font-semibold text-inherit cursor-pointer"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+        >
+          <span className="truncate">
+            {uploadingCount > 0
+              ? `Mengunggah ${uploadingCount} file...`
+              : `${completedCount + errorCount} Unggahan Selesai`}
+          </span>
           {isExpanded ? (
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4 shrink-0" />
           ) : (
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="w-4 h-4 shrink-0" />
           )}
-          <X
-            className="w-4 h-4 hover:scale-110 transition-transform"
-            onClick={(e) => {
-              e.stopPropagation();
-              uploadList.forEach((u) => {
-                if (u.status !== "uploading") removeUpload(u.name);
-              });
-              if (uploadingCount === 0) setIsExpanded(false);
-            }}
-          />
-        </div>
+        </button>
+        <button
+          type="button"
+          className="shrink-0 border-0 bg-transparent p-0 text-inherit cursor-pointer hover:scale-110 transition-transform"
+          aria-label="Clear completed uploads"
+          onClick={() => {
+            uploadList.forEach((u) => {
+              if (u.status !== "uploading") removeUpload(u.name);
+            });
+            if (uploadingCount === 0) setIsExpanded(false);
+          }}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Body */}
