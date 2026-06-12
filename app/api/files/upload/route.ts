@@ -1,227 +1,38 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { getAccessToken } from "@/lib/drive";
 import { createEditorRoute } from "@/lib/api-middleware";
-import { logActivity } from "@/lib/activityLogger";
-import { invalidateFolderCache } from "@/lib/cache";
-import { z } from "zod";
+import {
+  uploadQuerySchema,
+  handleUploadInit,
+  handleUploadChunk,
+  uploadErrorResponse,
+} from "@/lib/services/file-upload";
 
 export const maxDuration = 60;
 
-const uploadInitBodySchema = z.object({
-  name: z.string().min(1),
-  mimeType: z.string().min(1),
-  parentId: z.string().min(1),
-  size: z.number().nonnegative(),
-});
-
-const GOOGLE_UPLOAD_HOST = "www.googleapis.com";
-const GOOGLE_UPLOAD_PATH_PREFIX = "/upload/drive/v3/files";
-
-function isAllowedResumableUploadUrl(uploadUrl: string): boolean {
-  try {
-    const parsed = new URL(uploadUrl);
-    return (
-      parsed.protocol === "https:" &&
-      parsed.hostname === GOOGLE_UPLOAD_HOST &&
-      parsed.pathname.startsWith(GOOGLE_UPLOAD_PATH_PREFIX) &&
-      parsed.searchParams.has("upload_id")
-    );
-  } catch {
-    return false;
-  }
-}
-
-const uploadQuerySchema = z
-  .object({
-    type: z.enum(["init", "chunk"]),
-    uploadUrl: z.string().url().optional(),
-    parentId: z.string().optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (value.type === "chunk" && !value.uploadUrl) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["uploadUrl"],
-        message: "uploadUrl wajib diisi untuk chunk upload.",
-      });
-    }
-  });
-
 export const POST = createEditorRoute(
   async ({ request, session, query }) => {
-    const uploadType = query.type;
-
     try {
-      if (uploadType === "init") {
-        const body = await request.json();
-        const parsedBody = uploadInitBodySchema.safeParse(body);
-        if (!parsedBody.success) {
-          return NextResponse.json(
-            {
-              error: "Input upload init tidak valid.",
-              details: parsedBody.error.issues,
-            },
-            { status: 400 },
-          );
-        }
+      if (query.type === "init") {
+        return await handleUploadInit(request);
+      }
 
-        const { name, mimeType, parentId, size } = parsedBody.data;
-
-        if (parentId.startsWith("local-storage:")) {
-          return NextResponse.json({
-            uploadUrl: `local-storage-upload://${encodeURIComponent(
-              parentId,
-            )}/${encodeURIComponent(name)}`,
-          });
-        }
-
-        const accessToken = await getAccessToken();
-        const metadata = {
-          name,
-          mimeType,
-          parents: [parentId],
-        };
-
-        const response = await fetch(
-          "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-              "X-Upload-Content-Length": size.toString(),
-              "X-Upload-Content-Type": mimeType,
-            },
-            body: JSON.stringify(metadata),
-          },
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            "Gagal menginisialisasi sesi upload dengan Google Drive.",
-          );
-        }
-
-        const uploadUrl = response.headers.get("Location");
-        return NextResponse.json({ uploadUrl });
-      } else if (uploadType === "chunk") {
-        const uploadUrl = query.uploadUrl!;
-        const parentId = query.parentId;
-
-        if (uploadUrl.startsWith("local-storage-upload://")) {
-          const { saveLocalChunk } = await import("@/lib/storage/local");
-          const chunkBuffer = await request.arrayBuffer();
-          const contentRange = request.headers.get("Content-Range") || "";
-
-          const result = await saveLocalChunk(
-            uploadUrl,
-            chunkBuffer,
-            contentRange,
-          );
-
-          if (result.status === "completed" && result.file) {
-            if (parentId) {
-              await invalidateFolderCache(parentId);
-            }
-
-            await logActivity("UPLOAD", {
-              itemName: result.file.name,
-              itemId: result.file.id,
-              itemSize: result.file.size,
-              userEmail: session.user?.email,
-              status: "success",
-              metadata: {
-                operation: "file_upload",
-                fileId: result.file.id,
-                parentId: parentId || undefined,
-                uploadType: "chunk",
-              },
-            });
-          }
-
-          return NextResponse.json(result);
-        }
-
-        const contentRange = request.headers.get("Content-Range");
-        const contentLength = request.headers.get("Content-Length");
-
-        const chunkBuffer = await request.arrayBuffer();
-        const isEmptyChunk = chunkBuffer.byteLength === 0;
-
-        if (!isAllowedResumableUploadUrl(uploadUrl)) {
-          return NextResponse.json(
-            { error: "Parameter uploadUrl tidak valid atau header kurang." },
-            { status: 400 },
-          );
-        }
-
-        if (!isEmptyChunk && !contentRange) {
-          return NextResponse.json(
-            { error: "Parameter uploadUrl tidak valid atau header kurang." },
-            { status: 400 },
-          );
-        }
-
-        const driveHeaders: Record<string, string> = {
-          "Content-Length": contentLength ?? chunkBuffer.byteLength.toString(),
-        };
-        if (contentRange) {
-          driveHeaders["Content-Range"] = contentRange;
-        }
-
-        const driveResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: driveHeaders,
-          body: chunkBuffer.byteLength === 0 ? new Uint8Array(0) : chunkBuffer,
-        });
-
-        if (driveResponse.status === 308) {
-          return NextResponse.json({ status: "partial" });
-        }
-
-        if (driveResponse.ok) {
-          const fileData = await driveResponse.json();
-
-          if (parentId) {
-            await invalidateFolderCache(parentId);
-          }
-
-          await logActivity("UPLOAD", {
-            itemName: fileData.name,
-            itemId: fileData.id,
-            itemSize: fileData.size,
-            userEmail: session.user?.email,
-            status: "success",
-            metadata: {
-              operation: "file_upload",
-              fileId: fileData.id,
-              parentId: parentId || undefined,
-              mimeType: fileData.mimeType,
-              uploadType: "chunk",
-            },
-          });
-          return NextResponse.json({ status: "completed", file: fileData });
-        }
-
-        throw new Error("Gagal mengunggah chunk ke Google Drive.");
-      } else {
-        return NextResponse.json(
-          { error: "Invalid upload type" },
-          { status: 400 },
+      if (query.type === "chunk") {
+        return await handleUploadChunk(
+          request,
+          query.uploadUrl!,
+          query.parentId,
+          session,
         );
       }
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan tidak dikenal.";
-      console.error("Upload API Error:", error);
+
       return NextResponse.json(
-        { error: errorMessage || "Internal Server Error." },
-        { status: 500 },
+        { error: "Invalid upload type" },
+        { status: 400 },
       );
+    } catch (error: unknown) {
+      return uploadErrorResponse(error);
     }
   },
   { querySchema: uploadQuerySchema },
