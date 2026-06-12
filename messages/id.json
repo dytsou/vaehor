@@ -245,7 +245,8 @@
   },
   "FileBrowserModals": {
     "dropToUpload": "Lepas untuk Mengunggah",
-    "toThisFolder": "Ke folder ini"
+    "toThisFolder": "Ke folder ini",
+    "closePreview": "Tutup pratinjau"
   },
   "ArchivePreviewModal": {
     "title": "Isi Arsip",

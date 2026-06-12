@@ -323,15 +323,17 @@ export default function FileBrowserModals(props: FileBrowserModalsProps) {
       {previewFile && (
         <motion.div
           className="fixed inset-0 z-[100] bg-black flex flex-col"
-          onClick={() => setPreviewFile(null)}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div
-            className="relative w-full h-full overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <button
+            type="button"
+            aria-label={t("closePreview")}
+            className="absolute inset-0 border-0 bg-transparent p-0 cursor-default"
+            onClick={() => setPreviewFile(null)}
+          />
+          <div className="relative z-10 w-full h-full overflow-hidden">
             <Suspense fallback={<ModalLoading />}>
               <FileDetail
                 file={previewFile}

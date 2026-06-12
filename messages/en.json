@@ -245,7 +245,8 @@
   },
   "FileBrowserModals": {
     "dropToUpload": "Drop to Upload",
-    "toThisFolder": "To this folder"
+    "toThisFolder": "To this folder",
+    "closePreview": "Close preview"
   },
   "ArchivePreviewModal": {
     "title": "Archive Content",

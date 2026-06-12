@@ -245,7 +245,8 @@
   },
   "FileBrowserModals": {
     "dropToUpload": "放開即可上傳",
-    "toThisFolder": "到此資料夾"
+    "toThisFolder": "到此資料夾",
+    "closePreview": "關閉預覽"
   },
   "ArchivePreviewModal": {
     "title": "壓縮檔內容",
