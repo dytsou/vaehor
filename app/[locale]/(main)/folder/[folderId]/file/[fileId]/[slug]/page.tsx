@@ -132,14 +132,14 @@ function getNavigationUrls(
   return navigation;
 }
 
-const SUBTITLE_EXTENSIONS = [".vtt", ".srt"];
+const SUBTITLE_EXTENSIONS = new Set([".vtt", ".srt"]);
 
 function isSubtitleFile(file: ZeeFile, baseName: string): boolean {
   const fileName = file.name.toLowerCase();
   const ext = file.name.substring(file.name.lastIndexOf("."));
   return (
     !file.isFolder &&
-    SUBTITLE_EXTENSIONS.includes(ext.toLowerCase()) &&
+    SUBTITLE_EXTENSIONS.has(ext.toLowerCase()) &&
     fileName.startsWith(baseName.toLowerCase())
   );
 }
