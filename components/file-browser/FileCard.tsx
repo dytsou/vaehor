@@ -95,7 +95,13 @@ export default function FileCard({
 
   const handleClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest("button") || target.closest("input")) return;
+    if (
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("label")
+    ) {
+      return;
+    }
 
     if (isBulkMode || e.shiftKey) {
       e.preventDefault();
@@ -195,22 +201,22 @@ export default function FileCard({
       onDrop={handleDrop}
       ref={containerRef}
     >
-      <div
-        className="absolute top-3 left-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity data-[selected=true]:opacity-100"
-        data-selected={isSelected}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleSelection(file);
-          if (!isBulkMode) setBulkMode(true);
-        }}
+      <label
+        className={cn(
+          "absolute top-3 left-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer",
+          isSelected && "opacity-100",
+        )}
       >
         <input
           type="checkbox"
           checked={isSelected}
-          readOnly
+          onChange={() => {
+            toggleSelection(file);
+            if (!isBulkMode) setBulkMode(true);
+          }}
           className="w-5 h-5 accent-primary rounded cursor-pointer"
         />
-      </div>
+      </label>
 
       <div className="flex-1 w-full bg-muted/20 rounded flex items-center justify-center overflow-hidden relative">
         {isNavigating ? (
