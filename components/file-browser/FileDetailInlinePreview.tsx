@@ -142,9 +142,7 @@ export default function FileDetailInlinePreview(
   props: FileDetailInlinePreviewProps,
 ) {
   const {
-    file,
     fileType,
-    directLink,
     isEditing,
     isFetchingEditableContent,
     editableContent,

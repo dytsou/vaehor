@@ -89,7 +89,25 @@ function FileItem({
 }: FileItemProps) {
   const t = useTranslations("FileItem");
   const format = useFormatter();
-  const state = useFileItemState({
+  const {
+    containerRef,
+    view,
+    toggleSelection,
+    Icon,
+    isDragOver,
+    setIsDragOver,
+    setImageError,
+    isImageLoading,
+    setIsImageLoading,
+    isDesktop,
+    thumbnailSrc,
+    isGallery,
+    hasImage,
+    compactClass,
+    isUploading,
+    isError,
+    canDrag,
+  } = useFileItemState({
     file,
     density,
     isAdmin,
@@ -98,7 +116,7 @@ function FileItem({
   });
 
   const onActivate = (event: React.MouseEvent | React.KeyboardEvent) => {
-    handleFileItemActivate(event, { isUploading: state.isUploading, onClick });
+    handleFileItemActivate(event, { isUploading, onClick });
   };
 
   return (
@@ -106,22 +124,22 @@ function FileItem({
       variants={itemVariants}
       initial="hidden"
       animate="visible"
-      whileHover={!state.isUploading && state.isDesktop ? "hover" : undefined}
-      whileTap={!state.isUploading ? "tap" : undefined}
-      className={fileItemMotionClassName(state.isGallery, state.isUploading)}
+      whileHover={!isUploading && isDesktop ? "hover" : undefined}
+      whileTap={!isUploading ? "tap" : undefined}
+      className={fileItemMotionClassName(isGallery, isUploading)}
       onMouseEnter={onMouseEnter}
-      ref={state.containerRef}
+      ref={containerRef}
     >
       <div
         className={fileItemShellClassName({
-          view: state.view,
-          isGallery: state.isGallery,
+          view,
+          isGallery,
           isSelected,
           isActive,
           isBulkMode,
-          compactClass: state.compactClass,
-          isDragOver: state.isDragOver,
-          isError: state.isError,
+          compactClass,
+          isDragOver,
+          isError,
         })}
         style={{ WebkitTapHighlightColor: "transparent" }}
         onClick={onActivate}
@@ -132,65 +150,65 @@ function FileItem({
           event.stopPropagation();
         }}
         onContextMenu={
-          state.isUploading
+          isUploading
             ? undefined
             : (event) => openFileItemContextMenu(event, file, onContextMenu)
         }
-        draggable={state.canDrag}
+        draggable={canDrag}
         onDragStart={onDragStart}
         onDragOver={(event) =>
           handleFileItemDragOver(event, {
             isFolder: Boolean(file.isFolder),
             isAdmin,
-            isUploading: state.isUploading,
-            onDragOver: () => state.setIsDragOver(true),
+            isUploading,
+            onDragOver: () => setIsDragOver(true),
           })
         }
         onDragLeave={(event) => {
           event.preventDefault();
           event.stopPropagation();
-          state.setIsDragOver(false);
+          setIsDragOver(false);
         }}
         onDrop={(event) =>
           handleFileItemDrop(event, file, {
             isFolder: Boolean(file.isFolder),
             isAdmin,
-            isUploading: state.isUploading,
+            isUploading,
             onFileDrop,
-            onDragLeave: () => state.setIsDragOver(false),
+            onDragLeave: () => setIsDragOver(false),
           })
         }
         role="button"
         tabIndex={0}
       >
-        <div className={fileItemFlexClassName(state.view)}>
-          <div className={fileItemThumbnailWrapperClassName(state.isGallery)}>
+        <div className={fileItemFlexClassName(view)}>
+          <div className={fileItemThumbnailWrapperClassName(isGallery)}>
             <FileItemThumbnail
               file={file}
-              view={state.view}
-              isGallery={state.isGallery}
-              hasImage={state.hasImage}
-              thumbnailSrc={state.thumbnailSrc}
-              Icon={state.Icon}
-              compactClass={state.compactClass}
+              view={view}
+              isGallery={isGallery}
+              hasImage={hasImage}
+              thumbnailSrc={thumbnailSrc}
+              Icon={Icon}
+              compactClass={compactClass}
               isNavigating={isNavigating}
-              isImageLoading={state.isImageLoading}
-              onImageLoad={() => state.setIsImageLoading(false)}
+              isImageLoading={isImageLoading}
+              onImageLoad={() => setIsImageLoading(false)}
               onImageError={() => {
-                state.setIsImageLoading(false);
-                state.setImageError(true);
+                setIsImageLoading(false);
+                setImageError(true);
               }}
             />
           </div>
 
           <FileItemDetails
             file={file}
-            view={state.view}
-            isGallery={state.isGallery}
+            view={view}
+            isGallery={isGallery}
             isBulkMode={isBulkMode}
-            compactClass={state.compactClass}
-            isUploading={state.isUploading}
-            isError={state.isError}
+            compactClass={compactClass}
+            isUploading={isUploading}
+            isError={isError}
             uploadProgress={uploadProgress}
             formatDate={(value) =>
               format.dateTime(value, {
@@ -203,17 +221,17 @@ function FileItem({
 
           <FileItemToolbar
             file={file}
-            view={state.view}
+            view={view}
             isAdmin={isAdmin}
             isBulkMode={isBulkMode}
             isSelected={isSelected}
-            isUploading={state.isUploading}
-            compactClass={state.compactClass}
+            isUploading={isUploading}
+            compactClass={compactClass}
             onShare={onShare}
             onShowDetails={onShowDetails}
             onDownload={onDownload}
             onContextMenu={onContextMenu}
-            onToggleSelection={state.toggleSelection}
+            onToggleSelection={toggleSelection}
             labels={{
               share: t("share"),
               download: t("download"),
