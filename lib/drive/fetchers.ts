@@ -1,7 +1,6 @@
 import { kv } from "@/lib/kv";
 import { memoryCache, CACHE_TTL } from "@/lib/memory-cache";
 import { getAccessToken } from "./auth";
-import { getRootFolderId } from "@/lib/config";
 import { fetchWithRetry } from "./client";
 import {
   DriveFile,
@@ -18,13 +17,9 @@ import {
 } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { measure } from "@/lib/performance";
-import {
-  MANUAL_DRIVES_KEY,
-  parseManualDriveRecords,
-  parseManualDrivesFromEnv,
-} from "@/lib/manual-drives";
 import { getAppCredentials } from "@/lib/config";
 import { resolveDescendantFolders } from "./folder-tree";
+import { resolveFolderPath } from "./folder-path";
 
 async function getCredentialHash(): Promise<string> {
   const creds = await getAppCredentials();
@@ -247,113 +242,7 @@ export async function getFolderPath(
 ): Promise<{ id: string; name: string }[]> {
   const credHash = await getCredentialHash();
   const cacheKey = `${REDIS_KEYS.FOLDER_PATH}${credHash}:${folderId}:${locale}`;
-  try {
-    const cachedPath: { id: string; name: string }[] | null =
-      await kv.get(cacheKey);
-    if (cachedPath) {
-      return cachedPath;
-    }
-  } catch (e) {
-    logger.warn({ err: e }, "Failed to get folder path cache");
-  }
-
-  const accessToken = await getAccessToken();
-  const path: { id: string; name: string }[] = [];
-  let currentId = folderId;
-  const rootId = await getRootFolderId();
-  const rootName =
-    process.env.NEXT_PUBLIC_ROOT_FOLDER_NAME ||
-    (locale === "id" ? "Beranda" : "Home");
-
-  const dbDrives = parseManualDriveRecords(await kv.get(MANUAL_DRIVES_KEY));
-  const envDrives = parseManualDrivesFromEnv(
-    process.env.NEXT_PUBLIC_MANUAL_DRIVES,
-  );
-
-  const shortcutMap = new Map<string, string>();
-  if (rootId) shortcutMap.set(rootId, rootName);
-  envDrives.forEach((d) => {
-    if (d.id?.trim()) shortcutMap.set(d.id.trim(), d.name || "");
-  });
-  dbDrives.forEach((d) => {
-    if (d && d.id) shortcutMap.set(d.id.trim(), d.name || "");
-  });
-
-  const driveFallback = locale === "id" ? "Drive Bersama" : "Shared Drive";
-
-  let iterations = 0;
-  while (currentId && iterations < 20) {
-    iterations++;
-
-    if (shortcutMap.has(currentId)) {
-      const driveUrl = `${GOOGLE_DRIVE_API_BASE_URL}/files/${currentId}?fields=id,name`;
-      try {
-        const response = await fetchWithRetry(driveUrl, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const displayName = shortcutMap.get(currentId) || data.name;
-          path.unshift({ id: data.id, name: displayName });
-        } else {
-          path.unshift({
-            id: currentId,
-            name: shortcutMap.get(currentId) || driveFallback,
-          });
-        }
-      } catch {
-        path.unshift({
-          id: currentId,
-          name: shortcutMap.get(currentId) || driveFallback,
-        });
-      }
-      break;
-    }
-
-    const driveUrl = `${GOOGLE_DRIVE_API_BASE_URL}/files/${currentId}`;
-    const params = new URLSearchParams({
-      fields: "id, name, parents",
-      supportsAllDrives: "true",
-    });
-
-    try {
-      const response = await fetchWithRetry(
-        `${driveUrl}?${params.toString()}`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          cache: "no-store",
-        },
-      );
-
-      if (!response.ok) {
-        break;
-      }
-
-      const data: { id: string; name: string; parents?: string[] } =
-        await response.json();
-
-      path.unshift({ id: data.id, name: data.name });
-
-      if (data.parents && data.parents.length > 0) {
-        currentId = data.parents[0];
-      } else {
-        break;
-      }
-    } catch (e) {
-      logger.error({ err: e }, "Error fetching folder path segment");
-      break;
-    }
-  }
-
-  try {
-    await kv.set(cacheKey, path, { ex: REDIS_TTL.FOLDER_PATH });
-  } catch (e) {
-    logger.warn({ err: e }, "Failed to cache folder path");
-  }
-
-  return path;
+  return resolveFolderPath(folderId, locale, cacheKey);
 }
 
 export async function searchFilesInFolder(

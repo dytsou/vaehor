@@ -47,70 +47,126 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-export function validateOnStartup(): Env {
-  if (
+type ValidationIssue = {
+  path: PropertyKey[];
+  message: string;
+};
+
+type AdminCredentialResult =
+  | { ok: true }
+  | { ok: false; issue: ValidationIssue };
+
+function shouldSkipEnvValidation(): boolean {
+  return (
     process.env.NODE_ENV === "test" ||
     process.env.SKIP_ENV_VALIDATION === "1" ||
     process.env.SKIP_ENV_VALIDATION === "true"
+  );
+}
+
+type EnvParseResult = ReturnType<typeof envSchema.safeParse>;
+
+function collectValidationIssues(
+  result: EnvParseResult,
+  adminCredentialResult: AdminCredentialResult,
+): ValidationIssue[] {
+  if (!result.success) {
+    return result.error.issues;
+  }
+
+  if (!adminCredentialResult.ok) {
+    return [adminCredentialResult.issue];
+  }
+
+  return [];
+}
+
+function logValidationErrors(issues: ValidationIssue[]): void {
+  console.error("\n❌ PROYEK GAGAL MENYALA: Environment Variable Tidak Valid");
+  console.error("=========================================================");
+
+  for (const issue of issues) {
+    console.error(`🚩 [${issue.path.join(".")}] -> ${issue.message}`);
+  }
+
+  console.error("=========================================================");
+  console.error("Silakan periksa kembali file .env Anda.\n");
+}
+
+function handleValidationFailure(
+  result: EnvParseResult,
+  adminCredentialResult: AdminCredentialResult,
+): Env {
+  logValidationErrors(collectValidationIssues(result, adminCredentialResult));
+
+  if (process.env.NODE_ENV === "production") {
+    process.exit(1);
+  }
+
+  return process.env as unknown as Env;
+}
+
+function collectConfigWarnings(): string[] {
+  const warnings: string[] = [];
+
+  if (!process.env.REDIS_URL) {
+    warnings.push(
+      "REDIS_URL tidak diset. Data sementara tidak akan tersimpan secara persisten.",
+    );
+  }
+
+  if (!process.env.SMTP_HOST) {
+    warnings.push(
+      "Konfigurasi Email (SMTP) tidak ditemukan. Fitur email akan dinonaktifkan.",
+    );
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    !process.env.ADMIN_PASSWORD_HASH
   ) {
+    warnings.push(
+      "ADMIN_PASSWORD_HASH belum diset. Login admin berbasis plaintext dinonaktifkan di production.",
+    );
+  }
+
+  if (process.env.NODE_ENV === "production" && !process.env.CRON_SECRET) {
+    warnings.push(
+      "CRON_SECRET belum diset. Endpoint cron akan menolak semua request.",
+    );
+  }
+
+  return warnings;
+}
+
+function reportConfigWarnings(warnings: string[]): void {
+  if (warnings.length === 0) {
+    console.log("✅ Validasi Environment Berhasil\n");
+    return;
+  }
+
+  console.warn("\n⚠️  Peringatan Konfigurasi:");
+  for (const warning of warnings) {
+    console.warn(`   - ${warning}`);
+  }
+  console.warn("");
+}
+
+export function validateOnStartup(): Env {
+  if (shouldSkipEnvValidation()) {
     return process.env as unknown as Env;
   }
 
   const result = envSchema.safeParse(process.env);
-
   const adminCredentialResult = result.success
     ? validateAdminCredentials(result.data)
     : { ok: true as const };
 
   if (!result.success || !adminCredentialResult.ok) {
-    console.error(
-      "\n❌ PROYEK GAGAL MENYALA: Environment Variable Tidak Valid",
-    );
-    console.error("=========================================================");
-    const issues = !result.success
-      ? result.error.issues
-      : adminCredentialResult.ok
-        ? []
-        : [adminCredentialResult.issue];
-
-    issues.forEach((issue) => {
-      console.error(`🚩 [${issue.path.join(".")}] -> ${issue.message}`);
-    });
-    console.error("=========================================================");
-    console.error("Silakan periksa kembali file .env Anda.\n");
-
-    if (process.env.NODE_ENV === "production") {
-      process.exit(1);
-    }
-    return process.env as unknown as Env;
+    return handleValidationFailure(result, adminCredentialResult);
   }
 
-  const warnings: string[] = [];
-  if (!process.env.REDIS_URL)
-    warnings.push(
-      "REDIS_URL tidak diset. Data sementara tidak akan tersimpan secara persisten.",
-    );
-  if (!process.env.SMTP_HOST)
-    warnings.push(
-      "Konfigurasi Email (SMTP) tidak ditemukan. Fitur email akan dinonaktifkan.",
-    );
-  if (process.env.NODE_ENV === "production" && !process.env.ADMIN_PASSWORD_HASH)
-    warnings.push(
-      "ADMIN_PASSWORD_HASH belum diset. Login admin berbasis plaintext dinonaktifkan di production.",
-    );
-  if (process.env.NODE_ENV === "production" && !process.env.CRON_SECRET)
-    warnings.push(
-      "CRON_SECRET belum diset. Endpoint cron akan menolak semua request.",
-    );
-
-  if (warnings.length > 0) {
-    console.warn("\n⚠️  Peringatan Konfigurasi:");
-    warnings.forEach((w) => console.warn(`   - ${w}`));
-    console.warn("");
-  } else {
-    console.log("✅ Validasi Environment Berhasil\n");
-  }
-
+  reportConfigWarnings(collectConfigWarnings());
   return result.data;
 }
 
@@ -119,12 +175,9 @@ function stripEnvQuotes(value: string | undefined): string {
 }
 
 /** Match auth.ts: hash in production, or plaintext password (min 8) when no hash. */
-function validateAdminCredentials(data: z.infer<typeof envSchema>):
-  | { ok: true }
-  | {
-      ok: false;
-      issue: { path: (string | number)[]; message: string };
-    } {
+function validateAdminCredentials(
+  data: z.infer<typeof envSchema>,
+): AdminCredentialResult {
   const pass = stripEnvQuotes(data.ADMIN_PASSWORD);
   const hash = (data.ADMIN_PASSWORD_HASH ?? "").trim();
 
