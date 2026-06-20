@@ -22,13 +22,12 @@ export async function resolveRole(email: string): Promise<AppRole> {
     kv.sismember(REDIS_KEYS.ADMIN_EDITORS, normalizedEmail),
   ]);
 
-  let adminCount = adminCountRaw;
+  const adminCount = adminCountRaw;
   let isRedisAdmin = isRedisAdminRaw;
 
   if (adminCount === 0 && normalizedEnvAdmins.length > 0) {
     try {
       await kv.sadd(REDIS_KEYS.ADMIN_USERS, ...normalizedEnvAdmins);
-      adminCount = normalizedEnvAdmins.length;
       isRedisAdmin = normalizedEnvAdmins.includes(normalizedEmail) ? 1 : 0;
       logger.warn(
         { count: normalizedEnvAdmins.length },
