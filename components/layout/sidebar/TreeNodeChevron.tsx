@@ -8,6 +8,18 @@ interface TreeNodeChevronProps {
   onToggle: (id: string) => void;
 }
 
+function TreeNodeChevronIcon({ node }: { node: FolderNode }) {
+  if (node.isLoading) {
+    return <Loader2 size={12} className="animate-spin" />;
+  }
+
+  if (node.isExpanded) {
+    return <ChevronDown size={12} />;
+  }
+
+  return <ChevronRight size={12} />;
+}
+
 export default function TreeNodeChevron({
   node,
   onToggle,
@@ -27,13 +39,7 @@ export default function TreeNodeChevron({
       aria-label={node.isExpanded ? "Collapse folder" : "Expand folder"}
       className="p-1.5 -ml-1.5 rounded-sm transition-colors flex items-center justify-center shrink-0 border-0 bg-transparent hover:bg-muted text-muted-foreground cursor-pointer group/chevron z-10"
     >
-      {node.isLoading ? (
-        <Loader2 size={12} className="animate-spin" />
-      ) : node.isExpanded ? (
-        <ChevronDown size={12} />
-      ) : (
-        <ChevronRight size={12} />
-      )}
+      <TreeNodeChevronIcon node={node} />
     </button>
   );
 }
