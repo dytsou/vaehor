@@ -121,6 +121,48 @@ async function getCollectionItems(shareId: string) {
   );
 }
 
+function isLocalStorageDescendant(
+  nodeId: string,
+  rootId: string,
+): boolean | null {
+  if (
+    !rootId.startsWith("local-storage:") ||
+    !nodeId.startsWith("local-storage:")
+  ) {
+    return null;
+  }
+
+  const prefix = rootId.endsWith("/") ? rootId : `${rootId}/`;
+  return nodeId === rootId || nodeId.startsWith(prefix);
+}
+
+async function walkDriveAncestorsForSharedRoot(
+  nodeId: string,
+  sharedRootFolderId: string,
+): Promise<boolean> {
+  let current: string | null = nodeId;
+  const visited = new Set<string>();
+  const rootEnv = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID?.trim();
+
+  for (let depth = 0; depth < 45; depth++) {
+    if (!current || visited.has(current)) return false;
+    visited.add(current);
+
+    if (current === sharedRootFolderId) return true;
+
+    const meta = await getFileDetailsFromDrive(current);
+    if (!meta?.parents?.length) return false;
+
+    const parent = meta.parents[0];
+    if (parent === sharedRootFolderId) return true;
+    if (rootEnv && parent === rootEnv) return false;
+
+    current = parent;
+  }
+
+  return false;
+}
+
 /**
  * Walks Google Drive parents from nodeId upward; true if sharedRootFolderId is an ancestor (or equal).
  */
@@ -133,40 +175,10 @@ export async function isNodeInsideSharedFolder(
 
   if (cleanNode === cleanRoot) return true;
 
-  if (
-    cleanRoot.startsWith("local-storage:") &&
-    cleanNode.startsWith("local-storage:")
-  ) {
-    return (
-      cleanNode === cleanRoot ||
-      cleanNode.startsWith(
-        cleanRoot.endsWith("/") ? cleanRoot : `${cleanRoot}/`,
-      )
-    );
-  }
+  const localStorageMatch = isLocalStorageDescendant(cleanNode, cleanRoot);
+  if (localStorageMatch !== null) return localStorageMatch;
 
-  let current: string | null = cleanNode;
-  const visited = new Set<string>();
-
-  for (let depth = 0; depth < 45; depth++) {
-    if (!current || visited.has(current)) return false;
-    visited.add(current);
-
-    if (current === cleanRoot) return true;
-
-    const meta = await getFileDetailsFromDrive(current);
-    if (!meta?.parents?.length) return false;
-
-    const parent = meta.parents[0];
-    if (parent === cleanRoot) return true;
-
-    const rootEnv = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID?.trim();
-    if (rootEnv && parent === rootEnv) return false;
-
-    current = parent;
-  }
-
-  return false;
+  return walkDriveAncestorsForSharedRoot(cleanNode, cleanRoot);
 }
 
 type ShareCollectionItem = {
