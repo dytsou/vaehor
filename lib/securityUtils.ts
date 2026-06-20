@@ -62,6 +62,181 @@ async function getRestrictedIds(): Promise<string[]> {
   }
 }
 
+interface AccessCheckContext {
+  allowedTokens: string[];
+  userEmail: string | null | undefined;
+  accessCache: Map<string, boolean>;
+}
+
+interface RestrictionTraversalState extends AccessCheckContext {
+  depth: number;
+  maxDepth: number;
+  allRestrictedIds: string[];
+  visited: Set<string>;
+}
+
+function markTraversalVisited(
+  fileId: string,
+  depth: number,
+  maxDepth: number,
+  visited: Set<string>,
+): boolean {
+  if (depth >= maxDepth) {
+    logger.error({ fileId, depth }, "Max depth reached for security check");
+    return true;
+  }
+
+  if (visited.has(fileId)) {
+    return true;
+  }
+
+  visited.add(fileId);
+  return false;
+}
+
+async function resolveUserAccess(
+  id: string,
+  context: AccessCheckContext,
+): Promise<boolean> {
+  if (context.accessCache.has(id)) {
+    return context.accessCache.get(id)!;
+  }
+
+  if (context.allowedTokens.includes(id)) {
+    return true;
+  }
+
+  if (context.userEmail) {
+    const hasAccess = await hasUserAccess(context.userEmail, id);
+    context.accessCache.set(id, hasAccess);
+    if (hasAccess) {
+      return true;
+    }
+  }
+
+  context.accessCache.set(id, false);
+  return false;
+}
+
+async function isRestrictedWithoutAccess(
+  id: string,
+  restrictedIds: string[],
+  context: AccessCheckContext,
+): Promise<boolean> {
+  if (!restrictedIds.includes(id)) {
+    return false;
+  }
+
+  return !(await resolveUserAccess(id, context));
+}
+
+async function resolveIsLocalRestricted(
+  allRestrictedIds: string[],
+): Promise<boolean> {
+  const { getAppConfig } = await import("@/lib/app-config");
+  const config = await getAppConfig();
+
+  return (
+    config.localStorageAuthEnabled ||
+    allRestrictedIds.includes("local-storage:")
+  );
+}
+
+async function checkLocalStorageRestriction(
+  fileId: string,
+  allRestrictedIds: string[],
+  isLocalRestricted: boolean,
+  context: AccessCheckContext,
+): Promise<boolean> {
+  if (await isRestrictedWithoutAccess(fileId, allRestrictedIds, context)) {
+    return true;
+  }
+
+  if (
+    isLocalRestricted &&
+    !(await resolveUserAccess("local-storage:", context))
+  ) {
+    return true;
+  }
+
+  const parts = fileId.split("/");
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const parentId = parts.slice(0, i).join("/");
+    if (await isRestrictedWithoutAccess(parentId, allRestrictedIds, context)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function checkDriveParentRestriction(
+  parentId: string,
+  state: RestrictionTraversalState,
+): Promise<boolean> {
+  const context: AccessCheckContext = {
+    allowedTokens: state.allowedTokens,
+    userEmail: state.userEmail,
+    accessCache: state.accessCache,
+  };
+
+  if (
+    await isRestrictedWithoutAccess(parentId, state.allRestrictedIds, context)
+  ) {
+    return true;
+  }
+
+  if (parentId === process.env.NEXT_PUBLIC_ROOT_FOLDER_ID) {
+    return false;
+  }
+
+  return isAccessRestricted(
+    parentId,
+    state.allowedTokens,
+    state.userEmail,
+    state.depth + 1,
+    state.maxDepth,
+    state.allRestrictedIds,
+    state.visited,
+    state.accessCache,
+  );
+}
+
+async function checkDriveFileRestriction(
+  fileId: string,
+  state: RestrictionTraversalState,
+): Promise<boolean> {
+  const context: AccessCheckContext = {
+    allowedTokens: state.allowedTokens,
+    userEmail: state.userEmail,
+    accessCache: state.accessCache,
+  };
+
+  if (
+    await isRestrictedWithoutAccess(fileId, state.allRestrictedIds, context)
+  ) {
+    return true;
+  }
+
+  try {
+    const file = await getFileDetailsFromDrive(fileId);
+    if (!file?.parents?.length) {
+      return false;
+    }
+
+    for (const parentId of file.parents) {
+      if (await checkDriveParentRestriction(parentId, state)) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    logger.error({ err: error, fileId }, "Error checking access restriction");
+    return true;
+  }
+}
+
 export async function isAccessRestricted(
   fileId: string,
   allowedTokens: string[] = [],
@@ -72,93 +247,40 @@ export async function isAccessRestricted(
   visited: Set<string> = new Set(),
   accessCache: Map<string, boolean> = new Map(),
 ): Promise<boolean> {
-  const isLocalStorage = fileId.startsWith("local-storage:");
-  if (depth >= maxDepth) {
-    logger.error({ fileId, depth }, "Max depth reached for security check");
+  if (markTraversalVisited(fileId, depth, maxDepth, visited)) {
     return true;
   }
-
-  if (visited.has(fileId)) {
-    return true;
-  }
-  visited.add(fileId);
 
   const allRestrictedIds =
-    preFetchedRestrictedIds || (await getRestrictedIds());
+    preFetchedRestrictedIds ?? (await getRestrictedIds());
+  const isLocalRestricted = await resolveIsLocalRestricted(allRestrictedIds);
 
-  const { getAppConfig } = await import("@/lib/app-config");
-  const config = await getAppConfig();
-  const isLocalRestricted =
-    config.localStorageAuthEnabled ||
-    allRestrictedIds.includes("local-storage:");
-
-  if (allRestrictedIds.length === 0 && !isLocalRestricted) return false;
-
-  async function checkAccess(id: string) {
-    if (accessCache.has(id)) {
-      return accessCache.get(id)!;
-    }
-    if (allowedTokens.includes(id)) return true;
-    if (userEmail) {
-      const hasAccess = await hasUserAccess(userEmail, id);
-      accessCache.set(id, hasAccess);
-      if (hasAccess) return true;
-    }
-    accessCache.set(id, false);
+  if (allRestrictedIds.length === 0 && !isLocalRestricted) {
     return false;
   }
 
-  if (allRestrictedIds.includes(fileId)) {
-    const access = await checkAccess(fileId);
-    if (!access) return true;
+  const context: AccessCheckContext = {
+    allowedTokens,
+    userEmail,
+    accessCache,
+  };
+
+  if (fileId.startsWith("local-storage:")) {
+    return checkLocalStorageRestriction(
+      fileId,
+      allRestrictedIds,
+      isLocalRestricted,
+      context,
+    );
   }
 
-  if (isLocalStorage) {
-    if (isLocalRestricted) {
-      const access = await checkAccess("local-storage:");
-      if (!access) return true;
-    }
-    const parts = fileId.split("/");
-    for (let i = parts.length - 1; i >= 1; i--) {
-      const parentId = parts.slice(0, i).join("/");
-      if (allRestrictedIds.includes(parentId)) {
-        const access = await checkAccess(parentId);
-        if (!access) return true;
-      }
-    }
-    return false;
-  }
-
-  try {
-    const file = await getFileDetailsFromDrive(fileId);
-    if (!file || !file.parents || file.parents.length === 0) return false;
-
-    for (const parentId of file.parents) {
-      if (allRestrictedIds.includes(parentId)) {
-        const access = await checkAccess(parentId);
-        if (!access) return true;
-      }
-
-      if (parentId === process.env.NEXT_PUBLIC_ROOT_FOLDER_ID) {
-        continue;
-      }
-
-      const isParentRestricted = await isAccessRestricted(
-        parentId,
-        allowedTokens,
-        userEmail,
-        depth + 1,
-        maxDepth,
-        allRestrictedIds,
-        visited,
-        accessCache,
-      );
-      if (isParentRestricted) return true;
-    }
-
-    return false;
-  } catch (error) {
-    logger.error({ err: error, fileId }, "Error checking access restriction");
-    return true;
-  }
+  return checkDriveFileRestriction(fileId, {
+    allowedTokens,
+    userEmail,
+    accessCache,
+    depth,
+    maxDepth,
+    allRestrictedIds,
+    visited,
+  });
 }
