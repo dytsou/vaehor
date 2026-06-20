@@ -51,7 +51,7 @@ describe("lib/utils", () => {
     });
 
     it("handles NaN and special values", () => {
-      expect(formatBytes(NaN)).toBe("0 Bytes");
+      expect(formatBytes(Number.NaN)).toBe("0 Bytes");
     });
   });
 
@@ -79,7 +79,7 @@ describe("lib/utils", () => {
     it("handles invalid inputs", () => {
       expect(formatDuration(-1)).toBe("00:00");
       expect(formatDuration("abc")).toBe("00:00");
-      expect(formatDuration(NaN)).toBe("00:00");
+      expect(formatDuration(Number.NaN)).toBe("00:00");
     });
 
     it("handles large durations", () => {
