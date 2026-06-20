@@ -23,41 +23,65 @@ interface FileSystemDirectoryEntryLike extends FileSystemEntryLike {
   createReader: () => FileSystemDirectoryReaderLike;
 }
 
+function readFileFromEntry(
+  fileItem: FileSystemFileEntryLike,
+  path: string,
+): Promise<FileEntry[]> {
+  return new Promise((resolve) => {
+    fileItem.file((file: File) => {
+      resolve([{ file, path: path + file.name }]);
+    });
+  });
+}
+
+function readDirectoryBatch(
+  dirReader: FileSystemDirectoryReaderLike,
+): Promise<FileSystemEntryLike[]> {
+  return new Promise((resolve) => {
+    dirReader.readEntries(resolve);
+  });
+}
+
+async function readAllDirectoryEntries(
+  dirReader: FileSystemDirectoryReaderLike,
+): Promise<FileSystemEntryLike[]> {
+  const allEntries: FileSystemEntryLike[] = [];
+  let batch = await readDirectoryBatch(dirReader);
+
+  while (batch.length > 0) {
+    allEntries.push(...batch);
+    batch = await readDirectoryBatch(dirReader);
+  }
+
+  return allEntries;
+}
+
+async function traverseDirectory(
+  directoryItem: FileSystemDirectoryEntryLike,
+  path: string,
+): Promise<FileEntry[]> {
+  const dirReader = directoryItem.createReader();
+  const childEntries = await readAllDirectoryEntries(dirReader);
+  const childPath = path + directoryItem.name + "/";
+  const childResults = await Promise.all(
+    childEntries.map((entry) => traverseFileTree(entry, childPath)),
+  );
+
+  return childResults.flat();
+}
+
 async function traverseFileTree(
   item: FileSystemEntryLike,
   path: string = "",
 ): Promise<FileEntry[]> {
   if (item.isFile) {
-    const fileItem = item as FileSystemFileEntryLike;
-    return new Promise((resolve) => {
-      fileItem.file((file: File) => {
-        const fullPath = path + file.name;
-        resolve([{ file, path: fullPath }]);
-      });
-    });
-  } else if (item.isDirectory) {
-    const directoryItem = item as FileSystemDirectoryEntryLike;
-    const dirReader = directoryItem.createReader();
-    const entries: FileEntry[] = [];
-    const readEntries = async (): Promise<FileEntry[]> => {
-      return new Promise((resolve) => {
-        dirReader.readEntries(async (results: FileSystemEntryLike[]) => {
-          if (results.length === 0) {
-            resolve(entries);
-          } else {
-            const promises = results.map((entry) =>
-              traverseFileTree(entry, path + directoryItem.name + "/"),
-            );
-            const recursiveEntries = await Promise.all(promises);
-            entries.push(...recursiveEntries.flat());
-            const moreEntries = await readEntries();
-            resolve([...entries, ...moreEntries]);
-          }
-        });
-      });
-    };
-    return readEntries();
+    return readFileFromEntry(item as FileSystemFileEntryLike, path);
   }
+
+  if (item.isDirectory) {
+    return traverseDirectory(item as FileSystemDirectoryEntryLike, path);
+  }
+
   return [];
 }
 
