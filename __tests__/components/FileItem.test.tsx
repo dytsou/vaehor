@@ -18,7 +18,7 @@ Object.defineProperty(globalThis, "matchMedia", {
 
 vi.mock("framer-motion", () => {
   const React = require("react");
-  const motionProps = [
+  const motionProps = new Set([
     "whileHover",
     "whileTap",
     "initial",
@@ -27,12 +27,12 @@ vi.mock("framer-motion", () => {
     "variants",
     "transition",
     "layout",
-  ];
+  ]);
 
   const filterProps = (props: any) => {
     const filtered: any = {};
     Object.keys(props).forEach((key) => {
-      if (!motionProps.includes(key)) {
+      if (!motionProps.has(key)) {
         filtered[key] = props[key];
       }
     });
