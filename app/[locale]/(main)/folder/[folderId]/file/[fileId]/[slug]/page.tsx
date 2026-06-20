@@ -145,7 +145,7 @@ function isSubtitleFile(file: ZeeFile, baseName: string): boolean {
 }
 
 function toSubtitleTrack(trackFile: ZeeFile): SubtitleTrack {
-  const langMatch = trackFile.name.match(/[\._]([a-z]{2,3})[\._]/i);
+  const langMatch = trackFile.name.match(/[._]([a-z]{2,3})[._]/i);
   const lang = langMatch ? langMatch[1] : "en";
 
   return {
