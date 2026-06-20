@@ -12,6 +12,14 @@ interface FileItemShellState {
   isError: boolean;
 }
 
+function fileItemShellPaddingClassName(view: ViewMode, compactClass: boolean) {
+  if (view !== "list") {
+    return "w-full";
+  }
+
+  return compactClass ? "p-1.5 min-h-[40px]" : "p-3 min-h-[68px]";
+}
+
 export function fileItemMotionClassName(
   isGallery: boolean,
   isUploading: boolean,
@@ -31,11 +39,7 @@ export function fileItemShellClassName(state: FileItemShellState) {
       ? "bg-primary/10 border-primary shadow-sm"
       : "bg-card border-border hover:shadow-lg hover:border-primary/30",
     state.isActive && !state.isBulkMode && "ring-1 ring-primary",
-    state.view === "list"
-      ? state.compactClass
-        ? "p-1.5 min-h-[40px]"
-        : "p-3 min-h-[68px]"
-      : "w-full",
+    fileItemShellPaddingClassName(state.view, state.compactClass),
     state.view === "grid" &&
       "flex flex-col items-center justify-center text-center p-2 sm:p-4",
     state.isGallery && "p-0 border-none",
@@ -45,14 +49,22 @@ export function fileItemShellClassName(state: FileItemShellState) {
   );
 }
 
+function fileItemFlexLayoutClassName(view: ViewMode) {
+  if (view === "list") {
+    return "items-center gap-3";
+  }
+
+  if (view === "grid") {
+    return "flex-col items-center justify-center gap-2";
+  }
+
+  return "flex-col";
+}
+
 export function fileItemFlexClassName(view: ViewMode) {
   return cn(
     "flex w-full min-w-0 pointer-events-none",
-    view === "list"
-      ? "items-center gap-3"
-      : view === "grid"
-        ? "flex-col items-center justify-center gap-2"
-        : "flex-col",
+    fileItemFlexLayoutClassName(view),
   );
 }
 
@@ -71,14 +83,22 @@ export function fileItemDetailsClassName(view: ViewMode, isGallery: boolean) {
   );
 }
 
+function fileItemTitleLayoutClassName(view: ViewMode) {
+  if (view === "list") {
+    return "text-sm justify-start";
+  }
+
+  if (view === "grid") {
+    return "text-xs sm:text-sm justify-center";
+  }
+
+  return "text-sm";
+}
+
 export function fileItemTitleClassName(view: ViewMode) {
   return cn(
     "font-medium flex items-center gap-1.5 min-w-0",
-    view === "list"
-      ? "text-sm justify-start"
-      : view === "grid"
-        ? "text-xs sm:text-sm justify-center"
-        : "text-sm",
+    fileItemTitleLayoutClassName(view),
   );
 }
 
