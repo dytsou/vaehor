@@ -41,6 +41,20 @@ const PUBLIC_API_PREFIXES = [
   "/api/metadata",
 ];
 
+type IntlMiddleware = (request: NextRequest) => Response | Promise<Response>;
+
+interface ProxyRouteContext {
+  pathname: string;
+  pathnameWithoutLocale: string;
+  isApi: boolean;
+}
+
+interface AuthState {
+  isAuthenticated: boolean;
+  isGuest: boolean;
+  is2FARequired: boolean;
+}
+
 const isPublicRoute = (pathname: string) => {
   return (
     PUBLIC_PATHS.has(pathname) ||
@@ -50,62 +64,215 @@ const isPublicRoute = (pathname: string) => {
   );
 };
 
-export async function proxy(request: NextRequest) {
+function buildRouteContext(request: NextRequest): ProxyRouteContext {
   const { pathname } = request.nextUrl;
+  const pathnameWithoutLocale = stripLocaleFromPathname(pathname) || "/";
 
-  if (
+  return {
+    pathname,
+    pathnameWithoutLocale,
+    isApi: pathnameWithoutLocale.startsWith("/api"),
+  };
+}
+
+function shouldBypassProxy(pathname: string): boolean {
+  return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/static") ||
     pathname === "/sw.js" ||
     pathname === "/manifest.webmanifest" ||
     pathname.startsWith("/api/health") ||
     pathname.startsWith("/api/download")
+  );
+}
+
+function resolveIntlOrNext(
+  request: NextRequest,
+  isApi: boolean,
+): Response | Promise<Response> {
+  return isApi ? NextResponse.next() : intlMiddleware(request);
+}
+
+async function enforceApiRateLimit(
+  request: NextRequest,
+  pathnameWithoutLocale: string,
+): Promise<NextResponse | null> {
+  if (
+    !pathnameWithoutLocale.startsWith("/api") ||
+    pathnameWithoutLocale.startsWith("/api/health")
   ) {
-    return NextResponse.next();
+    return null;
   }
 
-  const pathnameWithoutLocale = stripLocaleFromPathname(pathname) || "/";
-  const isApi = pathnameWithoutLocale.startsWith("/api");
+  const type: RateLimitType = pathnameWithoutLocale.startsWith("/api/admin")
+    ? "ADMIN"
+    : "API";
+  const ratelimitResult = await checkRateLimit(request, type);
 
-  if (isApi && !pathnameWithoutLocale.startsWith("/api/health")) {
-    const type: RateLimitType = pathnameWithoutLocale.startsWith("/api/admin")
-      ? "ADMIN"
-      : "API";
-
-    const ratelimitResult = await checkRateLimit(request, type);
-    if (!ratelimitResult.success) {
-      return NextResponse.json(
-        { error: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED },
-        {
-          status: 429,
-          headers: createRateLimitResponse(ratelimitResult).headers,
-        },
-      );
-    }
+  if (!ratelimitResult.success) {
+    return NextResponse.json(
+      { error: ERROR_MESSAGES.RATE_LIMIT_EXCEEDED },
+      {
+        status: 429,
+        headers: createRateLimitResponse(ratelimitResult).headers,
+      },
+    );
   }
 
+  return null;
+}
+
+function handleSetupWhenUnconfigured(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): NextResponse | Response | Promise<Response> {
+  const isSetupPage =
+    context.pathnameWithoutLocale.startsWith("/setup") ||
+    context.pathnameWithoutLocale.startsWith("/api/setup");
+
+  if (isSetupPage) {
+    return resolveIntlOrNext(request, context.isApi);
+  }
+
+  return NextResponse.redirect(new URL("/setup", request.url));
+}
+
+async function handleAppConfiguration(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): Promise<NextResponse | Response | Promise<Response> | null> {
   const isConfigured = await isAppConfigured();
 
   if (!isConfigured) {
-    const isSetupPage =
-      pathnameWithoutLocale.startsWith("/setup") ||
-      pathnameWithoutLocale.startsWith("/api/setup");
-
-    if (isSetupPage) {
-      return isApi ? NextResponse.next() : intlMiddleware(request);
-    }
-    return NextResponse.redirect(new URL("/setup", request.url));
+    return handleSetupWhenUnconfigured(request, context);
   }
 
-  if (isConfigured && pathnameWithoutLocale.startsWith("/setup")) {
+  if (context.pathnameWithoutLocale.startsWith("/setup")) {
     return NextResponse.redirect(new URL(`/${DEFAULT_LOCALE}`, request.url));
   }
 
+  return null;
+}
+
+function handleExplicitPublicRoute(
+  request: NextRequest,
+  pathnameWithoutLocale: string,
+  isApi: boolean,
+): Response | Promise<Response> | null {
   if (
     PUBLIC_PATHS.has(pathnameWithoutLocale) ||
-    PUBLIC_API_PREFIXES.some((p) => pathnameWithoutLocale.startsWith(p))
+    PUBLIC_API_PREFIXES.some((prefix) =>
+      pathnameWithoutLocale.startsWith(prefix),
+    )
   ) {
-    return isApi ? NextResponse.next() : intlMiddleware(request);
+    return resolveIntlOrNext(request, isApi);
+  }
+
+  return null;
+}
+
+function enforceAuthenticationRules(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  auth: AuthState,
+): NextResponse | null {
+  if (!auth.isAuthenticated && !isPublicRoute(context.pathnameWithoutLocale)) {
+    return handleAuthRedirect(request, context.pathname);
+  }
+
+  if (
+    auth.isAuthenticated &&
+    auth.isGuest &&
+    context.pathnameWithoutLocale.startsWith("/admin")
+  ) {
+    return handleAuthRedirect(request, context.pathname, "GuestAccessDenied");
+  }
+
+  if (
+    auth.isAuthenticated &&
+    auth.is2FARequired &&
+    context.pathnameWithoutLocale !== "/verify-2fa"
+  ) {
+    const verifyUrl = new URL("/verify-2fa", request.url);
+    verifyUrl.searchParams.set("callbackUrl", context.pathname);
+    return NextResponse.redirect(verifyUrl);
+  }
+
+  return null;
+}
+
+function resolveCurrentFolderId(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): string {
+  if (context.pathnameWithoutLocale.startsWith("/folder/")) {
+    return context.pathnameWithoutLocale.split("/")[2] || "";
+  }
+
+  if (context.pathname.startsWith("/api/files")) {
+    return request.nextUrl.searchParams.get("folderId") || "";
+  }
+
+  return "";
+}
+
+async function validateFolderAccessIfNeeded(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  intlHandler: IntlMiddleware,
+): Promise<Response | null> {
+  const currentFolderId = resolveCurrentFolderId(request, context);
+  if (!currentFolderId) {
+    return null;
+  }
+
+  return validateFolderToken(
+    request,
+    currentFolderId,
+    context.isApi,
+    intlHandler,
+  );
+}
+
+function enforceFinalAuthCheck(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  auth: AuthState,
+): NextResponse | null {
+  if (!auth.isAuthenticated && !isPublicRoute(context.pathnameWithoutLocale)) {
+    return handleAuthRedirect(request, context.pathname);
+  }
+
+  return null;
+}
+
+export async function proxy(request: NextRequest) {
+  const context = buildRouteContext(request);
+
+  if (shouldBypassProxy(context.pathname)) {
+    return NextResponse.next();
+  }
+
+  const rateLimitResponse = await enforceApiRateLimit(
+    request,
+    context.pathnameWithoutLocale,
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const configurationResponse = await handleAppConfiguration(request, context);
+  if (configurationResponse) {
+    return configurationResponse;
+  }
+
+  const publicRouteResponse = handleExplicitPublicRoute(
+    request,
+    context.pathnameWithoutLocale,
+    context.isApi,
+  );
+  if (publicRouteResponse) {
+    return publicRouteResponse;
   }
 
   const shareToken = request.nextUrl.searchParams.get("share_token");
@@ -113,62 +280,38 @@ export async function proxy(request: NextRequest) {
     return validateShareToken(
       request,
       shareToken,
-      pathname,
-      isApi,
+      context.pathname,
+      context.isApi,
       intlMiddleware,
     );
   }
 
-  const { isAuthenticated, isGuest, is2FARequired } = await checkAuth(
+  const auth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
+
+  const authResponse = enforceAuthenticationRules(request, context, auth);
+  if (authResponse) {
+    return authResponse;
+  }
+
+  const folderResponse = await validateFolderAccessIfNeeded(
     request,
-    process.env.NEXTAUTH_SECRET,
+    context,
+    intlMiddleware,
   );
-
-  if (!isAuthenticated && !isPublicRoute(pathnameWithoutLocale)) {
-    return handleAuthRedirect(request, pathname);
+  if (folderResponse) {
+    return folderResponse;
   }
 
-  if (
-    isAuthenticated &&
-    isGuest &&
-    pathnameWithoutLocale.startsWith("/admin")
-  ) {
-    return handleAuthRedirect(request, pathname, "GuestAccessDenied");
+  const finalAuthResponse = enforceFinalAuthCheck(request, context, auth);
+  if (finalAuthResponse) {
+    return finalAuthResponse;
   }
 
-  const is2FAPage = pathnameWithoutLocale === "/verify-2fa";
-  if (isAuthenticated && is2FARequired && !is2FAPage) {
-    const verifyUrl = new URL("/verify-2fa", request.url);
-    verifyUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(verifyUrl);
-  }
-
-  let currentFolderId = "";
-  if (pathnameWithoutLocale.startsWith("/folder/")) {
-    currentFolderId = pathnameWithoutLocale.split("/")[2];
-  } else if (pathname.startsWith("/api/files")) {
-    currentFolderId = request.nextUrl.searchParams.get("folderId") || "";
-  }
-
-  if (currentFolderId) {
-    const folderRes = await validateFolderToken(
-      request,
-      currentFolderId,
-      isApi,
-      intlMiddleware,
-    );
-    if (folderRes) return folderRes;
-  }
-
-  if (!isAuthenticated && !isPublicRoute(pathnameWithoutLocale)) {
-    return handleAuthRedirect(request, pathname);
-  }
-
-  if (pathname.startsWith("/findpath")) {
+  if (context.pathname.startsWith("/findpath")) {
     return handleFindPath(request);
   }
 
-  return isApi ? NextResponse.next() : intlMiddleware(request);
+  return resolveIntlOrNext(request, context.isApi);
 }
 
 export const config = {
