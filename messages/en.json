@@ -727,7 +727,8 @@
     "download": "Download",
     "share": "Share",
     "delete": "Delete",
-    "folder": "Folder"
+    "folder": "Folder",
+    "select": "Select {name}"
   },
   "StoragePage": {
     "title": "Storage Analysis",

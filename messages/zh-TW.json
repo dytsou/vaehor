@@ -722,7 +722,8 @@
     "download": "下載",
     "share": "分享",
     "delete": "刪除",
-    "folder": "資料夾"
+    "folder": "資料夾",
+    "select": "選取 {name}"
   },
   "StoragePage": {
     "title": "儲存空間分析",

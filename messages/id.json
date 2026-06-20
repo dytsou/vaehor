@@ -727,7 +727,8 @@
     "download": "Unduh",
     "share": "Bagikan",
     "delete": "Hapus",
-    "folder": "Folder"
+    "folder": "Folder",
+    "select": "Pilih {name}"
   },
   "StoragePage": {
     "title": "Analisis Penyimpanan",

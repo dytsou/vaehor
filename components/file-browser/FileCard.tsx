@@ -191,6 +191,7 @@ export default function FileCard({
           isSelected && "opacity-100",
         )}
       >
+        <span className="sr-only">{t("select", { name: file.name })}</span>
         <input
           type="checkbox"
           checked={isSelected}
