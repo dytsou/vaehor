@@ -169,6 +169,46 @@ export async function isNodeInsideSharedFolder(
   return false;
 }
 
+type ShareCollectionItem = {
+  id: string;
+  mimeType: string;
+  parents?: string[];
+};
+
+async function collectionItemGrantsFolderAccess(
+  cleanFolderId: string,
+  item: ShareCollectionItem,
+): Promise<boolean> {
+  if (item.mimeType === MIME_TYPES.FOLDER) {
+    return isNodeInsideSharedFolder(cleanFolderId, item.id);
+  }
+
+  const parent = item.parents?.[0];
+  if (!parent) {
+    return false;
+  }
+
+  return isNodeInsideSharedFolder(cleanFolderId, parent);
+}
+
+async function collectionShareGrantsFolderAccess(
+  cleanFolderId: string,
+  shareId: string,
+): Promise<boolean> {
+  const items = await getCollectionItems(shareId);
+  if (!items?.length) {
+    return false;
+  }
+
+  for (const item of items) {
+    if (await collectionItemGrantsFolderAccess(cleanFolderId, item)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function shareGrantsAccessToFolder(
   ctx: ShareAuthOk,
   folderId: string,
@@ -185,20 +225,7 @@ export async function shareGrantsAccessToFolder(
   }
 
   if (parsed.kind === "collection") {
-    const items = await getCollectionItems(parsed.shareId);
-    if (!items?.length) return false;
-
-    for (const item of items) {
-      if (item.mimeType === MIME_TYPES.FOLDER) {
-        if (await isNodeInsideSharedFolder(clean, item.id)) return true;
-      } else {
-        const parent = item.parents?.[0];
-        if (parent && (await isNodeInsideSharedFolder(clean, parent))) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return collectionShareGrantsFolderAccess(clean, parsed.shareId);
   }
 
   return false;
