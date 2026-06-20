@@ -39,8 +39,9 @@ vi.mock("@/lib/drive/fetchers", () => ({
 }));
 
 import {
-  validateShareToken,
-  validateFolderToken,
+  validateShareTokenForApi,
+  validateShareTokenForPage,
+  validateFolderTokenForPage,
   handleFindPath,
 } from "@/lib/middleware-helpers";
 
@@ -62,17 +63,15 @@ describe("lib/middleware-helpers", () => {
     );
   });
 
-  describe("validateShareToken", () => {
+  describe("validateShareTokenForApi", () => {
     it("returns api 401 when the share token is invalid", async () => {
       mockJwtVerify.mockRejectedValueOnce(new Error("invalid token"));
 
       const request = new NextRequest("http://localhost:3000/api/files");
-      const response = await validateShareToken(
+      const response = await validateShareTokenForApi(
         request,
         "bad-token",
         "/api/files",
-        true,
-        (incomingRequest) => NextResponse.next({ request: incomingRequest }),
       );
 
       expect(response.status).toBe(401);
@@ -88,11 +87,10 @@ describe("lib/middleware-helpers", () => {
       mockCheckAuth.mockResolvedValueOnce({ isAuthenticated: false });
 
       const request = new NextRequest("http://localhost:3000/share/demo");
-      const response = await validateShareToken(
+      const response = await validateShareTokenForPage(
         request,
         "share-token",
         "/share/demo",
-        false,
         () => NextResponse.next(),
       );
 
@@ -107,13 +105,12 @@ describe("lib/middleware-helpers", () => {
     });
   });
 
-  describe("validateFolderToken", () => {
+  describe("validateFolderTokenForPage", () => {
     it("returns null when the folder token cookie is missing", async () => {
       const request = new NextRequest("http://localhost:3000/folder/demo");
-      const response = await validateFolderToken(
+      const response = await validateFolderTokenForPage(
         request,
         "folder-1",
-        false,
         () => NextResponse.next(),
       );
 
@@ -131,10 +128,9 @@ describe("lib/middleware-helpers", () => {
         },
       });
 
-      const response = await validateFolderToken(
+      const response = await validateFolderTokenForPage(
         request,
         "folder-1",
-        false,
         () => NextResponse.next(),
       );
 

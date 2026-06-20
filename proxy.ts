@@ -10,8 +10,12 @@ import {
 import { ERROR_MESSAGES } from "@/lib/constants";
 import { isAppConfigured } from "@/lib/config";
 import {
-  validateShareToken,
-  validateFolderToken,
+  continueApiRoute,
+  continuePageRoute,
+  validateShareTokenForApi,
+  validateShareTokenForPage,
+  validateFolderTokenForApi,
+  validateFolderTokenForPage,
   handleFindPath,
 } from "@/lib/middleware-helpers";
 import {
@@ -86,13 +90,6 @@ function shouldBypassProxy(pathname: string): boolean {
   );
 }
 
-function resolveIntlOrNext(
-  request: NextRequest,
-  isApi: boolean,
-): Response | Promise<Response> {
-  return isApi ? NextResponse.next() : intlMiddleware(request);
-}
-
 async function enforceApiRateLimit(
   request: NextRequest,
   pathnameWithoutLocale: string,
@@ -131,7 +128,9 @@ function handleSetupWhenUnconfigured(
     context.pathnameWithoutLocale.startsWith("/api/setup");
 
   if (isSetupPage) {
-    return resolveIntlOrNext(request, context.isApi);
+    return context.isApi
+      ? continueApiRoute()
+      : continuePageRoute(request, intlMiddleware);
   }
 
   return NextResponse.redirect(new URL("/setup", request.url));
@@ -154,21 +153,13 @@ async function handleAppConfiguration(
   return null;
 }
 
-function handleExplicitPublicRoute(
-  request: NextRequest,
-  pathnameWithoutLocale: string,
-  isApi: boolean,
-): Response | Promise<Response> | null {
-  if (
+function isExplicitPublicRoute(pathnameWithoutLocale: string): boolean {
+  return (
     PUBLIC_PATHS.has(pathnameWithoutLocale) ||
     PUBLIC_API_PREFIXES.some((prefix) =>
       pathnameWithoutLocale.startsWith(prefix),
     )
-  ) {
-    return resolveIntlOrNext(request, isApi);
-  }
-
-  return null;
+  );
 }
 
 function enforceAuthenticationRules(
@@ -226,12 +217,9 @@ async function validateFolderAccessIfNeeded(
     return null;
   }
 
-  return validateFolderToken(
-    request,
-    currentFolderId,
-    context.isApi,
-    intlHandler,
-  );
+  return context.isApi
+    ? validateFolderTokenForApi(request, currentFolderId)
+    : validateFolderTokenForPage(request, currentFolderId, intlHandler);
 }
 
 function enforceFinalAuthCheck(
@@ -266,24 +254,22 @@ export async function proxy(request: NextRequest) {
     return configurationResponse;
   }
 
-  const publicRouteResponse = handleExplicitPublicRoute(
-    request,
-    context.pathnameWithoutLocale,
-    context.isApi,
-  );
-  if (publicRouteResponse) {
-    return publicRouteResponse;
+  if (isExplicitPublicRoute(context.pathnameWithoutLocale)) {
+    return context.isApi
+      ? continueApiRoute()
+      : continuePageRoute(request, intlMiddleware);
   }
 
   const shareToken = request.nextUrl.searchParams.get("share_token");
   if (shareToken) {
-    return validateShareToken(
-      request,
-      shareToken,
-      context.pathname,
-      context.isApi,
-      intlMiddleware,
-    );
+    return context.isApi
+      ? validateShareTokenForApi(request, shareToken, context.pathname)
+      : validateShareTokenForPage(
+          request,
+          shareToken,
+          context.pathname,
+          intlMiddleware,
+        );
   }
 
   const auth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
@@ -311,7 +297,9 @@ export async function proxy(request: NextRequest) {
     return handleFindPath(request);
   }
 
-  return resolveIntlOrNext(request, context.isApi);
+  return context.isApi
+    ? continueApiRoute()
+    : continuePageRoute(request, intlMiddleware);
 }
 
 export const config = {

@@ -5,52 +5,117 @@ import { getRootFolderId } from "@/lib/config";
 
 type IntlMiddleware = (request: NextRequest) => Response | Promise<Response>;
 
-export async function validateShareToken(
+export function continueApiRoute(): NextResponse {
+  return NextResponse.next();
+}
+
+export function continuePageRoute(
+  request: NextRequest,
+  intlMiddleware: IntlMiddleware,
+): Response | Promise<Response> {
+  return intlMiddleware(request);
+}
+
+function shareTokenExpiredPageResponse(request: NextRequest): NextResponse {
+  const url = request.nextUrl.clone();
+  url.searchParams.delete("share_token");
+  const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set("error", "ShareLinkExpired");
+  loginUrl.searchParams.set("callbackUrl", url.toString());
+  return NextResponse.redirect(loginUrl);
+}
+
+async function assertShareTokenAccess(
   request: NextRequest,
   shareToken: string,
   pathname: string,
-  isApi: boolean,
-  intlMiddleware: IntlMiddleware,
+): Promise<NextResponse | null> {
+  const shareSecretKey = process.env.SHARE_SECRET_KEY;
+  if (!shareSecretKey || shareSecretKey.length < 32) {
+    return handleAuthRedirect(request, pathname);
+  }
+
+  const secret = new TextEncoder().encode(shareSecretKey);
+  const { payload } = await jwtVerify(shareToken, secret);
+
+  if (payload.loginRequired) {
+    const { isAuthenticated } = await checkAuth(
+      request,
+      process.env.NEXTAUTH_SECRET,
+    );
+    if (!isAuthenticated) {
+      return handleAuthRedirect(request, pathname, "GuestAccessDenied");
+    }
+  }
+
+  return null;
+}
+
+export async function validateShareTokenForApi(
+  request: NextRequest,
+  shareToken: string,
+  pathname: string,
 ) {
   try {
-    const shareSecretKey = process.env.SHARE_SECRET_KEY;
-    if (!shareSecretKey || shareSecretKey.length < 32) {
-      return handleAuthRedirect(request, pathname);
-    }
-
-    const secret = new TextEncoder().encode(shareSecretKey);
-    const { payload } = await jwtVerify(shareToken, secret);
-
-    if (payload.loginRequired) {
-      const { isAuthenticated } = await checkAuth(
-        request,
-        process.env.NEXTAUTH_SECRET,
-      );
-      if (!isAuthenticated) {
-        return handleAuthRedirect(request, pathname, "GuestAccessDenied");
-      }
-    }
-
-    return isApi ? NextResponse.next() : intlMiddleware(request);
+    const authError = await assertShareTokenAccess(
+      request,
+      shareToken,
+      pathname,
+    );
+    if (authError) return authError;
+    return continueApiRoute();
   } catch {
-    if (isApi) {
-      return NextResponse.json({ error: "ShareLinkExpired" }, { status: 401 });
-    }
-    const url = request.nextUrl.clone();
-    url.searchParams.delete("share_token");
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("error", "ShareLinkExpired");
-    loginUrl.searchParams.set("callbackUrl", url.toString());
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.json({ error: "ShareLinkExpired" }, { status: 401 });
   }
 }
 
-export async function validateFolderToken(
+export async function validateShareTokenForPage(
   request: NextRequest,
-  currentFolderId: string,
-  isApi: boolean,
+  shareToken: string,
+  pathname: string,
   intlMiddleware: IntlMiddleware,
 ) {
+  try {
+    const authError = await assertShareTokenAccess(
+      request,
+      shareToken,
+      pathname,
+    );
+    if (authError) return authError;
+    return continuePageRoute(request, intlMiddleware);
+  } catch {
+    return shareTokenExpiredPageResponse(request);
+  }
+}
+
+export async function validateFolderTokenForApi(
+  request: NextRequest,
+  currentFolderId: string,
+) {
+  return validateFolderTokenResponse(
+    request,
+    currentFolderId,
+    continueApiRoute(),
+  );
+}
+
+export async function validateFolderTokenForPage(
+  request: NextRequest,
+  currentFolderId: string,
+  intlMiddleware: IntlMiddleware,
+) {
+  return validateFolderTokenResponse(
+    request,
+    currentFolderId,
+    continuePageRoute(request, intlMiddleware),
+  );
+}
+
+async function validateFolderTokenResponse(
+  request: NextRequest,
+  currentFolderId: string,
+  response: Response | Promise<Response>,
+): Promise<Response | null> {
   const folderToken = request.cookies.get(
     `folder_token_${currentFolderId}`,
   )?.value;
@@ -61,11 +126,9 @@ export async function validateFolderToken(
     const { payload } = await jwtVerify(folderToken, secret);
 
     if (payload.folderId === currentFolderId) {
-      const response = isApi
-        ? NextResponse.next()
-        : await intlMiddleware(request);
-      response.headers.set("x-folder-authorized", "true");
-      return response;
+      const authorized = await response;
+      authorized.headers.set("x-folder-authorized", "true");
+      return authorized;
     }
   } catch (error) {
     console.error("Folder token validation failed:", error);
