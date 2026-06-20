@@ -60,15 +60,31 @@ function createEmptyDownloadContext(): DownloadContext {
   };
 }
 
-export async function validateDownloadRequest(request: NextRequest): Promise<{
+type DownloadValidationResult = {
   context: DownloadContext;
   session: Session | null;
   error?: DownloadErrorType;
-}> {
-  const { searchParams } = new URL(request.url);
-  const fileId = searchParams.get("fileId");
-  const shareToken = searchParams.get("share_token");
-  const accessTokenParam = searchParams.get("access_token");
+};
+
+type ShareValidationResult =
+  | { error: DownloadErrorType }
+  | { shareAuthOk: ShareAuthOk; shareRecord: DbShareLink };
+
+function downloadValidationError(
+  session: Session | null,
+  error: DownloadErrorType,
+): DownloadValidationResult {
+  return {
+    context: createEmptyDownloadContext(),
+    session,
+    error,
+  };
+}
+
+async function enforceDownloadRateLimit(
+  request: NextRequest,
+  fileId: string | null,
+): Promise<DownloadErrorType | null> {
   const range = request.headers.get("range");
   const rateLimitType = range ? "API" : "DOWNLOAD";
   const { success } = await checkRateLimit(
@@ -76,57 +92,52 @@ export async function validateDownloadRequest(request: NextRequest): Promise<{
     rateLimitType,
     getDownloadRateLimitIdentifier(request, fileId),
   );
+
   if (!success) {
+    return { error: ERROR_MESSAGES.DOWNLOAD_LIMIT_EXCEEDED, status: 429 };
+  }
+
+  return null;
+}
+
+async function validateShareToken(
+  request: NextRequest,
+): Promise<ShareValidationResult> {
+  const shareRes = await authenticateShareRequest(request);
+
+  if (!shareRes) {
     return {
-      context: createEmptyDownloadContext(),
-      session: null,
-      error: { error: ERROR_MESSAGES.DOWNLOAD_LIMIT_EXCEEDED, status: 429 },
+      error: { error: ERROR_MESSAGES.INVALID_SHARE_TOKEN, status: 401 },
     };
   }
 
-  const session = await auth();
-  let shareRecord: DbShareLink | undefined;
-  let shareAuthOk: ShareAuthOk | undefined;
-
-  if (shareToken) {
-    const shareRes = await authenticateShareRequest(request);
-    if (!shareRes) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: ERROR_MESSAGES.INVALID_SHARE_TOKEN, status: 401 },
-      };
-    }
-    if ("error" in shareRes) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: shareRes.error, status: shareRes.status },
-      };
-    }
-    shareAuthOk = shareRes;
-    shareRecord = shareRes.shareRecord;
-    if (
-      shareRecord.preventDownload &&
-      shouldBlockDueToPreventDownload(request)
-    ) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: {
-          error: "Unduhan dinonaktifkan untuk file ini.",
-          status: 403,
-        },
-      };
-    }
+  if ("error" in shareRes) {
+    return {
+      error: { error: shareRes.error, status: shareRes.status },
+    };
   }
 
+  if (
+    shareRes.shareRecord.preventDownload &&
+    shouldBlockDueToPreventDownload(request)
+  ) {
+    return {
+      error: {
+        error: "Unduhan dinonaktifkan untuk file ini.",
+        status: 403,
+      },
+    };
+  }
+
+  return {
+    shareAuthOk: shareRes,
+    shareRecord: shareRes.shareRecord,
+  };
+}
+
+function validateFileId(fileId: string | null): DownloadErrorType | null {
   if (!fileId) {
-    return {
-      context: createEmptyDownloadContext(),
-      session,
-      error: { error: ERROR_MESSAGES.MISSING_FILE_ID, status: 400 },
-    };
+    return { error: ERROR_MESSAGES.MISSING_FILE_ID, status: 400 };
   }
 
   if (fileId.startsWith("local-storage:")) {
@@ -137,100 +148,202 @@ export async function validateDownloadRequest(request: NextRequest): Promise<{
       localRest.includes("..") ||
       /[\0\r\n]/.test(localRest)
     ) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 },
-      };
+      return { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 };
     }
-  } else {
-    // Google Drive file IDs are URL path segments; disallow characters that can
-    // change the path structure or introduce ambiguity.
-    const fileIdPattern = /^[a-zA-Z0-9_-]+$/;
-    if (!fileIdPattern.test(fileId) || fileId.length > 255) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 },
-      };
-    }
+
+    return null;
   }
 
-  const userRole = session?.user?.role;
-
-  if (shareToken && shareAuthOk) {
-    const scopeOk = await shareGrantsAccessToFile(shareAuthOk, fileId);
-    if (!scopeOk) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: ERROR_MESSAGES.ACCESS_DENIED, status: 403 },
-      };
-    }
+  const fileIdPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!fileIdPattern.test(fileId) || fileId.length > 255) {
+    return { error: ERROR_MESSAGES.INVALID_FILE_ID, status: 400 };
   }
 
-  if (fileId.startsWith("local-storage:") && userRole !== "ADMIN") {
-    const hasAccess = await import("@/lib/auth").then((m) =>
-      m.checkLocalStorageAccess(request),
-    );
-    if (!hasAccess) {
-      return {
-        context: createEmptyDownloadContext(),
-        session,
-        error: { error: "Autentikasi Local Storage diperlukan", status: 401 },
-      };
+  return null;
+}
+
+async function validateShareFileScope(
+  shareToken: string | null,
+  shareAuthOk: ShareAuthOk | undefined,
+  fileId: string,
+): Promise<DownloadErrorType | null> {
+  if (!shareToken || !shareAuthOk) {
+    return null;
+  }
+
+  const scopeOk = await shareGrantsAccessToFile(shareAuthOk, fileId);
+  if (!scopeOk) {
+    return { error: ERROR_MESSAGES.ACCESS_DENIED, status: 403 };
+  }
+
+  return null;
+}
+
+async function tryGrantRestrictedAccessViaToken(
+  request: NextRequest,
+  fileId: string,
+  accessTokenParam: string | null,
+  session: Session | null,
+): Promise<boolean> {
+  const authHeader = request.headers.get("Authorization");
+  const token = authHeader?.split(" ")[1] || accessTokenParam;
+
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const secret = new TextEncoder().encode(process.env.SHARE_SECRET_KEY!);
+    const { payload } = await jwtVerify(token, secret);
+    const authorizedFolderId = payload.folderId as string;
+
+    if (!authorizedFolderId) {
+      return false;
     }
-  } else if (userRole !== "ADMIN") {
-    const isRestricted = await isAccessRestricted(
+
+    const stillRestricted = await isAccessRestricted(
       fileId,
-      [],
+      [authorizedFolderId],
       session?.user?.email,
     );
 
-    if (isRestricted) {
-      const authHeader = request.headers.get("Authorization");
-      const token = authHeader?.split(" ")[1] || accessTokenParam;
+    return !stillRestricted;
+  } catch (error) {
+    logger.error(
+      { err: error },
+      "[Download Service] Token verification failed",
+    );
+    return false;
+  }
+}
 
-      let accessGranted = false;
-      if (token) {
-        try {
-          const secret = new TextEncoder().encode(
-            process.env.SHARE_SECRET_KEY!,
-          );
-          const { payload } = await jwtVerify(token, secret);
-          const authorizedFolderId = payload.folderId as string;
+async function validateLocalStorageDownloadAccess(
+  request: NextRequest,
+): Promise<DownloadErrorType | null> {
+  const hasAccess = await import("@/lib/auth").then((module) =>
+    module.checkLocalStorageAccess(request),
+  );
 
-          if (authorizedFolderId) {
-            const stillRestricted = await isAccessRestricted(
-              fileId,
-              [authorizedFolderId],
-              session?.user?.email,
-            );
-            if (!stillRestricted) {
-              accessGranted = true;
-            }
-          }
-        } catch (e) {
-          logger.error(
-            { err: e },
-            "[Download Service] Token verification failed",
-          );
-        }
-      }
+  if (!hasAccess) {
+    return { error: "Autentikasi Local Storage diperlukan", status: 401 };
+  }
 
-      if (!accessGranted) {
-        return {
-          context: createEmptyDownloadContext(),
-          session,
-          error: { error: ERROR_MESSAGES.ACCESS_DENIED, status: 403 },
-        };
-      }
+  return null;
+}
+
+async function validateRestrictedDownloadAccess(
+  request: NextRequest,
+  fileId: string,
+  accessTokenParam: string | null,
+  session: Session | null,
+): Promise<DownloadErrorType | null> {
+  const isRestricted = await isAccessRestricted(
+    fileId,
+    [],
+    session?.user?.email,
+  );
+
+  if (!isRestricted) {
+    return null;
+  }
+
+  const accessGranted = await tryGrantRestrictedAccessViaToken(
+    request,
+    fileId,
+    accessTokenParam,
+    session,
+  );
+
+  if (!accessGranted) {
+    return { error: ERROR_MESSAGES.ACCESS_DENIED, status: 403 };
+  }
+
+  return null;
+}
+
+async function validateNonAdminDownloadAccess(
+  request: NextRequest,
+  fileId: string,
+  accessTokenParam: string | null,
+  session: Session | null,
+  userRole: string | undefined,
+): Promise<DownloadErrorType | null> {
+  if (userRole === "ADMIN") {
+    return null;
+  }
+
+  if (fileId.startsWith("local-storage:")) {
+    return validateLocalStorageDownloadAccess(request);
+  }
+
+  return validateRestrictedDownloadAccess(
+    request,
+    fileId,
+    accessTokenParam,
+    session,
+  );
+}
+
+export async function validateDownloadRequest(request: NextRequest): Promise<{
+  context: DownloadContext;
+  session: Session | null;
+  error?: DownloadErrorType;
+}> {
+  const { searchParams } = new URL(request.url);
+  const fileId = searchParams.get("fileId");
+  const shareToken = searchParams.get("share_token");
+  const accessTokenParam = searchParams.get("access_token");
+  const range = request.headers.get("range");
+
+  const rateLimitError = await enforceDownloadRateLimit(request, fileId);
+  if (rateLimitError) {
+    return downloadValidationError(null, rateLimitError);
+  }
+
+  const session = await auth();
+  let shareRecord: DbShareLink | undefined;
+  let shareAuthOk: ShareAuthOk | undefined;
+
+  if (shareToken) {
+    const shareValidation = await validateShareToken(request);
+    if ("error" in shareValidation) {
+      return downloadValidationError(session, shareValidation.error);
     }
+
+    shareAuthOk = shareValidation.shareAuthOk;
+    shareRecord = shareValidation.shareRecord;
+  }
+
+  const fileIdError = validateFileId(fileId);
+  if (fileIdError) {
+    return downloadValidationError(session, fileIdError);
+  }
+
+  const validatedFileId = fileId as string;
+
+  const shareScopeError = await validateShareFileScope(
+    shareToken,
+    shareAuthOk,
+    validatedFileId,
+  );
+  if (shareScopeError) {
+    return downloadValidationError(session, shareScopeError);
+  }
+
+  const accessError = await validateNonAdminDownloadAccess(
+    request,
+    validatedFileId,
+    accessTokenParam,
+    session,
+    session?.user?.role,
+  );
+  if (accessError) {
+    return downloadValidationError(session, accessError);
   }
 
   return {
     context: {
-      fileId,
+      fileId: validatedFileId,
       shareToken,
       accessTokenParam,
       range,
