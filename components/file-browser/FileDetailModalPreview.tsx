@@ -15,6 +15,24 @@ const VideoPlayer = dynamic(() => import("../file-details/VideoPlayer"));
 const MarkdownViewer = dynamic(() => import("../file-details/MarkdownViewer"));
 const AudioPlayer = dynamic(() => import("../file-details/AudioPlayer"));
 
+const WATERMARK_TILE_KEYS = [
+  "watermark-tile-1",
+  "watermark-tile-2",
+  "watermark-tile-3",
+  "watermark-tile-4",
+  "watermark-tile-5",
+  "watermark-tile-6",
+  "watermark-tile-7",
+  "watermark-tile-8",
+  "watermark-tile-9",
+  "watermark-tile-10",
+  "watermark-tile-11",
+  "watermark-tile-12",
+  "watermark-tile-13",
+  "watermark-tile-14",
+  "watermark-tile-15",
+] as const;
+
 interface FileDetailModalPreviewProps {
   file: DriveFile;
   fileType: string;
@@ -125,9 +143,9 @@ export default function FileDetailModalPreview({
 
       {showWatermark && (
         <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-difference w-full h-full select-none text-white/80">
-          {Array.from({ length: 15 }).map((_, index) => (
+          {WATERMARK_TILE_KEYS.map((tileKey) => (
             <div
-              key={index}
+              key={tileKey}
               className="text-xl sm:text-3xl font-black -rotate-[30deg] p-6 sm:p-10 whitespace-nowrap drop-shadow-md"
             >
               {sharePolicy?.watermarkText ||
