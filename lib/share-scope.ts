@@ -231,6 +231,60 @@ export async function shareGrantsAccessToFolder(
   return false;
 }
 
+async function collectionItemGrantsFileAccess(
+  cleanFileId: string,
+  item: ShareCollectionItem,
+): Promise<boolean> {
+  if (item.mimeType === MIME_TYPES.FOLDER) {
+    return isNodeInsideSharedFolder(cleanFileId, item.id);
+  }
+
+  return item.id === cleanFileId;
+}
+
+async function collectionShareGrantsFileAccess(
+  cleanFileId: string,
+  shareId: string,
+): Promise<boolean> {
+  const items = await getCollectionItems(shareId);
+  if (!items?.length) {
+    return false;
+  }
+
+  for (const item of items) {
+    if (await collectionItemGrantsFileAccess(cleanFileId, item)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+async function folderShareGrantsFileAccess(
+  cleanFileId: string,
+  sharedFolderId: string,
+): Promise<boolean> {
+  const meta = await getFileDetailsFromDrive(cleanFileId);
+  if (!meta) {
+    return false;
+  }
+
+  if (meta.mimeType === MIME_TYPES.FOLDER) {
+    return isNodeInsideSharedFolder(cleanFileId, sharedFolderId);
+  }
+
+  const parent = meta.parents?.[0];
+  if (!parent) {
+    return false;
+  }
+
+  if (parent === sharedFolderId) {
+    return true;
+  }
+
+  return isNodeInsideSharedFolder(parent, sharedFolderId);
+}
+
 export async function shareGrantsAccessToFile(
   ctx: ShareAuthOk,
   fileId: string,
@@ -243,31 +297,11 @@ export async function shareGrantsAccessToFile(
   }
 
   if (parsed.kind === "collection") {
-    const items = await getCollectionItems(parsed.shareId);
-    if (!items?.length) return false;
-
-    for (const item of items) {
-      if (item.mimeType === MIME_TYPES.FOLDER) {
-        if (await isNodeInsideSharedFolder(clean, item.id)) return true;
-      } else if (item.id === clean) {
-        return true;
-      }
-    }
-    return false;
+    return collectionShareGrantsFileAccess(clean, parsed.shareId);
   }
 
   if (parsed.kind === "folder") {
-    const meta = await getFileDetailsFromDrive(clean);
-    if (!meta) return false;
-
-    if (meta.mimeType === MIME_TYPES.FOLDER) {
-      return isNodeInsideSharedFolder(clean, parsed.folderId);
-    }
-
-    const parent = meta.parents?.[0];
-    if (!parent) return false;
-    if (parent === parsed.folderId) return true;
-    return isNodeInsideSharedFolder(parent, parsed.folderId);
+    return folderShareGrantsFileAccess(clean, parsed.folderId);
   }
 
   return false;
