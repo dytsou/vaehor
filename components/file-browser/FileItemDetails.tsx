@@ -8,7 +8,6 @@ import {
   fileItemDetailsClassName,
   fileItemTitleClassName,
 } from "@/components/file-browser/file-item-classes";
-import { preventTextSelectionOnDoubleClick } from "@/components/file-browser/file-item-handlers";
 
 interface FileItemDetailsProps {
   file: BrowserFile;
@@ -43,10 +42,7 @@ function FileItemListMetadata({
   formatDate,
 }: Pick<FileItemDetailsProps, "file" | "formatDate">) {
   return (
-    <p
-      className="text-xs text-muted-foreground mt-1 text-left truncate select-none"
-      onMouseDown={preventTextSelectionOnDoubleClick}
-    >
+    <p className="text-xs text-muted-foreground mt-1 text-left truncate select-none">
       {file.size ? formatBytes(parseInt(file.size)) : "-"} •{" "}
       {file.modifiedTime ? formatDate(new Date(file.modifiedTime)) : "-"}
     </p>
@@ -87,18 +83,10 @@ export default function FileItemDetails({
               isBulkMode && "pr-10",
             )}
           >
-            <p
-              className="truncate block select-none"
-              onMouseDown={preventTextSelectionOnDoubleClick}
-            >
-              {file.name}
-            </p>
+            <p className="truncate block select-none">{file.name}</p>
           </div>
         ) : (
-          <p
-            className="line-clamp-2 break-words w-full leading-tight select-none"
-            onMouseDown={preventTextSelectionOnDoubleClick}
-          >
+          <p className="line-clamp-2 break-words w-full leading-tight select-none">
             {file.name}
           </p>
         )}
