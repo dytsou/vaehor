@@ -64,7 +64,9 @@ export default function FileCardFooter({
           )}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          {isFolder ? folderLabel : formatBytes(parseInt(file.size || "0"))}
+          {isFolder
+            ? folderLabel
+            : formatBytes(Number.parseInt(file.size || "0"))}
         </p>
       </div>
 
