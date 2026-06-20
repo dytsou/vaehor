@@ -43,7 +43,7 @@ function FileItemListMetadata({
 }: Pick<FileItemDetailsProps, "file" | "formatDate">) {
   return (
     <p className="text-xs text-muted-foreground mt-1 text-left truncate select-none">
-      {file.size ? formatBytes(parseInt(file.size)) : "-"} •{" "}
+      {file.size ? formatBytes(Number.parseInt(file.size)) : "-"} •{" "}
       {file.modifiedTime ? formatDate(new Date(file.modifiedTime)) : "-"}
     </p>
   );
