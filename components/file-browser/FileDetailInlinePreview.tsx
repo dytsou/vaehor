@@ -72,6 +72,28 @@ function FileDetailEditorToolbar({
   );
 }
 
+function FileDetailEditPreview({
+  isFetchingEditableContent,
+  editableContent,
+  onEditableContentChange,
+}: Pick<
+  FileDetailInlinePreviewProps,
+  "isFetchingEditableContent" | "editableContent" | "onEditableContentChange"
+>) {
+  if (isFetchingEditableContent) {
+    return <LoadingPreview />;
+  }
+
+  return (
+    <textarea
+      value={editableContent || ""}
+      onChange={(event) => onEditableContentChange(event.target.value)}
+      className="w-full h-full p-4 bg-background font-mono text-sm resize-none focus:outline-none border rounded-lg"
+      spellCheck="false"
+    />
+  );
+}
+
 function FileDetailViewPreview({
   file,
   fileType,
@@ -141,15 +163,7 @@ function FileDetailViewPreview({
 export default function FileDetailInlinePreview(
   props: FileDetailInlinePreviewProps,
 ) {
-  const {
-    fileType,
-    isEditing,
-    isFetchingEditableContent,
-    editableContent,
-    onEditableContentChange,
-    isEditable,
-    isTheaterMode,
-  } = props;
+  const { fileType, isEditing, isEditable, isTheaterMode } = props;
 
   return (
     <>
@@ -162,16 +176,7 @@ export default function FileDetailInlinePreview(
         )}
       >
         {isEditing ? (
-          isFetchingEditableContent ? (
-            <LoadingPreview />
-          ) : (
-            <textarea
-              value={editableContent || ""}
-              onChange={(event) => onEditableContentChange(event.target.value)}
-              className="w-full h-full p-4 bg-background font-mono text-sm resize-none focus:outline-none border rounded-lg"
-              spellCheck="false"
-            />
-          )
+          <FileDetailEditPreview {...props} />
         ) : (
           <FileDetailViewPreview {...props} />
         )}
