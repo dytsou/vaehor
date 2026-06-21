@@ -46,6 +46,16 @@ interface ManualDriveResponse {
   error?: string;
 }
 
+function driveIconClass(drive: ManualDrive) {
+  if (drive.source === "env") {
+    return "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400";
+  }
+  if (drive.isProtected) {
+    return "bg-amber-100 text-amber-600";
+  }
+  return "bg-blue-100 text-blue-600";
+}
+
 export default function ManualDrivesManager(props: {
   initialDbDrives?: ManualDrive[];
 }) {
@@ -76,7 +86,7 @@ export default function ManualDrivesManager(props: {
     const envString = process.env.NEXT_PUBLIC_MANUAL_DRIVES || "";
     return envString.split(",").reduce<ManualDrive[]>((acc, entry) => {
       const [id, name] = entry.split(":");
-      if (id && id.trim()) {
+      if (id?.trim()) {
         acc.push({
           id: id.trim(),
           name: name?.trim() || id.trim(),
@@ -215,6 +225,74 @@ export default function ManualDrivesManager(props: {
     setConfigName(drive.name);
     setConfigPassword("");
   };
+
+  let activeDrivesContent;
+  if (isLoading) {
+    activeDrivesContent = (
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  } else if (allDrives.length === 0) {
+    activeDrivesContent = (
+      <p className="text-muted-foreground italic">{t("noManualDrives")}</p>
+    );
+  } else {
+    activeDrivesContent = (
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {allDrives.map((drive) => (
+          <div
+            key={drive.id}
+            className="flex items-center justify-between p-4 bg-card border rounded-lg shadow-sm relative overflow-hidden"
+          >
+            {drive.source === "env" && (
+              <div className="absolute top-0 right-0 bg-muted px-2 py-0.5 text-[10px] text-muted-foreground rounded-bl-md border-l border-b border-border">
+                {t("configEnv")}
+              </div>
+            )}
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className={`p-2 rounded-full ${driveIconClass(drive)}`}>
+                {drive.source === "env" ? (
+                  <FileCog size={20} />
+                ) : (
+                  <HardDrive size={20} />
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-medium truncate">{drive.name}</p>
+                <p className="text-xs text-muted-foreground truncate font-mono">
+                  {drive.id}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {drive.isProtected && (
+                <div title="Terproteksi Password">
+                  <Lock size={14} className="text-amber-500" />
+                </div>
+              )}
+              {drive.source === "db" ? (
+                <button
+                  onClick={() => handleDelete(drive.id)}
+                  className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                  title={t("deleteFromDb")}
+                >
+                  <Trash2 size={18} />
+                </button>
+              ) : (
+                <div title={t("lockedEnv")}>
+                  <Lock
+                    size={18}
+                    className="text-muted-foreground/30 p-2 box-content"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -357,70 +435,7 @@ export default function ManualDrivesManager(props: {
 
         <div className="space-y-2">
           <h3 className="text-lg font-medium mb-4">{t("activeDrives")}</h3>
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : allDrives.length === 0 ? (
-            <p className="text-muted-foreground italic">
-              {t("noManualDrives")}
-            </p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {allDrives.map((drive) => (
-                <div
-                  key={drive.id}
-                  className="flex items-center justify-between p-4 bg-card border rounded-lg shadow-sm relative overflow-hidden"
-                >
-                  {drive.source === "env" && (
-                    <div className="absolute top-0 right-0 bg-muted px-2 py-0.5 text-[10px] text-muted-foreground rounded-bl-md border-l border-b border-border">
-                      {t("configEnv")}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div
-                      className={`p-2 rounded-full ${drive.source === "env" ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400" : drive.isProtected ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"}`}
-                    >
-                      {drive.source === "env" ? (
-                        <FileCog size={20} />
-                      ) : (
-                        <HardDrive size={20} />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium truncate">{drive.name}</p>
-                      <p className="text-xs text-muted-foreground truncate font-mono">
-                        {drive.id}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {drive.isProtected && (
-                      <div title="Terproteksi Password">
-                        <Lock size={14} className="text-amber-500" />
-                      </div>
-                    )}
-                    {drive.source === "db" ? (
-                      <button
-                        onClick={() => handleDelete(drive.id)}
-                        className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-                        title={t("deleteFromDb")}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    ) : (
-                      <div title={t("lockedEnv")}>
-                        <Lock
-                          size={18}
-                          className="text-muted-foreground/30 p-2 box-content"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {activeDrivesContent}
         </div>
       </div>
 
