@@ -85,10 +85,7 @@ export default function CommandPalette() {
       label={t("dialogLabel")}
       className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[640px] bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
     >
-      <div
-        className="flex items-center border-b border-border px-4"
-        cmdk-input-wrapper=""
-      >
+      <div className="flex items-center border-b border-border px-4">
         <Search className="mr-2 h-5 w-5 shrink-0 opacity-50" />
         <Command.Input
           value={searchQuery}
