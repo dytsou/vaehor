@@ -82,17 +82,17 @@ export const GET = createPublicRoute(
     const url = new URL(request.url);
     const imageUrl = url.searchParams.get("url");
     const width = clampNumber(
-      parseInt(url.searchParams.get("w") || "0", 10),
+      Number.parseInt(url.searchParams.get("w") || "0", 10),
       0,
       MAX_IMAGE_DIMENSION,
     );
     const height = clampNumber(
-      parseInt(url.searchParams.get("h") || "0", 10),
+      Number.parseInt(url.searchParams.get("h") || "0", 10),
       0,
       MAX_IMAGE_DIMENSION,
     );
     const quality = clampNumber(
-      parseInt(url.searchParams.get("q") || "80", 10),
+      Number.parseInt(url.searchParams.get("q") || "80", 10),
       MIN_IMAGE_QUALITY,
       MAX_IMAGE_QUALITY,
     );
