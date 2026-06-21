@@ -301,6 +301,11 @@ interface WatermarkOverlayProps {
   userName?: string | null;
 }
 
+const WATERMARK_TILE_KEYS = Array.from(
+  { length: 15 },
+  (_, slot) => `watermark-tile-${slot}`,
+);
+
 export function WatermarkOverlay({
   watermarkText,
   userEmail,
@@ -308,9 +313,9 @@ export function WatermarkOverlay({
 }: WatermarkOverlayProps) {
   return (
     <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-overlay w-full h-full select-none">
-      {Array.from({ length: 15 }).map((_, i) => (
+      {WATERMARK_TILE_KEYS.map((tileKey) => (
         <div
-          key={i}
+          key={tileKey}
           className="text-white text-xl sm:text-2xl md:text-3xl font-black -rotate-[30deg] p-6 sm:p-10 whitespace-nowrap shadow-black drop-shadow-md"
         >
           {watermarkText || userEmail || userName || "Confidential View"}

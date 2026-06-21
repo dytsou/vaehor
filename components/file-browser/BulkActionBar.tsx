@@ -75,7 +75,7 @@ export function BulkActionBar() {
       a.download = "download.zip";
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      a.remove();
       URL.revokeObjectURL(url);
 
       addToast({ message: t("zipStarted"), type: "success" });

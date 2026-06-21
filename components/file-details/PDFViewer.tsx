@@ -23,6 +23,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
+const WATERMARK_TILE_KEYS = Array.from(
+  { length: 15 },
+  (_, slot) => `watermark-tile-${slot}`,
+);
+
 interface PDFViewerProps {
   src: string;
 }
@@ -154,31 +159,33 @@ export default function PDFViewer({ src }: PDFViewerProps) {
         {showThumbnails && (
           <div className="w-64 bg-zinc-900 border-r border-white/5 overflow-y-auto p-4 space-y-4 shadow-2xl animate-in slide-in-from-left duration-300">
             <Document file={src} onLoadSuccess={onDocumentLoadSuccess}>
-              {Array.from(new Array(numPages), (el, index) => (
-                <button
-                  key={`thumb_${index + 1}`}
-                  type="button"
-                  onClick={() => setPageNumber(index + 1)}
-                  aria-label={`Go to page ${index + 1}`}
-                  aria-current={pageNumber === index + 1 ? "true" : undefined}
-                  className={cn(
-                    "w-full cursor-pointer rounded-lg overflow-hidden border-2 transition-all p-1 bg-zinc-800 text-left",
-                    pageNumber === index + 1
-                      ? "border-primary shadow-lg ring-2 ring-primary/20 scale-95"
-                      : "border-transparent hover:border-white/20",
-                  )}
-                >
-                  <Page
-                    pageNumber={index + 1}
-                    width={200}
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                  />
-                  <div className="text-[10px] text-center mt-1 text-zinc-500 font-mono">
-                    {index + 1}
-                  </div>
-                </button>
-              ))}
+              {Array.from({ length: numPages }, (_, i) => i + 1).map(
+                (pageNum) => (
+                  <button
+                    key={`page-${pageNum}`}
+                    type="button"
+                    onClick={() => setPageNumber(pageNum)}
+                    aria-label={`Go to page ${pageNum}`}
+                    aria-current={pageNumber === pageNum ? "true" : undefined}
+                    className={cn(
+                      "w-full cursor-pointer rounded-lg overflow-hidden border-2 transition-all p-1 bg-zinc-800 text-left",
+                      pageNumber === pageNum
+                        ? "border-primary shadow-lg ring-2 ring-primary/20 scale-95"
+                        : "border-transparent hover:border-white/20",
+                    )}
+                  >
+                    <Page
+                      pageNumber={pageNum}
+                      width={200}
+                      renderTextLayer={false}
+                      renderAnnotationLayer={false}
+                    />
+                    <div className="text-[10px] text-center mt-1 text-zinc-500 font-mono">
+                      {pageNum}
+                    </div>
+                  </button>
+                ),
+              )}
             </Document>
           </div>
         )}
@@ -189,9 +196,9 @@ export default function PDFViewer({ src }: PDFViewerProps) {
         >
           {sharePolicy?.hasWatermark && (
             <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-overlay w-full h-full select-none">
-              {Array.from({ length: 15 }).map((_, i) => (
+              {WATERMARK_TILE_KEYS.map((tileKey) => (
                 <div
-                  key={i}
+                  key={tileKey}
                   className="text-zinc-400 text-xl sm:text-3xl font-black -rotate-[30deg] p-6 sm:p-10 whitespace-nowrap shadow-black drop-shadow-md mix-blend-difference"
                 >
                   {sharePolicy?.watermarkText ||

@@ -78,16 +78,19 @@ export default function KeyboardShortcutsModal() {
             </button>
           </div>
           <div className="p-6 grid gap-4">
-            {shortcuts.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between">
+            {shortcuts.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <item.icon size={16} />
                   <span>{item.label}</span>
                 </div>
                 <div className="flex gap-1">
-                  {item.keys.map((k, kIdx) => (
+                  {item.keys.map((k) => (
                     <kbd
-                      key={kIdx}
+                      key={k}
                       className="px-2 py-1 bg-muted border border-border rounded-md text-xs font-mono font-bold text-foreground shadow-sm"
                     >
                       {k}

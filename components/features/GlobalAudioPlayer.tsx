@@ -125,11 +125,11 @@ export default function GlobalAudioPlayer() {
               </button>
             </div>
             <div className="overflow-y-auto p-2 space-y-1">
-              {audioQueue.map((file, idx) => {
+              {audioQueue.map((file) => {
                 const isActive = file.id === activeAudioFile.id;
                 return (
                   <div
-                    key={`${file.id}-${idx}`}
+                    key={file.id}
                     className={`flex items-center justify-between p-2 rounded-md text-xs ${
                       isActive
                         ? "bg-primary/20 text-primary font-medium"

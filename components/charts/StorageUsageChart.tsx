@@ -69,8 +69,8 @@ const StorageUsageChart: React.FC<StorageUsageChartProps> = ({ data }) => {
             dataKey="size"
             strokeWidth={0}
           >
-            {data.map((entry, i) => (
-              <Cell key={`cell-${i}`} fill={entry.fill} />
+            {data.map((entry) => (
+              <Cell key={entry.type} fill={entry.fill} />
             ))}
           </Pie>
           <Tooltip content={<CustomTooltip />} />

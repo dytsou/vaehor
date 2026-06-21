@@ -182,7 +182,7 @@ export default function ActivityLogDashboard() {
           const Icon = iconMap[log.type] || AlertCircle;
           return (
             <motion.div
-              key={`${log.timestamp}-${index}`}
+              key={log.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{

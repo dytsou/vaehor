@@ -6,6 +6,11 @@ import { motion } from "framer-motion";
 import FileItemSkeleton from "@/components/file-browser/FileItemSkeleton";
 import type { ViewMode } from "@/lib/store";
 
+const SKELETON_PLACEHOLDER_KEYS = Array.from(
+  { length: 12 },
+  (_, slot) => `skeleton-${slot}`,
+);
+
 const FileBrowserLoading = () => {
   const { view, density } = useAppStore();
 
@@ -34,9 +39,9 @@ const FileBrowserLoading = () => {
       initial="hidden"
       animate="visible"
     >
-      {Array.from({ length: 12 }).map((_, index) => (
+      {SKELETON_PLACEHOLDER_KEYS.map((slotKey) => (
         <FileItemSkeleton
-          key={index}
+          key={slotKey}
           viewMode={view as ViewMode}
           density={density}
         />
