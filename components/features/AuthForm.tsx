@@ -107,6 +107,51 @@ export default function AuthForm({
 
   const isLoggedIn = user && user.role !== "GUEST";
 
+  let accessRequestContent;
+  if (!isLoggedIn) {
+    accessRequestContent = (
+      <div className="flex flex-col items-center gap-2">
+        <span className="text-xs text-muted-foreground">{t("wantAccess")}</span>
+        <button
+          onClick={() => signIn("google")}
+          className="text-sm font-medium text-primary hover:underline flex items-center gap-1.5"
+        >
+          <LogIn size={14} /> {t("loginToRequest")}
+        </button>
+      </div>
+    );
+  } else if (requestSent) {
+    accessRequestContent = (
+      <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in">
+        <div className="flex items-center justify-center gap-2 text-green-600 bg-green-500/10 py-3 px-4 rounded-xl w-full">
+          <CheckCircle2 size={18} />
+          <span className="text-sm font-medium">{t("requestSent")}</span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1 animate-pulse">
+          {t("waitingApproval")}
+        </p>
+        <p className="text-xs text-muted-foreground/80">
+          {t("autoRefreshCountdown", { seconds: refreshCountdown })}
+        </p>
+      </div>
+    );
+  } else {
+    accessRequestContent = (
+      <button
+        onClick={handleRequestAccess}
+        disabled={isRequesting}
+        className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto disabled:opacity-50"
+      >
+        {isRequesting ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <ShieldQuestion size={14} />
+        )}
+        <span>{t("requestAccess")}</span>
+      </button>
+    );
+  }
+
   return (
     <div className="w-full max-w-5xl flex flex-col md:flex-row items-center justify-center gap-12 md:gap-24 p-6">
       <motion.div
@@ -193,49 +238,7 @@ export default function AuthForm({
         </form>
 
         <div className="mt-6 pt-6 border-t border-border/50 text-center">
-          {isLoggedIn ? (
-            requestSent ? (
-              <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in">
-                <div className="flex items-center justify-center gap-2 text-green-600 bg-green-500/10 py-3 px-4 rounded-xl w-full">
-                  <CheckCircle2 size={18} />
-                  <span className="text-sm font-medium">
-                    {t("requestSent")}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 animate-pulse">
-                  {t("waitingApproval")}
-                </p>
-                <p className="text-xs text-muted-foreground/80">
-                  {t("autoRefreshCountdown", { seconds: refreshCountdown })}
-                </p>
-              </div>
-            ) : (
-              <button
-                onClick={handleRequestAccess}
-                disabled={isRequesting}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto disabled:opacity-50"
-              >
-                {isRequesting ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <ShieldQuestion size={14} />
-                )}
-                <span>{t("requestAccess")}</span>
-              </button>
-            )
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-xs text-muted-foreground">
-                {t("wantAccess")}
-              </span>
-              <button
-                onClick={() => signIn("google")}
-                className="text-sm font-medium text-primary hover:underline flex items-center gap-1.5"
-              >
-                <LogIn size={14} /> {t("loginToRequest")}
-              </button>
-            </div>
-          )}
+          {accessRequestContent}
         </div>
       </motion.div>
     </div>
