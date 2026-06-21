@@ -123,12 +123,16 @@ export default function ProtectedFoldersManager(props: {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium px-1">
+                <label
+                  htmlFor="protected-folder-id"
+                  className="text-sm font-medium px-1"
+                >
                   ID Folder atau Path
                 </label>
                 <div className="relative group">
                   <FolderInput className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
+                    id="protected-folder-id"
                     name="folderId"
                     value={newFolder.folderId}
                     onChange={handleInputChange}
@@ -139,12 +143,16 @@ export default function ProtectedFoldersManager(props: {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium px-1">
+                <label
+                  htmlFor="protected-folder-password"
+                  className="text-sm font-medium px-1"
+                >
                   Kata Sandi Baru
                 </label>
                 <div className="relative group">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
+                    id="protected-folder-password"
                     name="password"
                     type="password"
                     value={newFolder.password}
