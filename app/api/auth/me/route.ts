@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = createPublicRoute(
   async ({ session }) => {
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ user: null });
     }
 
