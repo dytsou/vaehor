@@ -17,12 +17,15 @@ const FileBrowserLoading = () => {
     },
   };
 
-  const containerClass =
-    view === "gallery"
-      ? "flex flex-col gap-4"
-      : view === "list"
-        ? "flex flex-col gap-2"
-        : "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4";
+  let containerClass: string;
+  if (view === "gallery") {
+    containerClass = "flex flex-col gap-4";
+  } else if (view === "list") {
+    containerClass = "flex flex-col gap-2";
+  } else {
+    containerClass =
+      "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-4";
+  }
 
   return (
     <motion.div
