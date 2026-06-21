@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
   if (fileId.includes("view=true")) {
     shouldView = true;
-    fileId = fileId.replace(/[\?&]view=true/g, "").trim();
+    fileId = fileId.replace(/[?&]view=true/g, "").trim();
   }
 
   fileId = fileId.split("&")[0].split("?")[0].trim();
