@@ -51,6 +51,45 @@ export function BreadcrumbDropdown({
     staleTime: 1000 * 60 * 5,
   });
 
+  let folderListContent;
+  if (isLoading) {
+    folderListContent = (
+      <div className="flex flex-col items-center justify-center p-6 gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+        <span className="text-[10px] text-muted-foreground">
+          Memuat folder...
+        </span>
+      </div>
+    );
+  } else if (!data?.length) {
+    folderListContent = (
+      <div className="p-4 text-[11px] text-muted-foreground text-center italic">
+        Tidak ada folder lain di level ini
+      </div>
+    );
+  } else {
+    folderListContent = (
+      <div className="grid gap-0.5">
+        {data.map((folder) => (
+          <DropdownMenuItem
+            key={folder.id}
+            onClick={() => onFolderClick(folder.id)}
+            className="flex items-center gap-2.5 cursor-pointer rounded-lg hover:bg-primary/10 transition-colors py-2 px-2.5"
+          >
+            <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center">
+              <Folder size={14} className="text-blue-500 fill-blue-500/20" />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-medium truncate">
+                {folder.name}
+              </span>
+            </div>
+          </DropdownMenuItem>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <DropdownMenu onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -78,40 +117,7 @@ export function BreadcrumbDropdown({
             Pindah ke Folder Lain
           </p>
         </div>
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-6 gap-2">
-            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-            <span className="text-[10px] text-muted-foreground">
-              Memuat folder...
-            </span>
-          </div>
-        ) : !data || data.length === 0 ? (
-          <div className="p-4 text-[11px] text-muted-foreground text-center italic">
-            Tidak ada folder lain di level ini
-          </div>
-        ) : (
-          <div className="grid gap-0.5">
-            {data.map((folder) => (
-              <DropdownMenuItem
-                key={folder.id}
-                onClick={() => onFolderClick(folder.id)}
-                className="flex items-center gap-2.5 cursor-pointer rounded-lg hover:bg-primary/10 transition-colors py-2 px-2.5"
-              >
-                <div className="w-6 h-6 rounded-md bg-blue-500/10 flex items-center justify-center">
-                  <Folder
-                    size={14}
-                    className="text-blue-500 fill-blue-500/20"
-                  />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">
-                    {folder.name}
-                  </span>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </div>
-        )}
+        {folderListContent}
       </DropdownMenuContent>
     </DropdownMenu>
   );
