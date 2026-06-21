@@ -17,11 +17,7 @@ export const POST = createAdminRoute(
       const { fileId, newContent } = body;
       const fileDetails = await getFileDetailsFromDrive(fileId);
 
-      if (
-        !fileDetails ||
-        !fileDetails.parents ||
-        fileDetails.parents.length === 0
-      ) {
+      if (!fileDetails?.parents?.length) {
         throw new Error(
           "Tidak dapat menemukan file atau informasi folder induk.",
         );
