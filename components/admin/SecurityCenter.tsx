@@ -158,6 +158,121 @@ export default function SecurityCenter() {
     fetchSecurityData();
   }, [fetchSecurityData]);
 
+  let incidentsContent;
+  if (loading) {
+    incidentsContent = (
+      <div className="flex justify-center py-10">
+        <RefreshCw className="animate-spin text-muted-foreground/60" />
+      </div>
+    );
+  } else if (incidents.length > 0) {
+    incidentsContent = incidents.map((incident) => {
+      const canResolve = incident.status !== "resolved";
+      const canAck = incident.status === "open";
+      return (
+        <div
+          key={incident.id}
+          className="p-3 border rounded-lg hover:bg-muted/20 transition-colors space-y-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-medium text-foreground">{incident.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {incident.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded-full ${severityClasses(incident.severity)}`}
+              >
+                {incident.severity.toUpperCase()}
+              </span>
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusClasses(incident.status)}`}
+              >
+                {incident.status}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
+            <span>Rule: {incident.ruleId}</span>
+            <span>Count: {incident.triggerCount}</span>
+            <span>
+              Last: {format(new Date(incident.updatedAt), "dd MMM HH:mm:ss")}
+            </span>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              disabled={!canAck || updatingIncidentId === incident.id}
+              onClick={() => setIncidentStatus(incident.id, "acknowledged")}
+              className="px-2.5 py-1.5 text-xs rounded-md border hover:bg-accent disabled:opacity-50"
+            >
+              Acknowledge
+            </button>
+            <button
+              disabled={!canResolve || updatingIncidentId === incident.id}
+              onClick={() => setIncidentStatus(incident.id, "resolved")}
+              className="px-2.5 py-1.5 text-xs rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              Resolve
+            </button>
+          </div>
+        </div>
+      );
+    });
+  } else {
+    incidentsContent = (
+      <div className="text-center py-8 text-muted-foreground bg-muted/20 border border-dashed rounded-lg">
+        <ShieldCheck
+          className="mx-auto mb-2 opacity-60 text-green-500"
+          size={30}
+        />
+        <p className="text-sm">No incidents detected.</p>
+      </div>
+    );
+  }
+
+  let securityEventsContent;
+  if (loading) {
+    securityEventsContent = (
+      <div className="flex justify-center py-10">
+        <RefreshCw className="animate-spin text-muted-foreground/60" />
+      </div>
+    );
+  } else if (securityEvents.length > 0) {
+    securityEventsContent = securityEvents.map((event) => (
+      <div
+        key={event.id}
+        className="flex gap-3 text-sm p-3 border rounded-lg hover:bg-muted/20 transition-colors"
+      >
+        <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
+        <div>
+          <p className="font-medium text-foreground">
+            {event.type.replace(/_/g, " ")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5 break-all">
+            User: {event.userEmail || event.ipAddress || "Unknown"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {format(new Date(event.timestamp), "dd MMM, HH:mm:ss")}
+          </p>
+        </div>
+      </div>
+    ));
+  } else {
+    securityEventsContent = (
+      <div className="text-center py-8 text-muted-foreground bg-muted/20 border border-dashed rounded-lg">
+        <CheckCircle2
+          className="mx-auto mb-2 opacity-60 text-green-500"
+          size={30}
+        />
+        <p className="text-sm">No recent anomalies detected.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
       <div className="bg-card border rounded-xl p-5 shadow-sm">
@@ -190,83 +305,7 @@ export default function SecurityCenter() {
         </div>
 
         <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <RefreshCw className="animate-spin text-muted-foreground/60" />
-            </div>
-          ) : incidents.length > 0 ? (
-            incidents.map((incident) => {
-              const canResolve = incident.status !== "resolved";
-              const canAck = incident.status === "open";
-              return (
-                <div
-                  key={incident.id}
-                  className="p-3 border rounded-lg hover:bg-muted/20 transition-colors space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-foreground">
-                        {incident.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {incident.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${severityClasses(incident.severity)}`}
-                      >
-                        {incident.severity.toUpperCase()}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusClasses(incident.status)}`}
-                      >
-                        {incident.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
-                    <span>Rule: {incident.ruleId}</span>
-                    <span>Count: {incident.triggerCount}</span>
-                    <span>
-                      Last:{" "}
-                      {format(new Date(incident.updatedAt), "dd MMM HH:mm:ss")}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      disabled={!canAck || updatingIncidentId === incident.id}
-                      onClick={() =>
-                        setIncidentStatus(incident.id, "acknowledged")
-                      }
-                      className="px-2.5 py-1.5 text-xs rounded-md border hover:bg-accent disabled:opacity-50"
-                    >
-                      Acknowledge
-                    </button>
-                    <button
-                      disabled={
-                        !canResolve || updatingIncidentId === incident.id
-                      }
-                      onClick={() => setIncidentStatus(incident.id, "resolved")}
-                      className="px-2.5 py-1.5 text-xs rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                    >
-                      Resolve
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="text-center py-8 text-muted-foreground bg-muted/20 border border-dashed rounded-lg">
-              <ShieldCheck
-                className="mx-auto mb-2 opacity-60 text-green-500"
-                size={30}
-              />
-              <p className="text-sm">No incidents detected.</p>
-            </div>
-          )}
+          {incidentsContent}
         </div>
       </div>
 
@@ -282,42 +321,7 @@ export default function SecurityCenter() {
         </div>
 
         <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <RefreshCw className="animate-spin text-muted-foreground/60" />
-            </div>
-          ) : securityEvents.length > 0 ? (
-            securityEvents.map((event) => (
-              <div
-                key={event.id}
-                className="flex gap-3 text-sm p-3 border rounded-lg hover:bg-muted/20 transition-colors"
-              >
-                <AlertCircle
-                  className="text-red-500 mt-0.5 shrink-0"
-                  size={16}
-                />
-                <div>
-                  <p className="font-medium text-foreground">
-                    {event.type.replace(/_/g, " ")}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5 break-all">
-                    User: {event.userEmail || event.ipAddress || "Unknown"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(event.timestamp), "dd MMM, HH:mm:ss")}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-muted-foreground bg-muted/20 border border-dashed rounded-lg">
-              <CheckCircle2
-                className="mx-auto mb-2 opacity-60 text-green-500"
-                size={30}
-              />
-              <p className="text-sm">No recent anomalies detected.</p>
-            </div>
-          )}
+          {securityEventsContent}
         </div>
       </div>
     </div>
