@@ -100,6 +100,41 @@ function SharedCollectionPage() {
     return <Loading />;
   }
 
+  let content: React.ReactNode;
+  if (error) {
+    content = (
+      <div className="mt-8 text-center py-20 text-muted-foreground">
+        <EmptyState icon={SearchX} title={t("failedTitle")} message={error} />
+      </div>
+    );
+  } else if (items.length > 0) {
+    content = (
+      <FileList
+        files={items}
+        onItemClick={handleItemClick}
+        onItemContextMenu={() => {}}
+        activeFileId={null}
+        onShareClick={() => {}}
+        onDetailsClick={() => {}}
+        onDownloadClick={() => {}}
+        isAdmin={isAdmin}
+        onDragStart={() => {}}
+        onFileDrop={() => {}}
+        navigatingId={null}
+      />
+    );
+  } else {
+    content = (
+      <div className="mt-8 text-center py-20 text-muted-foreground">
+        <EmptyState
+          icon={SearchX}
+          title={t("emptyTitle")}
+          message={t("emptyMessage")}
+        />
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="py-3"
@@ -110,33 +145,7 @@ function SharedCollectionPage() {
       <h1 className="text-xl font-bold mb-8 flex items-center gap-2">
         <Link size={20} /> {collectionName}
       </h1>
-      {error ? (
-        <div className="mt-8 text-center py-20 text-muted-foreground">
-          <EmptyState icon={SearchX} title={t("failedTitle")} message={error} />
-        </div>
-      ) : items.length > 0 ? (
-        <FileList
-          files={items}
-          onItemClick={handleItemClick}
-          onItemContextMenu={() => {}}
-          activeFileId={null}
-          onShareClick={() => {}}
-          onDetailsClick={() => {}}
-          onDownloadClick={() => {}}
-          isAdmin={isAdmin}
-          onDragStart={() => {}}
-          onFileDrop={() => {}}
-          navigatingId={null}
-        />
-      ) : (
-        <div className="mt-8 text-center py-20 text-muted-foreground">
-          <EmptyState
-            icon={SearchX}
-            title={t("emptyTitle")}
-            message={t("emptyMessage")}
-          />
-        </div>
-      )}
+      {content}
     </motion.div>
   );
 }
