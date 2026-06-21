@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { SignJWT } from "jose";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { getProtectedFolderCredentials } from "@/lib/auth";
