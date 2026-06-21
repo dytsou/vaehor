@@ -6,6 +6,16 @@ import { Shield, Clock, User, Globe, FileText, Trash2 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { clearAuditLogsAction, getAuditLogsAction } from "@/app/actions/admin";
 
+function actionBadgeClass(action: string) {
+  if (action === "DELETE") {
+    return "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400";
+  }
+  if (action === "UPLOAD") {
+    return "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400";
+  }
+  return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400";
+}
+
 export default function AuditDashboardClient(props: { initialLogs: any[] }) {
   const [logs, setLogs] = useState<any[]>(props.initialLogs);
   const [loading, setLoading] = useState(false);
@@ -39,6 +49,74 @@ export default function AuditDashboardClient(props: { initialLogs: any[] }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  let tbodyContent;
+  if (loading) {
+    tbodyContent = (
+      <tr>
+        <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+          Loading logs...
+        </td>
+      </tr>
+    );
+  } else if (logs.length === 0) {
+    tbodyContent = (
+      <tr>
+        <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+          No logs found.
+        </td>
+      </tr>
+    );
+  } else {
+    tbodyContent = logs.map((log, i) => (
+      <tr
+        key={i}
+        className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
+      >
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3 h-3" />
+            {format(new Date(log.timestamp), "MMM d, HH:mm:ss")}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-zinc-400" />
+            <span className="text-sm font-medium">{log.email}</span>
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span
+            className={`text-[10px] font-bold px-2 py-1 rounded-full ${actionBadgeClass(log.action)}`}
+          >
+            {log.action}
+          </span>
+        </td>
+        <td className="px-6 py-4 max-w-xs truncate">
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-zinc-400" />
+            <span className="text-sm" title={log.fileName}>
+              {log.fileName || log.fileId}
+            </span>
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-sm">
+              <Globe className="w-3 h-3 text-zinc-400" />
+              {log.ip}
+            </div>
+            <div
+              className="text-[10px] text-zinc-500 max-w-[150px] truncate"
+              title={log.userAgent}
+            >
+              {log.userAgent}
+            </div>
+          </div>
+        </td>
+      </tr>
+    ));
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -82,80 +160,7 @@ export default function AuditDashboardClient(props: { initialLogs: any[] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-zinc-500"
-                  >
-                    Loading logs...
-                  </td>
-                </tr>
-              ) : logs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-12 text-center text-zinc-500"
-                  >
-                    No logs found.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log, i) => (
-                  <tr
-                    key={i}
-                    className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3 h-3" />
-                        {format(new Date(log.timestamp), "MMM d, HH:mm:ss")}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-zinc-400" />
-                        <span className="text-sm font-medium">{log.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                          log.action === "DELETE"
-                            ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
-                            : log.action === "UPLOAD"
-                              ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                        }`}
-                      >
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 max-w-xs truncate">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-zinc-400" />
-                        <span className="text-sm" title={log.fileName}>
-                          {log.fileName || log.fileId}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Globe className="w-3 h-3 text-zinc-400" />
-                          {log.ip}
-                        </div>
-                        <div
-                          className="text-[10px] text-zinc-500 max-w-[150px] truncate"
-                          title={log.userAgent}
-                        >
-                          {log.userAgent}
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              {tbodyContent}
             </tbody>
           </table>
         </div>
