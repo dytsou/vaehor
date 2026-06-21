@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = createAdminRoute(async ({ request }) => {
   const { searchParams } = new URL(request.url);
-  const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const offset = Number.parseInt(searchParams.get("offset") || "0", 10);
 
   try {
     const rawLogs = await kv.zrange<unknown>(
