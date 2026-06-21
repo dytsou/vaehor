@@ -10,6 +10,11 @@ import "yet-another-react-lightbox/plugins/counter.css";
 import { useAppStore } from "@/lib/store";
 import type { DriveFile } from "@/lib/drive";
 
+const WATERMARK_TILE_KEYS = Array.from(
+  { length: 15 },
+  (_, index) => `watermark-tile-${index}`,
+);
+
 interface ImageGalleryProps {
   images: DriveFile[];
   initialIndex: number;
@@ -72,9 +77,9 @@ export default function ImageGallery({
       />
       {isOpen && sharePolicy?.hasWatermark && (
         <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-difference select-none text-white">
-          {Array.from({ length: 15 }).map((_, i) => (
+          {WATERMARK_TILE_KEYS.map((tileKey) => (
             <div
-              key={i}
+              key={tileKey}
               className="text-xl sm:text-3xl font-black -rotate-[30deg] p-6 sm:p-10 whitespace-nowrap drop-shadow-md"
             >
               {sharePolicy?.watermarkText ||
