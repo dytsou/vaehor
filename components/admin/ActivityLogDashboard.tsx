@@ -158,6 +158,66 @@ export default function ActivityLogDashboard() {
     });
   }, [logs, filterType, searchQuery]);
 
+  let logsContent;
+  if (isLoading) {
+    logsContent = (
+      <div className="flex justify-center items-center h-48">
+        <Loader2 className="animate-spin text-muted-foreground" />
+      </div>
+    );
+  } else if (filteredLogs.length === 0) {
+    logsContent = (
+      <div className="text-center py-20 text-muted-foreground">
+        <EmptyState
+          icon={AlertCircle}
+          title={t("emptyTitle")}
+          message={t("emptyMessage")}
+        />
+      </div>
+    );
+  } else {
+    logsContent = (
+      <div className="divide-y divide-border">
+        {filteredLogs.map((log, index) => {
+          const Icon = iconMap[log.type] || AlertCircle;
+          return (
+            <motion.div
+              key={`${log.timestamp}-${index}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.3,
+                delay: index * 0.05,
+              }}
+              className="p-4 hover:bg-accent/50"
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-primary/10 rounded-full text-primary mt-1 shrink-0">
+                  <Icon size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-sm sm:text-base break-words">
+                      {log.type.replace(/_/g, " ")}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-mono shrink-0">
+                      {format(
+                        new Date(log.timestamp),
+                        "dd MMM yyyy, HH:mm:ss",
+                        { locale: id },
+                      )}
+                    </p>
+                  </div>
+                  <LogDetail log={log} />
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-8">
@@ -205,58 +265,7 @@ export default function ActivityLogDashboard() {
       </div>
 
       <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="animate-spin text-muted-foreground" />
-          </div>
-        ) : filteredLogs.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <EmptyState
-              icon={AlertCircle}
-              title={t("emptyTitle")}
-              message={t("emptyMessage")}
-            />
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {filteredLogs.map((log, index) => {
-              const Icon = iconMap[log.type] || AlertCircle;
-              return (
-                <motion.div
-                  key={`${log.timestamp}-${index}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: index * 0.05,
-                  }}
-                  className="p-4 hover:bg-accent/50"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 bg-primary/10 rounded-full text-primary mt-1 shrink-0">
-                      <Icon size={18} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-sm sm:text-base break-words">
-                          {log.type.replace(/_/g, " ")}
-                        </p>
-                        <p className="text-xs text-muted-foreground font-mono shrink-0">
-                          {format(
-                            new Date(log.timestamp),
-                            "dd MMM yyyy, HH:mm:ss",
-                            { locale: id },
-                          )}
-                        </p>
-                      </div>
-                      <LogDetail log={log} />
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+        {logsContent}
         {totalPages > 1 && !isLoading && (
           <div className="p-4 border-t border-border flex justify-between items-center bg-muted/20">
             <button
