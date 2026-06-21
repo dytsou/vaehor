@@ -29,7 +29,7 @@ vi.mock("@/lib/api-middleware", () => ({
   },
 }));
 
-vi.mock("fs", () => ({
+vi.mock("node:fs", () => ({
   default: {
     existsSync: mockExistsSync,
     readFileSync: mockReadFileSync,
