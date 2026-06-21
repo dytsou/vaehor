@@ -68,9 +68,9 @@ export default function AuditDashboardClient(props: { initialLogs: any[] }) {
       </tr>
     );
   } else {
-    tbodyContent = logs.map((log, i) => (
+    tbodyContent = logs.map((log) => (
       <tr
-        key={i}
+        key={log.id}
         className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition"
       >
         <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
