@@ -245,9 +245,9 @@ export default function PublicUploadPage() {
 
                 {files.length > 0 && (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
-                    {files.map((file, idx) => (
+                    {files.map((file) => (
                       <div
-                        key={idx}
+                        key={`${file.name}-${file.size}-${file.lastModified}`}
                         className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
                       >
                         <File size={20} className="text-primary shrink-0" />
