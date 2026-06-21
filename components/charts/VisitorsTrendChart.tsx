@@ -28,7 +28,7 @@ const CustomTooltip = ({
   payload?: VisitorsTrendTooltipPayload[];
   label?: string;
 }) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     return (
       <div className="bg-popover border border-border text-popover-foreground p-3 rounded-lg shadow-xl text-sm">
         <p className="font-semibold mb-1">{label}</p>

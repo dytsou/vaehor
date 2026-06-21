@@ -23,7 +23,7 @@ const CustomTooltip = ({
   payload?: Array<{ payload: BreakdownItem }>;
 }) => {
   const t = useTranslations("StoragePage");
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     const data = payload[0].payload;
     return (
       <div className="bg-popover border border-border text-popover-foreground p-3 rounded-lg shadow-xl text-sm">
