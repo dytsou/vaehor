@@ -87,7 +87,10 @@ export default function TrashPage() {
         return a.name.localeCompare(b.name, "id", { numeric: true }) * isAsc;
       }
       if (sort.key === "size") {
-        return (parseInt(a.size || "0") - parseInt(b.size || "0")) * isAsc;
+        return (
+          (Number.parseInt(a.size || "0") - Number.parseInt(b.size || "0")) *
+          isAsc
+        );
       }
       return (
         (new Date(a.modifiedTime).getTime() -
@@ -242,7 +245,7 @@ export default function TrashPage() {
               >
                 <p className="font-medium truncate">{file.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatBytes(parseInt(file.size || "0"))} •{" "}
+                  {formatBytes(Number.parseInt(file.size || "0"))} •{" "}
                   {new Date(file.modifiedTime).toLocaleDateString()}
                 </p>
               </label>
@@ -253,6 +256,24 @@ export default function TrashPage() {
     </div>
   );
 
+  let content;
+  if (isLoadingData) {
+    content = (
+      <div className="flex justify-center h-64 items-center">
+        <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+      </div>
+    );
+  } else if (files.length === 0) {
+    content = (
+      <div className="text-center py-20 text-muted-foreground">
+        <FileX className="w-16 h-16 mx-auto mb-4 opacity-20" />
+        <p>{t("empty")}</p>
+      </div>
+    );
+  } else {
+    content = renderFileList();
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -260,18 +281,7 @@ export default function TrashPage() {
       className="py-6"
     >
       {renderHeader()}
-      {isLoadingData ? (
-        <div className="flex justify-center h-64 items-center">
-          <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
-        </div>
-      ) : files.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <FileX className="w-16 h-16 mx-auto mb-4 opacity-20" />
-          <p>{t("empty")}</p>
-        </div>
-      ) : (
-        renderFileList()
-      )}
+      {content}
     </motion.div>
   );
 }
