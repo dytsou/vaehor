@@ -94,6 +94,87 @@ export default function ProtectedFoldersManager(props: {
     }
   };
 
+  let protectedListContent;
+  if (isLoading) {
+    protectedListContent = (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <Loader2 className="animate-spin text-primary" size={32} />
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Menghubungkan ke database...
+        </p>
+      </div>
+    );
+  } else if (Object.keys(folders).length === 0) {
+    protectedListContent = (
+      <div className="text-center py-16 bg-muted/30 border border-dashed rounded-2xl">
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+          <Lock size={24} />
+        </div>
+        <p className="text-sm text-muted-foreground font-medium">
+          {t("noProtected")}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Gunakan form di atas untuk menambah folder pertama.
+        </p>
+      </div>
+    );
+  } else {
+    protectedListContent = (
+      <ul className="grid gap-4 sm:grid-cols-2">
+        {Object.entries(folders).map(([folderId]) => {
+          const isLocalStorage = folderId.startsWith("local-storage:");
+          return (
+            <motion.li
+              key={folderId}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="group relative overflow-hidden bg-card border rounded-2xl p-5 transition-all hover:shadow-xl hover:border-primary/50 flex flex-col gap-3"
+            >
+              <div className="flex justify-between items-start">
+                <div
+                  className={`p-2.5 rounded-xl ${isLocalStorage ? "bg-blue-500/10 text-blue-600" : "bg-primary/10 text-primary"}`}
+                >
+                  {isLocalStorage ? (
+                    <HardDrive size={20} />
+                  ) : (
+                    <FolderKey size={20} />
+                  )}
+                </div>
+                <button
+                  onClick={() => setFolderToDelete(folderId)}
+                  className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                  title={t("removeProtection")}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {isLocalStorage ? "Penyimpanan Lokal" : "Google Drive ID"}
+                </p>
+                <p className="font-mono text-sm font-semibold truncate leading-none">
+                  {isLocalStorage
+                    ? folderId.replace("local-storage:", "/")
+                    : folderId}
+                </p>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-green-600 font-bold bg-green-500/10 w-fit px-3 py-1 rounded-full border border-green-500/20">
+                  <CheckCircle size={10} /> {t("securelyLocked")}
+                </div>
+                <span className="text-[10px] text-muted-foreground font-medium">
+                  Encrypted
+                </span>
+              </div>
+            </motion.li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -187,81 +268,7 @@ export default function ProtectedFoldersManager(props: {
               </span>
             </div>
 
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 className="animate-spin text-primary" size={32} />
-                <p className="text-sm text-muted-foreground animate-pulse">
-                  Menghubungkan ke database...
-                </p>
-              </div>
-            ) : Object.keys(folders).length === 0 ? (
-              <div className="text-center py-16 bg-muted/30 border border-dashed rounded-2xl">
-                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
-                  <Lock size={24} />
-                </div>
-                <p className="text-sm text-muted-foreground font-medium">
-                  {t("noProtected")}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Gunakan form di atas untuk menambah folder pertama.
-                </p>
-              </div>
-            ) : (
-              <ul className="grid gap-4 sm:grid-cols-2">
-                {Object.entries(folders).map(([folderId]) => {
-                  const isLocalStorage = folderId.startsWith("local-storage:");
-                  return (
-                    <motion.li
-                      key={folderId}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="group relative overflow-hidden bg-card border rounded-2xl p-5 transition-all hover:shadow-xl hover:border-primary/50 flex flex-col gap-3"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div
-                          className={`p-2.5 rounded-xl ${isLocalStorage ? "bg-blue-500/10 text-blue-600" : "bg-primary/10 text-primary"}`}
-                        >
-                          {isLocalStorage ? (
-                            <HardDrive size={20} />
-                          ) : (
-                            <FolderKey size={20} />
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setFolderToDelete(folderId)}
-                          className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                          title={t("removeProtection")}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-
-                      <div className="space-y-1">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          {isLocalStorage
-                            ? "Penyimpanan Lokal"
-                            : "Google Drive ID"}
-                        </p>
-                        <p className="font-mono text-sm font-semibold truncate leading-none">
-                          {isLocalStorage
-                            ? folderId.replace("local-storage:", "/")
-                            : folderId}
-                        </p>
-                      </div>
-
-                      <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-green-600 font-bold bg-green-500/10 w-fit px-3 py-1 rounded-full border border-green-500/20">
-                          <CheckCircle size={10} /> {t("securelyLocked")}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground font-medium">
-                          Encrypted
-                        </span>
-                      </div>
-                    </motion.li>
-                  );
-                })}
-              </ul>
-            )}
+            {protectedListContent}
           </div>
         </div>
       </div>
