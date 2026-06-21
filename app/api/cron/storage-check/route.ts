@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = createCronRoute(async () => {
   try {
-    const threshold = parseFloat(
+    const threshold = Number.parseFloat(
       process.env.STORAGE_WARNING_THRESHOLD || "0.90",
     );
     const details = await getStorageDetails();
