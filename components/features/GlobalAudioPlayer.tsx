@@ -72,7 +72,7 @@ export default function GlobalAudioPlayer() {
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = parseFloat(e.target.value);
+    const time = Number.parseFloat(e.target.value);
     if (audioRef.current) {
       audioRef.current.currentTime = time;
       setProgress(time);
