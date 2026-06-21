@@ -48,6 +48,58 @@ interface ContextMenuProps {
   onOpenNewTab: () => void;
 }
 
+function menuItemVariantClass(variant: "default" | "danger" | "warning") {
+  if (variant === "danger") {
+    return "text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10";
+  }
+  if (variant === "warning") {
+    return "text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/10";
+  }
+  return "text-foreground hover:bg-accent/50";
+}
+
+function MenuItem({
+  onClick,
+  icon: Icon,
+  label,
+  variant = "default",
+  disabled = false,
+  className = "",
+  isDesktop,
+}: {
+  onClick?: () => void;
+  icon: React.ElementType;
+  label: string | React.ReactNode;
+  variant?: "default" | "danger" | "warning";
+  disabled?: boolean;
+  className?: string;
+  isDesktop: boolean;
+}) {
+  return (
+    <li>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={cn(
+          "w-full text-left flex items-center gap-4 md:gap-2 px-6 md:px-4 py-4 md:py-2 text-base md:text-sm font-medium transition-colors active:bg-accent disabled:opacity-50 disabled:cursor-not-allowed select-none outline-none focus:outline-none focus:bg-accent/50",
+          menuItemVariantClass(variant),
+          className,
+        )}
+      >
+        <Icon
+          size={isDesktop ? 16 : 22}
+          className={cn(
+            "shrink-0",
+            variant === "danger" ? "text-red-500" : "text-muted-foreground",
+            variant === "warning" && "text-yellow-500",
+          )}
+        />
+        {label}
+      </button>
+    </li>
+  );
+}
+
 export default function ContextMenu({
   x,
   y,
@@ -113,59 +165,24 @@ export default function ContextMenu({
     ? { top: position.top, left: position.left }
     : undefined;
 
-  const MenuItem = ({
-    onClick,
-    icon: Icon,
-    label,
-    variant = "default",
-    disabled = false,
-    className = "",
-  }: {
-    onClick?: () => void;
-    icon: React.ElementType;
-    label: string | React.ReactNode;
-    variant?: "default" | "danger" | "warning";
-    disabled?: boolean;
-    className?: string;
-  }) => (
-    <li>
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={cn(
-          "w-full text-left flex items-center gap-4 md:gap-2 px-6 md:px-4 py-4 md:py-2 text-base md:text-sm font-medium transition-colors active:bg-accent disabled:opacity-50 disabled:cursor-not-allowed select-none outline-none focus:outline-none focus:bg-accent/50",
-          variant === "danger"
-            ? "text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-            : variant === "warning"
-              ? "text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/10"
-              : "text-foreground hover:bg-accent/50",
-          className,
-        )}
-      >
-        <Icon
-          size={isDesktop ? 16 : 22}
-          className={cn(
-            "shrink-0",
-            variant === "danger" ? "text-red-500" : "text-muted-foreground",
-            variant === "warning" && "text-yellow-500",
-          )}
-        />
-        {label}
-      </button>
-    </li>
-  );
-
   const menuContent = (
     <ul className="py-2 md:py-1 space-y-0.5 md:space-y-0">
       {!isFolder && (
         <>
-          <MenuItem onClick={onPreview} icon={Eye} label={t("preview")} />
           <MenuItem
+            isDesktop={isDesktop}
+            onClick={onPreview}
+            icon={Eye}
+            label={t("preview")}
+          />
+          <MenuItem
+            isDesktop={isDesktop}
             onClick={onOpenNewTab}
             icon={ExternalLink}
             label={t("openInNewTab")}
           />
           <MenuItem
+            isDesktop={isDesktop}
             onClick={onDownload}
             icon={Download}
             label={t("download")}
@@ -174,13 +191,24 @@ export default function ContextMenu({
       )}
 
       {isImage && isAdmin && (
-        <MenuItem onClick={onEditImage} icon={Edit3} label={t("editImage")} />
+        <MenuItem
+          isDesktop={isDesktop}
+          onClick={onEditImage}
+          icon={Edit3}
+          label={t("editImage")}
+        />
       )}
 
-      <MenuItem onClick={onShowDetails} icon={Info} label={t("viewDetails")} />
+      <MenuItem
+        isDesktop={isDesktop}
+        onClick={onShowDetails}
+        icon={Info}
+        label={t("viewDetails")}
+      />
 
       {isArchive && (
         <MenuItem
+          isDesktop={isDesktop}
           onClick={isArchivePreviewable ? onArchivePreview : undefined}
           disabled={!isArchivePreviewable}
           icon={Archive}
@@ -198,6 +226,7 @@ export default function ContextMenu({
         <>
           <li className="border-t my-2 border-border/50"></li>
           <MenuItem
+            isDesktop={isDesktop}
             onClick={onTogglePin}
             icon={isPinned ? PinOff : Pin}
             label={isPinned ? t("unpin") : t("pinFolder")}
@@ -209,6 +238,7 @@ export default function ContextMenu({
 
       {isAdmin && (
         <MenuItem
+          isDesktop={isDesktop}
           onClick={onToggleFavorite}
           icon={Star}
           variant={isFavorite ? "warning" : "default"}
@@ -218,14 +248,35 @@ export default function ContextMenu({
 
       {isAdmin && (
         <>
-          <MenuItem onClick={onShare} icon={Share2} label={t("share")} />
-          <MenuItem onClick={onCopy} icon={Copy} label={t("makeCopy")} />
-          <MenuItem onClick={onMove} icon={Move} label={t("move")} />
-          <MenuItem onClick={onRename} icon={Pencil} label={t("rename")} />
+          <MenuItem
+            isDesktop={isDesktop}
+            onClick={onShare}
+            icon={Share2}
+            label={t("share")}
+          />
+          <MenuItem
+            isDesktop={isDesktop}
+            onClick={onCopy}
+            icon={Copy}
+            label={t("makeCopy")}
+          />
+          <MenuItem
+            isDesktop={isDesktop}
+            onClick={onMove}
+            icon={Move}
+            label={t("move")}
+          />
+          <MenuItem
+            isDesktop={isDesktop}
+            onClick={onRename}
+            icon={Pencil}
+            label={t("rename")}
+          />
 
           <li className="border-t my-2 border-border/50"></li>
 
           <MenuItem
+            isDesktop={isDesktop}
             onClick={onDelete}
             icon={Trash2}
             label={t("delete")}
