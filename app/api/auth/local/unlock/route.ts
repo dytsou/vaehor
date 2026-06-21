@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
     let isPasswordCorrect = false;
 
-    if (dbProtected && dbProtected.password) {
+    if (dbProtected?.password) {
       isPasswordCorrect = await bcrypt.compare(password, dbProtected.password);
     } else if (config.localStorageAuthEnabled && config.localStoragePassword) {
       isPasswordCorrect = isHashedLocalStoragePassword(
