@@ -82,7 +82,7 @@ export default function DetailsPanel({ file, onClose }: DetailsPanelProps) {
   const locale = useLocale();
   const metadata = file.imageMediaMetadata || file.videoMediaMetadata;
   const durationMillis = file.videoMediaMetadata?.durationMillis
-    ? parseInt(file.videoMediaMetadata.durationMillis, 10)
+    ? Number.parseInt(file.videoMediaMetadata.durationMillis, 10)
     : undefined;
 
   const { user, hideAuthor, addToast, sharePolicy } = useAppStore();
@@ -166,12 +166,10 @@ export default function DetailsPanel({ file, onClose }: DetailsPanelProps) {
       } else {
         controls.start({ y: 0 });
       }
+    } else if (info.offset.x > threshold || info.velocity.x > velocity) {
+      onClose();
     } else {
-      if (info.offset.x > threshold || info.velocity.x > velocity) {
-        onClose();
-      } else {
-        controls.start({ x: 0 });
-      }
+      controls.start({ x: 0 });
     }
   };
 
