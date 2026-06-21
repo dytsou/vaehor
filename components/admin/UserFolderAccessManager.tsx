@@ -199,13 +199,13 @@ export default function UserFolderAccessManager(props: {
             </div>
           ) : (
             <div className="divide-y">
-              {requests.map((req, idx) => {
+              {requests.map((req) => {
                 const uniqueId = `${req.folderId}-${req.email}`;
                 const isItemProcessing = isProcessing === uniqueId;
 
                 return (
                   <div
-                    key={idx}
+                    key={uniqueId}
                     className="p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
