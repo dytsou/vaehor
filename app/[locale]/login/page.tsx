@@ -7,14 +7,37 @@ import Image from "next/image";
 import AppIcon from "@/app/icon.png";
 import { useTranslations } from "next-intl";
 
+type LoginMessage = {
+  type: "error" | "info" | "success";
+  title: string;
+  text: string;
+};
+
+const messageAlertClasses: Record<
+  LoginMessage["type"],
+  { box: string; title: string; text: string }
+> = {
+  error: {
+    box: "bg-red-50 dark:bg-red-950/30 border-red-500",
+    title: "text-red-800 dark:text-red-300",
+    text: "text-red-700 dark:text-red-400",
+  },
+  success: {
+    box: "bg-green-50 dark:bg-green-950/30 border-green-500",
+    title: "text-green-800 dark:text-green-300",
+    text: "text-green-700 dark:text-green-400",
+  },
+  info: {
+    box: "bg-blue-50 dark:bg-blue-950/30 border-blue-500",
+    title: "text-blue-800 dark:text-blue-300",
+    text: "text-blue-700 dark:text-blue-400",
+  },
+};
+
 function CustomLoginPage() {
   const t = useTranslations("LoginPage");
   const searchParams = useSearchParams();
-  const [message, setMessage] = useState<{
-    type: "error" | "info" | "success";
-    title: string;
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<LoginMessage | null>(null);
   const [isGuestLoginDisabled, setIsGuestLoginDisabled] = useState(true);
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
   const [email, setEmail] = useState("");
@@ -148,6 +171,39 @@ function CustomLoginPage() {
     }
   };
 
+  let messageAlert = null;
+  if (message) {
+    const classes = messageAlertClasses[message.type];
+    messageAlert = (
+      <div
+        className={`border-l-4 p-4 rounded-md animate-in fade-in slide-in-from-top-2 ${classes.box}`}
+        role="alert"
+      >
+        <p className={`font-bold ${classes.title}`}>{message.title}</p>
+        <p className={`text-sm ${classes.text}`}>{message.text}</p>
+      </div>
+    );
+  }
+
+  let guestButtonContent;
+  if (isLoadingConfig) {
+    guestButtonContent = <span className="animate-pulse">{t("loading")}</span>;
+  } else if (isGuestLoginDisabled) {
+    guestButtonContent = (
+      <>
+        <LockKeyhole size={20} />
+        <span>{t("guestDisabled")}</span>
+      </>
+    );
+  } else {
+    guestButtonContent = (
+      <>
+        <User size={20} />
+        <span>{t("continueGuest")}</span>
+      </>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       <div className="hidden lg:flex lg:w-1/2 items-center justify-center bg-muted/40 p-12 overflow-hidden relative">
@@ -181,41 +237,7 @@ function CustomLoginPage() {
             <p className="text-muted-foreground mt-2">{t("subtitle")}</p>
           </div>
 
-          {message && (
-            <div
-              className={`border-l-4 p-4 rounded-md animate-in fade-in slide-in-from-top-2 ${
-                message.type === "error"
-                  ? "bg-red-50 dark:bg-red-950/30 border-red-500"
-                  : message.type === "success"
-                    ? "bg-green-50 dark:bg-green-950/30 border-green-500"
-                    : "bg-blue-50 dark:bg-blue-950/30 border-blue-500"
-              }`}
-              role="alert"
-            >
-              <p
-                className={`font-bold ${
-                  message.type === "error"
-                    ? "text-red-800 dark:text-red-300"
-                    : message.type === "success"
-                      ? "text-green-800 dark:text-green-300"
-                      : "text-blue-800 dark:text-blue-300"
-                }`}
-              >
-                {message.title}
-              </p>
-              <p
-                className={`text-sm ${
-                  message.type === "error"
-                    ? "text-red-700 dark:text-red-400"
-                    : message.type === "success"
-                      ? "text-green-700 dark:text-green-400"
-                      : "text-blue-700 dark:text-blue-400"
-                }`}
-              >
-                {message.text}
-              </p>
-            </div>
-          )}
+          {messageAlert}
 
           <div className="pt-4 space-y-4">
             <form onSubmit={handleEmailPasswordSignIn} className="space-y-3">
@@ -326,19 +348,7 @@ function CustomLoginPage() {
                     : "bg-muted/50 hover:bg-accent cursor-pointer"
                 }`}
             >
-              {isLoadingConfig ? (
-                <span className="animate-pulse">{t("loading")}</span>
-              ) : isGuestLoginDisabled ? (
-                <>
-                  <LockKeyhole size={20} />
-                  <span>{t("guestDisabled")}</span>
-                </>
-              ) : (
-                <>
-                  <User size={20} />
-                  <span>{t("continueGuest")}</span>
-                </>
-              )}
+              {guestButtonContent}
             </button>
           </div>
 
