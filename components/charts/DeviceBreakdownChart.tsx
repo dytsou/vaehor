@@ -39,7 +39,7 @@ const CustomTooltip = ({
   active?: boolean;
   payload?: DeviceTooltipPayload[];
 }) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     const data = payload[0];
     return (
       <div className="bg-popover border border-border text-popover-foreground p-3 rounded-lg shadow-xl text-sm">
@@ -59,6 +59,10 @@ const CustomTooltip = ({
   }
   return null;
 };
+
+function formatDeviceLegendLabel(value: string) {
+  return <span className="text-xs text-foreground">{value}</span>;
+}
 
 const DeviceBreakdownChart: React.FC<DeviceBreakdownChartProps> = ({
   data,
@@ -90,15 +94,13 @@ const DeviceBreakdownChart: React.FC<DeviceBreakdownChartProps> = ({
           nameKey="name"
           strokeWidth={0}
         >
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+          {chartData.map((entry) => (
+            <Cell key={entry.name} fill={entry.fill} />
           ))}
         </Pie>
         <Tooltip content={<CustomTooltip />} />
         <Legend
-          formatter={(value: string) => (
-            <span className="text-xs text-foreground">{value}</span>
-          )}
+          formatter={formatDeviceLegendLabel}
           iconSize={8}
           wrapperStyle={{ fontSize: "11px" }}
         />
