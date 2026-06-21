@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminRoute } from "@/lib/api-middleware";
 import { kv } from "@/lib/kv";
-import crypto from "crypto";
+import crypto from "node:crypto";
 import { getBaseUrl } from "@/lib/utils";
 import { REDIS_KEYS } from "@/lib/constants";
 import {
