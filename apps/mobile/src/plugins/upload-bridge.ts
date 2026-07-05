@@ -5,6 +5,7 @@ import {
   type ZeeMobilePickUploadRequest,
 } from "../lib/mobile-bridge-protocol";
 import { createServerFetch } from "../lib/api-client";
+import { runWithBackgroundUploadSupport } from "../lib/background-upload";
 import {
   decodeBase64File,
   runNativeChunkedUpload,
@@ -104,7 +105,9 @@ export function attachUploadBridge(handlers: UploadBridgeHandlers): () => void {
     if (!data || data.type !== ZEE_MOBILE_MESSAGE) return;
 
     if (data.action === "upload/pick") {
-      void handlePickAndUpload(data, handlers)
+      void runWithBackgroundUploadSupport(() =>
+        handlePickAndUpload(data, handlers),
+      )
         .then(() => {
           postToFrame(handlers.iframe, {
             type: ZEE_MOBILE_MESSAGE,

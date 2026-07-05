@@ -29,5 +29,8 @@
   "auth.unlock": "使用生物识别解锁",
   "auth.signInGoogle": "使用 Google 登录",
   "auth.enableBiometrics": "启用生物识别解锁",
-  "auth.skipBiometrics": "暂不启用"
+  "auth.skipBiometrics": "暂不启用",
+  "deeplink.errorMalformed": "该链接无法在此应用中打开。",
+  "deeplink.unknownServer": "此分享链接指向 {{origin}}，尚未保存该服务器。",
+  "deeplink.addServer": "添加此服务器"
 }

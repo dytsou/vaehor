@@ -18,6 +18,7 @@
     "@capacitor/ios": "7.6.7",
     "@capacitor/network": "7.0.4",
     "@capacitor/preferences": "7.0.4",
+    "@capawesome/capacitor-background-task": "7.0.1",
     "@capawesome/capacitor-file-picker": "7.2.0",
     "@capgo/capacitor-native-biometric": "7.6.0",
     "@zee-index/sdk": "workspace:*",

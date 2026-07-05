@@ -353,6 +353,9 @@ importers:
       '@capacitor/preferences':
         specifier: 7.0.4
         version: 7.0.4(@capacitor/core@7.6.7)
+      '@capawesome/capacitor-background-task':
+        specifier: 7.0.1
+        version: 7.0.1(@capacitor/core@7.6.7)
       '@capawesome/capacitor-file-picker':
         specifier: 7.2.0
         version: 7.2.0(@capacitor/core@7.6.7)
@@ -1162,6 +1165,11 @@ packages:
 
   '@capacitor/preferences@7.0.4':
     resolution: {integrity: sha512-TJhkwaI2RCs/iDC9PjNczZV4h6JM4gUtTuKMeFdy0OwGgFEHf4TrtW2mFMc1TnPDalYQ91p9NT+UKgiJs9/xtg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capawesome/capacitor-background-task@7.0.1':
+    resolution: {integrity: sha512-ILkJ0bCOLperUc+fezzhpiH3Bfnr/318TI9XSrPU/vwvBXjMH7p7xYxKtjDA4VpJfbVh1cHmWLtRSWIk2wUglg==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -10161,6 +10169,10 @@ snapshots:
       '@capacitor/core': 7.6.7
 
   '@capacitor/preferences@7.0.4(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
+  '@capawesome/capacitor-background-task@7.0.1(@capacitor/core@7.6.7)':
     dependencies:
       '@capacitor/core': 7.6.7
 

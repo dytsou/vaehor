@@ -117,12 +117,14 @@ export function AddServerScreen({
   onSave,
   saving,
   errorKey,
+  initialUrl,
 }: {
   locale: Locale;
   onCancel: () => void;
   onSave: (url: string, label: string) => void;
   saving: boolean;
   errorKey?: MessageKey;
+  initialUrl?: string;
 }) {
   return (
     <ScreenShell
@@ -137,6 +139,7 @@ export function AddServerScreen({
         <input
           id="server-url"
           type="url"
+          defaultValue={initialUrl ?? ""}
           placeholder={t(locale, "add.urlPlaceholder")}
           disabled={saving}
           style={{ width: "100%", padding: "0.5rem" }}

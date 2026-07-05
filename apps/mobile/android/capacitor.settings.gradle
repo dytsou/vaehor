@@ -14,6 +14,9 @@ project(':capacitor-network').projectDir = new File('../../../node_modules/.pnpm
 include ':capacitor-preferences'
 project(':capacitor-preferences').projectDir = new File('../../../node_modules/.pnpm/@capacitor+preferences@7.0.4_@capacitor+core@7.6.7/node_modules/@capacitor/preferences/android')
 
+include ':capawesome-capacitor-background-task'
+project(':capawesome-capacitor-background-task').projectDir = new File('../../../node_modules/.pnpm/@capawesome+capacitor-background-task@7.0.1_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-background-task/android')
+
 include ':capawesome-capacitor-file-picker'
 project(':capawesome-capacitor-file-picker').projectDir = new File('../../../node_modules/.pnpm/@capawesome+capacitor-file-picker@7.2.0_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-file-picker/android')
 

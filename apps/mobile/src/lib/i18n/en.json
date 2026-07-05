@@ -29,5 +29,8 @@
   "auth.unlock": "Unlock with biometrics",
   "auth.signInGoogle": "Sign in with Google",
   "auth.enableBiometrics": "Enable biometric unlock",
-  "auth.skipBiometrics": "Not now"
+  "auth.skipBiometrics": "Not now",
+  "deeplink.errorMalformed": "That link is not valid for Zee Index.",
+  "deeplink.unknownServer": "This share link is for {{origin}}, which is not saved yet.",
+  "deeplink.addServer": "Add this server"
 }

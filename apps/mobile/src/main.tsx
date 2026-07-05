@@ -4,7 +4,16 @@ import { createRoot } from "react-dom/client";
 import { promptBiometricUnlock } from "./lib/biometrics";
 import { getDeviceLocale, t, type Locale, type MessageKey } from "./lib/i18n";
 import { isOnline, onNetworkChange } from "./lib/network-status";
-import { completeOAuthFromCallback, startGoogleOAuth } from "./lib/oauth";
+import {
+  completeOAuthFromCallback,
+  parseOAuthCallbackUrl,
+  startGoogleOAuth,
+} from "./lib/oauth";
+import {
+  findBookmarkForOrigin,
+  parseDeepLink,
+  type DeepLinkTarget,
+} from "./lib/deep-link";
 import {
   clearSessionForServer,
   loadSessionForServer,
@@ -47,7 +56,17 @@ function App() {
     origin: string;
     sessionToken: string;
     bootstrapToken?: string;
+    initialPath?: string;
   } | null>(null);
+  const [deepLinkPending, setDeepLinkPending] = useState<DeepLinkTarget | null>(
+    null,
+  );
+  const [deepLinkError, setDeepLinkError] = useState<MessageKey | undefined>();
+  const [prefillServerUrl, setPrefillServerUrl] = useState<
+    string | undefined
+  >();
+  const [pendingDeepLinkTarget, setPendingDeepLinkTarget] =
+    useState<DeepLinkTarget | null>(null);
   const [authPrompt, setAuthPrompt] = useState<{
     origin: string;
     sessionToken: string;
@@ -80,10 +99,72 @@ function App() {
     });
   }, [checkNetwork, refreshServers]);
 
-  useEffect(() => {
-    const sub = CapApp.addListener("appUrlOpen", ({ url }) => {
-      if (!pendingOAuthOrigin) return;
-      void (async () => {
+  const openWebviewForServer = useCallback(
+    (
+      server: ServerBookmark,
+      sessionToken: string,
+      options?: { bootstrapToken?: string; initialPath?: string },
+    ) => {
+      setWebviewSession({
+        origin: server.url,
+        sessionToken,
+        bootstrapToken: options?.bootstrapToken,
+        initialPath: options?.initialPath,
+      });
+      setView("webview");
+    },
+    [],
+  );
+
+  const openShareDeepLink = useCallback(
+    async (target: DeepLinkTarget) => {
+      setDeepLinkError(undefined);
+      const list = await preferencesStore.getServers();
+      const bookmark = findBookmarkForOrigin(target.origin, list);
+
+      if (!bookmark) {
+        setDeepLinkPending(target);
+        setPrefillServerUrl(target.origin);
+        setView("servers");
+        return;
+      }
+
+      await preferencesStore.setActiveId(bookmark.id);
+      await refreshServers();
+
+      const stored = await loadSessionForServer(bookmark.url);
+      if (stored && bookmark.biometricsEnabled) {
+        const ok = await promptBiometricUnlock("Unlock your saved session");
+        if (!ok) {
+          const failures = await recordBiometricFailure(bookmark.url);
+          if (failures >= 3) {
+            await clearSessionForServer(bookmark.url);
+          }
+          setPendingDeepLinkTarget(target);
+          setPendingOAuthOrigin(bookmark.url);
+          await startGoogleOAuth(bookmark.url);
+          return;
+        }
+        await resetBiometricFailures(bookmark.url);
+        openWebviewForServer(bookmark, stored, { initialPath: target.path });
+        return;
+      }
+
+      if (stored) {
+        openWebviewForServer(bookmark, stored, { initialPath: target.path });
+        return;
+      }
+
+      setPendingDeepLinkTarget(target);
+      setPendingOAuthOrigin(bookmark.url);
+      await startGoogleOAuth(bookmark.url);
+    },
+    [openWebviewForServer, refreshServers],
+  );
+
+  const handleIncomingUrl = useCallback(
+    async (url: string) => {
+      if (parseOAuthCallbackUrl(url) && pendingOAuthOrigin) {
         try {
           const result = await completeOAuthFromCallback(
             pendingOAuthOrigin,
@@ -91,6 +172,30 @@ function App() {
           );
           await saveSessionForServer(result.origin, result.sessionToken);
           setPendingOAuthOrigin(null);
+          const deepLinkPath =
+            pendingDeepLinkTarget?.origin === result.origin
+              ? pendingDeepLinkTarget.path
+              : undefined;
+          setPendingDeepLinkTarget(null);
+          setDeepLinkPending(null);
+
+          if (deepLinkPath) {
+            openWebviewForServer(
+              {
+                id: "oauth",
+                url: result.origin,
+                label: result.origin,
+                biometricsEnabled: false,
+              },
+              result.sessionToken,
+              {
+                bootstrapToken: result.bootstrapToken,
+                initialPath: deepLinkPath,
+              },
+            );
+            return;
+          }
+
           setAuthPrompt({
             origin: result.origin,
             sessionToken: result.sessionToken,
@@ -99,42 +204,72 @@ function App() {
           setView("auth");
         } catch {
           setPendingOAuthOrigin(null);
+          setPendingDeepLinkTarget(null);
         }
-      })();
+        return;
+      }
+
+      const parsed = parseDeepLink(url);
+      if (parsed.kind === "invalid") {
+        setDeepLinkError("deeplink.errorMalformed");
+        return;
+      }
+      if (parsed.kind === "share") {
+        await openShareDeepLink(parsed.target);
+      }
+    },
+    [
+      openShareDeepLink,
+      openWebviewForServer,
+      pendingDeepLinkTarget,
+      pendingOAuthOrigin,
+    ],
+  );
+
+  useEffect(() => {
+    void CapApp.getLaunchUrl().then((result) => {
+      if (result?.url) void handleIncomingUrl(result.url);
+    });
+  }, [handleIncomingUrl]);
+
+  useEffect(() => {
+    const sub = CapApp.addListener("appUrlOpen", ({ url }) => {
+      void handleIncomingUrl(url);
     });
     return () => {
       void sub.then((handle) => handle.remove());
     };
-  }, [pendingOAuthOrigin]);
+  }, [handleIncomingUrl]);
 
-  const openServer = useCallback(async (server: ServerBookmark) => {
-    const stored = await loadSessionForServer(server.url);
-    if (stored && server.biometricsEnabled) {
-      const ok = await promptBiometricUnlock("Unlock your saved session");
-      if (!ok) {
-        const failures = await recordBiometricFailure(server.url);
-        if (failures >= 3) {
-          await clearSessionForServer(server.url);
-          setPendingOAuthOrigin(server.url);
-          await startGoogleOAuth(server.url);
+  const openServer = useCallback(
+    async (server: ServerBookmark) => {
+      const stored = await loadSessionForServer(server.url);
+      if (stored && server.biometricsEnabled) {
+        const ok = await promptBiometricUnlock("Unlock your saved session");
+        if (!ok) {
+          const failures = await recordBiometricFailure(server.url);
+          if (failures >= 3) {
+            await clearSessionForServer(server.url);
+            setPendingOAuthOrigin(server.url);
+            await startGoogleOAuth(server.url);
+          }
+          return;
         }
+        await resetBiometricFailures(server.url);
+        openWebviewForServer(server, stored);
         return;
       }
-      await resetBiometricFailures(server.url);
-      setWebviewSession({ origin: server.url, sessionToken: stored });
-      setView("webview");
-      return;
-    }
 
-    if (stored) {
-      setWebviewSession({ origin: server.url, sessionToken: stored });
-      setView("webview");
-      return;
-    }
+      if (stored) {
+        openWebviewForServer(server, stored);
+        return;
+      }
 
-    setPendingOAuthOrigin(server.url);
-    await startGoogleOAuth(server.url);
-  }, []);
+      setPendingOAuthOrigin(server.url);
+      await startGoogleOAuth(server.url);
+    },
+    [openWebviewForServer],
+  );
 
   const enableBiometricsForActive = useCallback(
     async (origin: string, sessionToken: string, bootstrapToken?: string) => {
@@ -228,6 +363,7 @@ function App() {
           origin={webviewSession.origin}
           sessionToken={webviewSession.sessionToken}
           bootstrapToken={webviewSession.bootstrapToken}
+          initialPath={webviewSession.initialPath}
           onBack={() => {
             setWebviewSession(null);
             setUpload(null);
@@ -281,16 +417,27 @@ function App() {
         locale={locale}
         saving={saving}
         errorKey={addError}
+        initialUrl={prefillServerUrl}
         onCancel={() => {
           setAddError(undefined);
+          setPrefillServerUrl(undefined);
           setView("servers");
         }}
         onSave={async (url, label) => {
           setSaving(true);
           setAddError(undefined);
           try {
-            await addServer(preferencesStore, { url, label });
+            const bookmark = await addServer(preferencesStore, { url, label });
             await refreshServers();
+            setPrefillServerUrl(undefined);
+
+            if (deepLinkPending?.origin === bookmark.url) {
+              const target = deepLinkPending;
+              setDeepLinkPending(null);
+              await openShareDeepLink(target);
+              return;
+            }
+
             setView("servers");
           } catch (err) {
             if (err instanceof ServerValidationError) {
@@ -311,21 +458,48 @@ function App() {
   }
 
   return (
-    <ServerListScreen
-      locale={locale}
-      servers={servers}
-      activeId={activeId}
-      onAdd={() => setView("add")}
-      onSwitch={async (id) => {
-        const previous = servers.find((s) => s.id === activeId)?.url ?? null;
-        await switchActiveServer(preferencesStore, id, previous);
-        await refreshServers();
-      }}
-      onOpen={(id) => {
-        const server = servers.find((s) => s.id === id);
-        if (server) void openServer(server);
-      }}
-    />
+    <>
+      {deepLinkError ? (
+        <p style={{ padding: "0.75rem 1rem", color: "#b00020" }}>
+          {t(locale, deepLinkError)}
+        </p>
+      ) : null}
+      {deepLinkPending ? (
+        <div
+          style={{ padding: "0.75rem 1rem", borderBottom: "1px solid #ccc" }}
+        >
+          <p>
+            {t(locale, "deeplink.unknownServer", {
+              origin: deepLinkPending.origin,
+            })}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setPrefillServerUrl(deepLinkPending.origin);
+              setView("add");
+            }}
+          >
+            {t(locale, "deeplink.addServer")}
+          </button>
+        </div>
+      ) : null}
+      <ServerListScreen
+        locale={locale}
+        servers={servers}
+        activeId={activeId}
+        onAdd={() => setView("add")}
+        onSwitch={async (id) => {
+          const previous = servers.find((s) => s.id === activeId)?.url ?? null;
+          await switchActiveServer(preferencesStore, id, previous);
+          await refreshServers();
+        }}
+        onOpen={(id) => {
+          const server = servers.find((s) => s.id === id);
+          if (server) void openServer(server);
+        }}
+      />
+    </>
   );
 }
 

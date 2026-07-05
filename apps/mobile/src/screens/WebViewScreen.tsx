@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Locale } from "../lib/i18n";
 import { t } from "../lib/i18n";
+import { appendBootstrapRedirect } from "../lib/deep-link";
 import { bootstrapPathFromToken } from "../lib/oauth";
 import { attachUploadBridge } from "../plugins/upload-bridge";
 import { issueBootstrapPath, webViewEntryUrl } from "../lib/session-store";
@@ -11,6 +12,7 @@ export function WebViewScreen({
   origin,
   sessionToken,
   bootstrapToken,
+  initialPath,
   onLogout,
   onBack,
   onUploadProgress,
@@ -19,6 +21,7 @@ export function WebViewScreen({
   origin: string;
   sessionToken: string;
   bootstrapToken?: string;
+  initialPath?: string;
   onLogout: () => void;
   onBack: () => void;
   onUploadProgress?: (progress: NativeUploadProgress) => void;
@@ -27,13 +30,16 @@ export function WebViewScreen({
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const initialBootstrap = useMemo(
-    () =>
-      bootstrapToken
-        ? webViewEntryUrl(origin, bootstrapPathFromToken(bootstrapToken))
-        : null,
-    [bootstrapToken, origin],
-  );
+  const initialBootstrap = useMemo(() => {
+    const bootstrapPath = bootstrapToken
+      ? bootstrapPathFromToken(bootstrapToken)
+      : null;
+    if (!bootstrapPath) return null;
+    const path = initialPath
+      ? appendBootstrapRedirect(bootstrapPath, initialPath)
+      : bootstrapPath;
+    return webViewEntryUrl(origin, path);
+  }, [bootstrapToken, initialPath, origin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +51,10 @@ export function WebViewScreen({
           return;
         }
         const path = await issueBootstrapPath(origin, sessionToken);
-        if (!cancelled) setFrameSrc(webViewEntryUrl(origin, path));
+        const bootstrapPath = initialPath
+          ? appendBootstrapRedirect(path, initialPath)
+          : path;
+        if (!cancelled) setFrameSrc(webViewEntryUrl(origin, bootstrapPath));
       } catch {
         if (!cancelled) setError(t(locale, "webview.errorBootstrap"));
       }
@@ -55,7 +64,7 @@ export function WebViewScreen({
     return () => {
       cancelled = true;
     };
-  }, [initialBootstrap, locale, origin, sessionToken]);
+  }, [initialBootstrap, initialPath, locale, origin, sessionToken]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
