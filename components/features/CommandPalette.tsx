@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTranslations } from "next-intl";
 
 export default function CommandPalette() {
@@ -262,7 +263,10 @@ export default function CommandPalette() {
               <Command.Item
                 value="logout keluar sign out"
                 onSelect={() =>
-                  runCommand(() => signOut({ callbackUrl: "/login" }))
+                  runCommand(() => {
+                    notifyZeeMobileLogout();
+                    return signOut({ callbackUrl: "/login" });
+                  })
                 }
                 className={`${itemClass} text-red-500 aria-selected:text-red-500`}
               >

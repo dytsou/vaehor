@@ -5,6 +5,7 @@ import {
   getZeeMobileBridge,
   installZeeMobileBridge,
   isZeeMobileBridgeAvailable,
+  notifyZeeMobileLogout,
 } from "@/lib/mobile-bridge";
 
 describe("lib/mobile-bridge", () => {
@@ -79,5 +80,27 @@ describe("lib/mobile-bridge", () => {
     );
 
     await expect(pending).rejects.toThrow("Session expired");
+  });
+
+  it("notifies native shell on logout when embedded in iframe", () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", { postMessage });
+
+    notifyZeeMobileLogout();
+
+    expect(postMessage).toHaveBeenCalledWith(
+      { type: ZEE_MOBILE_MESSAGE, action: "logout" },
+      "*",
+    );
+  });
+
+  it("does not notify native shell on logout in a top-level page", () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", window);
+    window.postMessage = postMessage;
+
+    notifyZeeMobileLogout();
+
+    expect(postMessage).not.toHaveBeenCalled();
   });
 });

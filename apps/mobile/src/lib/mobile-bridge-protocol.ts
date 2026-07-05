@@ -29,8 +29,14 @@ export type ZeeMobilePickErrorMessage = {
   error: string;
 };
 
+export type ZeeMobileLogoutMessage = {
+  type: typeof ZEE_MOBILE_MESSAGE;
+  action: "logout";
+};
+
 export type ZeeMobileMessage =
   | ZeeMobilePickUploadRequest
   | ZeeMobileUploadProgressMessage
   | ZeeMobilePickDoneMessage
-  | ZeeMobilePickErrorMessage;
+  | ZeeMobilePickErrorMessage
+  | ZeeMobileLogoutMessage;

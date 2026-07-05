@@ -124,6 +124,11 @@ export function attachUploadBridge(handlers: UploadBridgeHandlers): () => void {
               error instanceof Error ? error.message : "Native upload failed",
           });
         });
+      return;
+    }
+
+    if (data.action === "logout") {
+      handlers.onLogout?.();
     }
   };
 

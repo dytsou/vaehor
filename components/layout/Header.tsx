@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, FC } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
+import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import AppIcon from "@/app/icon.png";
@@ -252,7 +253,10 @@ export default function Header() {
       <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />
     ) : session?.user ? (
       <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
+        onClick={() => {
+          notifyZeeMobileLogout();
+          void signOut({ callbackUrl: "/login" });
+        }}
         title={t("logout")}
         className="p-2 rounded-lg hover:bg-accent"
       >

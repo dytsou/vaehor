@@ -28,11 +28,17 @@ export type ZeeMobilePickErrorMessage = {
   error: string;
 };
 
+export type ZeeMobileLogoutMessage = {
+  type: typeof ZEE_MOBILE_MESSAGE;
+  action: "logout";
+};
+
 export type ZeeMobileMessage =
   | ZeeMobilePickUploadRequest
   | ZeeMobileUploadProgressMessage
   | ZeeMobilePickDoneMessage
-  | ZeeMobilePickErrorMessage;
+  | ZeeMobilePickErrorMessage
+  | ZeeMobileLogoutMessage;
 
 export interface ZeeMobileBridge {
   isAvailable(): boolean;
@@ -62,6 +68,12 @@ export function isZeeMobileBridgeAvailable(): boolean {
 
 function postToParent(message: ZeeMobileMessage): void {
   window.parent.postMessage(message, "*");
+}
+
+/** Notify the native shell to wipe stored session (WebView sign-out). */
+export function notifyZeeMobileLogout(): void {
+  if (!isEmbeddedInNativeShell()) return;
+  postToParent({ type: ZEE_MOBILE_MESSAGE, action: "logout" });
 }
 
 export function createZeeMobileBridge(): ZeeMobileBridge {

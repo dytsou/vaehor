@@ -68,13 +68,13 @@ export function WebViewScreen({
 
   useEffect(() => {
     const iframe = iframeRef.current;
-    if (!iframe || !frameSrc || !onUploadProgress) return;
+    if (!iframe || !frameSrc) return;
 
     return attachUploadBridge({
       origin,
       sessionToken,
       iframe,
-      onProgress: onUploadProgress,
+      onProgress: onUploadProgress ?? (() => {}),
       onLogout,
     });
   }, [frameSrc, onLogout, onUploadProgress, origin, sessionToken]);
@@ -117,7 +117,7 @@ export function WebViewScreen({
                 onLogout();
               }
             } catch {
-              // ponytail: cross-origin iframe hides location; logout bridge lands in U5
+              // same-origin dev only; production uses postMessage logout bridge
             }
           }}
         />
