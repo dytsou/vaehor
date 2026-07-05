@@ -1,3 +1,9 @@
+import {
+  getUploadFileUrl,
+  UploadMode,
+  type ResumableUploadInitBody,
+} from "@zee-index/sdk";
+
 export const CHUNK_SIZE = 2 * 1024 * 1024;
 export const MAX_RETRIES = 3;
 const LOCAL_UPLOAD_PREFIX = "local-storage-upload://";
@@ -49,9 +55,11 @@ async function retryFetch(
 }
 
 function buildChunkUploadPath(uploadUrl: string, parentId: string): string {
-  return `/api/files/upload?type=chunk&uploadUrl=${encodeURIComponent(
+  return getUploadFileUrl({
+    type: UploadMode.chunk,
     uploadUrl,
-  )}&parentId=${parentId}`;
+    parentId,
+  });
 }
 
 function buildZeroByteHeaders(uploadUrl: string): Record<string, string> {
@@ -72,18 +80,19 @@ async function initializeUpload(
   file: NativeUploadFile,
   parentId: string,
 ): Promise<string> {
+  const initBody: ResumableUploadInitBody = {
+    name: file.name,
+    mimeType: file.mimeType || "application/octet-stream",
+    parentId,
+    size: file.bytes.byteLength,
+  };
   const initResponse = await retryFetch(
     fetchImpl,
-    "/api/files/upload?type=init",
+    getUploadFileUrl({ type: UploadMode.init }),
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: file.name,
-        mimeType: file.mimeType || "application/octet-stream",
-        parentId,
-        size: file.bytes.byteLength,
-      }),
+      body: JSON.stringify(initBody),
     },
   );
 
@@ -111,6 +120,7 @@ async function uploadSingleChunk(
   start: number,
   end: number,
 ) {
+  // ponytail: chunk body is binary; generated uploadFile() JSON.stringifies — keep raw fetch
   const chunkResponse = await retryFetch(
     fetchImpl,
     buildChunkUploadPath(uploadUrl, parentId),

@@ -50,7 +50,7 @@ describe("upload-bridge", () => {
     });
 
     expect(fetchImpl).toHaveBeenCalledWith(
-      "/api/files/upload?type=init",
+      expect.stringContaining("type=init"),
       expect.any(Object),
     );
     expect(progress.at(-1)).toBe(100);

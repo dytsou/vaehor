@@ -1,5 +1,7 @@
 # Store release (A4 publisher)
 
+See [development.md](./development.md) for local device testing before submission.
+
 Checklist for shipping **Zee Index Mobile** (`com.zeeindex.mobile`) to App Store and Google Play. This is a single publisher app; operators self-host the backend and add their server URL in the app.
 
 ## CI workflow

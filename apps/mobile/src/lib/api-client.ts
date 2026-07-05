@@ -1,4 +1,6 @@
-/** Minimal SDK-style client for native shell HTTP (health check in U2; upload in U5). */
+/** Native shell HTTP helpers; paths and types from @zee-index/sdk (R20). */
+
+import { getHealthCheckUrl } from "@zee-index/sdk";
 
 export const SESSION_COOKIE_NAME = "authjs.session-token";
 
@@ -42,10 +44,13 @@ export async function checkServerHealth(origin: string): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
-    const res = await fetch(`${normalizeServerOrigin(origin)}/api/health`, {
-      method: "GET",
-      signal: controller.signal,
-    });
+    const res = await fetch(
+      `${normalizeServerOrigin(origin)}${getHealthCheckUrl()}`,
+      {
+        method: "GET",
+        signal: controller.signal,
+      },
+    );
     return res.ok;
   } finally {
     clearTimeout(timeout);

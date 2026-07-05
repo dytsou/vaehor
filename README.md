@@ -53,7 +53,8 @@
 - [Environment Variables](#️-environment-variables)
 - [Deployment Guide](#-deployment-guide)
   - [VPS / DigitalOcean](#vps--digitalocean)
-  - [Auto HTTPS with DuckDNS + Caddy](#automatic-https-with-duckdns--caddy)
+  - [Auto HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
+  - [Mobile app (Capacitor)](#mobile-app-capacitor)
   - [Railway / Render / Vercel](#other-platforms)
 - [Security](#-security)
   - [Authentication & Authorization](#authentication--authorization)
@@ -150,10 +151,11 @@
 <tr><td>Google Drive API v3</td><td>File storage, streaming, metadata</td></tr>
 <tr><td>Prisma + PostgreSQL 16</td><td>Database ORM with migration support</td></tr>
 <tr><td rowspan="2"><strong>Infrastructure</strong></td><td>Redis 7</td><td>Caching, rate limiting, session data</td></tr>
-<tr><td>Docker + Caddy</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
-<tr><td rowspan="3"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
+<tr><td>Docker + Traefik</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
+<tr><td rowspan="4"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
 <tr><td>Vitest + Playwright</td><td>Unit tests + end-to-end testing</td></tr>
 <tr><td>ESLint + Prettier + Husky</td><td>Linting, formatting, git hooks</td></tr>
+<tr><td>Capacitor 7</td><td>iOS/Android hybrid shell (`apps/mobile/`)</td></tr>
 </table>
 
 ---
@@ -166,7 +168,7 @@ flowchart TB
         A["React 19 + Next.js 16\nApp Router · Zustand · TanStack Query"]
     end
 
-    subgraph CADDY["🔒 Caddy Reverse Proxy"]
+    subgraph TRAEFIK["🔒 Traefik Reverse Proxy"]
         B["Auto-HTTPS · Let's Encrypt\n:443 → :3000"]
     end
 
@@ -182,8 +184,8 @@ flowchart TB
         H["☁️ Google Drive API v3\nFiles · Streaming\nMetadata"]
     end
 
-    CLIENT <-->|HTTPS| CADDY
-    CADDY <--> APP
+    CLIENT <-->|HTTPS| TRAEFIK
+    TRAEFIK <--> APP
     C <--> F
     C <--> G
     C <--> H
@@ -522,27 +524,38 @@ docker compose logs -f   # Watch startup logs
 | `zee-index` | 512 MB       | ~300 MB       |
 | `postgres`  | 200 MB       | ~50 MB        |
 | `redis`     | 150 MB       | ~20 MB        |
-| `caddy`     | 50 MB        | ~10 MB        |
+| `traefik`   | 50 MB        | ~10 MB        |
 | **Total**   | **~912 MB**  | **~380 MB**   |
 
-### Automatic HTTPS with DuckDNS + Caddy
+### Automatic HTTPS with DuckDNS + Traefik
 
-The included `docker-compose.yml` has built-in support for **free HTTPS**:
+Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443. See [docs/deployment.md](docs/deployment.md) for full operator notes.
 
 1. **Get a DuckDNS domain** at [duckdns.org](https://www.duckdns.org/)
 2. **Add to `.env`:**
    ```bash
+   DOMAIN="your-subdomain.duckdns.org"
+   ACME_EMAIL="you@example.com"
    DUCKDNS_DOMAIN="your-subdomain"
    DUCKDNS_TOKEN="your-duckdns-token"
    NEXTAUTH_URL="https://your-subdomain.duckdns.org"
    ```
-3. **Create a `Caddyfile`:**
+3. **Deploy** — Traefik provisions Let's Encrypt certificates automatically:
+   ```bash
+   docker compose up -d --build
    ```
-   your-subdomain.duckdns.org {
-     reverse_proxy zee-index:3000
-   }
-   ```
-4. **Deploy** — Caddy automatically provisions SSL via Let's Encrypt
+
+### Mobile app (Capacitor)
+
+Installable iOS/Android client in `apps/mobile/` — WebView UI, native OAuth, biometrics, file upload, and deep links.
+
+```bash
+pnpm mobile:dev          # Shell UI dev server
+pnpm mobile:build        # Production shell bundle
+pnpm mobile:sync         # Copy into android/ (and ios/ when added)
+```
+
+Device live reload and store release: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/store-release.md](docs/mobile/store-release.md).
 
 ### Other Platforms
 
@@ -762,9 +775,13 @@ zee-index/
 ├── scripts/                      # Utility scripts
 │   └── hash-password.sh          # bcrypt password hash generator
 │
+├── apps/
+│   └── mobile/                   # Capacitor iOS/Android shell
+├── deploy/
+│   └── traefik/                  # Traefik static + dynamic config
 ├── docker-compose.yml            # Production stack
 ├── Dockerfile                    # Multi-stage optimized build
-├── Caddyfile                     # Reverse proxy config
+├── Caddyfile                     # Legacy (deprecated; see docs/deployment.md)
 ├── proxy.ts                       # Auth, i18n, rate limiting (Next.js 16 proxy)
 └── next.config.mjs               # Next.js + security headers
 ```

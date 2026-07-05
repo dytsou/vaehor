@@ -1,13 +1,19 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+const devServerUrl = process.env.CAPACITOR_SERVER_URL?.trim();
+
 const config: CapacitorConfig = {
   appId: "com.zeeindex.mobile",
   appName: "Zee Index",
   webDir: "dist",
-  server: {
-    // ponytail: set url to dev machine LAN IP during R18 device testing only
-    cleartext: true,
-  },
+  server: devServerUrl
+    ? {
+        url: devServerUrl,
+        cleartext: devServerUrl.startsWith("http://"),
+      }
+    : {
+        cleartext: true,
+      },
   plugins: {
     App: {
       appUrlOpen: {
