@@ -3,6 +3,7 @@ import { useAppStore } from "@/lib/store";
 import { parseDroppedItems, FileEntry } from "@/lib/fileParser";
 import { useTranslations } from "next-intl";
 import { runChunkedFileUpload } from "@/hooks/chunked-file-upload";
+import { useNativeUpload } from "@/hooks/use-native-upload";
 
 interface UseUploadProps {
   currentFolderId: string;
@@ -25,6 +26,20 @@ export function useUpload({
   const activeUploadsCount = useRef(0);
   const uploadQueue = useRef<(() => Promise<void>)[]>([]);
   const t = useTranslations("UploadModal");
+
+  const nativeUpload = useNativeUpload({
+    currentFolderId,
+    triggerRefresh,
+    onError: (message) => addToast({ message, type: "error" }),
+  });
+
+  const requestUpload = useCallback(() => {
+    if (nativeUpload.isAvailable) {
+      void nativeUpload.pickAndUpload();
+      return;
+    }
+    setIsUploadModalOpen(true);
+  }, [nativeUpload]);
 
   const processNextInQueue = useCallback(async () => {
     if (
@@ -226,6 +241,7 @@ export function useUpload({
     isUploadModalOpen,
     isDragging,
     setIsUploadModalOpen,
+    requestUpload,
     handleDragOver,
     handleDragLeave,
     handleDropUpload,

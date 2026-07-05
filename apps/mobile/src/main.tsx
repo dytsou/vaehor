@@ -222,21 +222,56 @@ function App() {
 
   if (view === "webview" && webviewSession) {
     return (
-      <WebViewScreen
-        locale={locale}
-        origin={webviewSession.origin}
-        sessionToken={webviewSession.sessionToken}
-        bootstrapToken={webviewSession.bootstrapToken}
-        onBack={() => {
-          setWebviewSession(null);
-          setView("servers");
-        }}
-        onLogout={() => {
-          void clearSessionForServer(webviewSession.origin);
-          setWebviewSession(null);
-          setView("servers");
-        }}
-      />
+      <>
+        <WebViewScreen
+          locale={locale}
+          origin={webviewSession.origin}
+          sessionToken={webviewSession.sessionToken}
+          bootstrapToken={webviewSession.bootstrapToken}
+          onBack={() => {
+            setWebviewSession(null);
+            setUpload(null);
+            setView("servers");
+          }}
+          onLogout={() => {
+            void clearSessionForServer(webviewSession.origin);
+            setWebviewSession(null);
+            setUpload(null);
+            setView("servers");
+          }}
+          onUploadProgress={(progress) => {
+            setUpload({
+              fileName: progress.fileName,
+              percent: progress.percent,
+              status: progress.status,
+              errorMessage: progress.errorMessage,
+            });
+          }}
+        />
+        {upload ? (
+          <div
+            style={{
+              position: "fixed",
+              inset: "auto 0 0 0",
+              background: "rgba(255,255,255,0.96)",
+              borderTop: "1px solid #ccc",
+              padding: "0.75rem",
+              maxHeight: "40vh",
+              overflow: "auto",
+            }}
+          >
+            <UploadProgressScreen
+              locale={locale}
+              upload={upload}
+              onDismiss={
+                upload.status === "uploading"
+                  ? undefined
+                  : () => setUpload(null)
+              }
+            />
+          </div>
+        ) : null}
+      </>
     );
   }
 

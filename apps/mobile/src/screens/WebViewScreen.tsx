@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Locale } from "../lib/i18n";
 import { t } from "../lib/i18n";
 import { bootstrapPathFromToken } from "../lib/oauth";
+import { attachUploadBridge } from "../plugins/upload-bridge";
 import { issueBootstrapPath, webViewEntryUrl } from "../lib/session-store";
+import type { NativeUploadProgress } from "../lib/upload-bridge";
 
 export function WebViewScreen({
   locale,
@@ -11,6 +13,7 @@ export function WebViewScreen({
   bootstrapToken,
   onLogout,
   onBack,
+  onUploadProgress,
 }: {
   locale: Locale;
   origin: string;
@@ -18,7 +21,9 @@ export function WebViewScreen({
   bootstrapToken?: string;
   onLogout: () => void;
   onBack: () => void;
+  onUploadProgress?: (progress: NativeUploadProgress) => void;
 }) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +57,19 @@ export function WebViewScreen({
     };
   }, [initialBootstrap, locale, origin, sessionToken]);
 
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !frameSrc || !onUploadProgress) return;
+
+    return attachUploadBridge({
+      origin,
+      sessionToken,
+      iframe,
+      onProgress: onUploadProgress,
+      onLogout,
+    });
+  }, [frameSrc, onLogout, onUploadProgress, origin, sessionToken]);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div
@@ -73,6 +91,7 @@ export function WebViewScreen({
         <p style={{ padding: "1rem", color: "#b00020" }}>{error}</p>
       ) : frameSrc ? (
         <iframe
+          ref={iframeRef}
           title={t(locale, "webview.title")}
           src={frameSrc}
           style={{ flex: 1, border: "none", width: "100%" }}

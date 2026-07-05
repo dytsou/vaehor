@@ -1,4 +1,7 @@
 /** Minimal SDK-style client for native shell HTTP (health check in U2; upload in U5). */
+
+export const SESSION_COOKIE_NAME = "authjs.session-token";
+
 export function normalizeServerOrigin(input: string): string {
   const trimmed = input.trim();
   const withScheme = /^https?:\/\//i.test(trimmed)
@@ -14,11 +17,32 @@ export function normalizeServerOrigin(input: string): string {
   return url.origin;
 }
 
+export type ServerFetch = (
+  path: string,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export function createServerFetch(
+  origin: string,
+  sessionToken: string,
+): ServerFetch {
+  const base = normalizeServerOrigin(origin);
+  return (path, init = {}) => {
+    const headers = new Headers(init.headers);
+    headers.set("Cookie", `${SESSION_COOKIE_NAME}=${sessionToken}`);
+    return fetch(`${base}${path}`, {
+      ...init,
+      headers,
+      credentials: "omit",
+    });
+  };
+}
+
 export async function checkServerHealth(origin: string): Promise<boolean> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
-    const res = await fetch(`${origin}/api/health`, {
+    const res = await fetch(`${normalizeServerOrigin(origin)}/api/health`, {
       method: "GET",
       signal: controller.signal,
     });
