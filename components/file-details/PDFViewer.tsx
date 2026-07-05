@@ -159,7 +159,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
         {showThumbnails && (
           <div className="w-64 bg-zinc-900 border-r border-white/5 overflow-y-auto p-4 space-y-4 shadow-2xl animate-in slide-in-from-left duration-300">
             <Document file={src} onLoadSuccess={onDocumentLoadSuccess}>
-              {Array.from({ length: numPages }, (_, i) => i + 1).map(
+              {Array.from({ length: numPages ?? 0 }, (_, i) => i + 1).map(
                 (pageNum) => (
                   <button
                     key={`page-${pageNum}`}
