@@ -1,7 +1,17 @@
+import { App as CapApp } from "@capacitor/app";
 import { StrictMode, useCallback, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { getDeviceLocale, type Locale, type MessageKey } from "./lib/i18n";
+import { promptBiometricUnlock } from "./lib/biometrics";
+import { getDeviceLocale, t, type Locale, type MessageKey } from "./lib/i18n";
 import { isOnline, onNetworkChange } from "./lib/network-status";
+import { completeOAuthFromCallback, startGoogleOAuth } from "./lib/oauth";
+import {
+  clearSessionForServer,
+  loadSessionForServer,
+  recordBiometricFailure,
+  resetBiometricFailures,
+  saveSessionForServer,
+} from "./lib/session-store";
 import {
   addServer,
   getActiveServer,
@@ -17,8 +27,9 @@ import {
   UploadProgressScreen,
   type UploadState,
 } from "./screens";
+import { WebViewScreen } from "./screens/WebViewScreen";
 
-type View = "servers" | "add" | "offline" | "upload";
+type View = "servers" | "add" | "offline" | "upload" | "webview" | "auth";
 
 function App() {
   const [locale] = useState<Locale>(() => getDeviceLocale());
@@ -29,6 +40,19 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState<MessageKey | undefined>();
   const [upload, setUpload] = useState<UploadState | null>(null);
+  const [pendingOAuthOrigin, setPendingOAuthOrigin] = useState<string | null>(
+    null,
+  );
+  const [webviewSession, setWebviewSession] = useState<{
+    origin: string;
+    sessionToken: string;
+    bootstrapToken?: string;
+  } | null>(null);
+  const [authPrompt, setAuthPrompt] = useState<{
+    origin: string;
+    sessionToken: string;
+    bootstrapToken?: string;
+  } | null>(null);
 
   const refreshServers = useCallback(async () => {
     const list = await preferencesStore.getServers();
@@ -56,6 +80,76 @@ function App() {
     });
   }, [checkNetwork, refreshServers]);
 
+  useEffect(() => {
+    const sub = CapApp.addListener("appUrlOpen", ({ url }) => {
+      if (!pendingOAuthOrigin) return;
+      void (async () => {
+        try {
+          const result = await completeOAuthFromCallback(
+            pendingOAuthOrigin,
+            url,
+          );
+          await saveSessionForServer(result.origin, result.sessionToken);
+          setPendingOAuthOrigin(null);
+          setAuthPrompt({
+            origin: result.origin,
+            sessionToken: result.sessionToken,
+            bootstrapToken: result.bootstrapToken,
+          });
+          setView("auth");
+        } catch {
+          setPendingOAuthOrigin(null);
+        }
+      })();
+    });
+    return () => {
+      void sub.then((handle) => handle.remove());
+    };
+  }, [pendingOAuthOrigin]);
+
+  const openServer = useCallback(async (server: ServerBookmark) => {
+    const stored = await loadSessionForServer(server.url);
+    if (stored && server.biometricsEnabled) {
+      const ok = await promptBiometricUnlock("Unlock your saved session");
+      if (!ok) {
+        const failures = await recordBiometricFailure(server.url);
+        if (failures >= 3) {
+          await clearSessionForServer(server.url);
+          setPendingOAuthOrigin(server.url);
+          await startGoogleOAuth(server.url);
+        }
+        return;
+      }
+      await resetBiometricFailures(server.url);
+      setWebviewSession({ origin: server.url, sessionToken: stored });
+      setView("webview");
+      return;
+    }
+
+    if (stored) {
+      setWebviewSession({ origin: server.url, sessionToken: stored });
+      setView("webview");
+      return;
+    }
+
+    setPendingOAuthOrigin(server.url);
+    await startGoogleOAuth(server.url);
+  }, []);
+
+  const enableBiometricsForActive = useCallback(
+    async (origin: string, sessionToken: string, bootstrapToken?: string) => {
+      const list = await preferencesStore.getServers();
+      const updated = list.map((s) =>
+        s.url === origin ? { ...s, biometricsEnabled: true } : s,
+      );
+      await preferencesStore.setServers(updated);
+      setWebviewSession({ origin, sessionToken, bootstrapToken });
+      setAuthPrompt(null);
+      setView("webview");
+    },
+    [],
+  );
+
   // ponytail: demo hook for UploadProgressScreen until U5 bridge wires real uploads
   useEffect(() => {
     const demo = new URLSearchParams(window.location.search).get("demoUpload");
@@ -82,6 +176,64 @@ function App() {
         upload={upload}
         onDismiss={() => {
           setUpload(null);
+          setView("servers");
+        }}
+      />
+    );
+  }
+
+  if (view === "auth" && authPrompt) {
+    return (
+      <div style={{ padding: "1rem", maxWidth: "480px", margin: "0 auto" }}>
+        <h1 style={{ fontSize: "1.35rem" }}>
+          {t(locale, "auth.enableBiometrics")}
+        </h1>
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+          <button
+            type="button"
+            onClick={() =>
+              void enableBiometricsForActive(
+                authPrompt.origin,
+                authPrompt.sessionToken,
+                authPrompt.bootstrapToken,
+              )
+            }
+          >
+            {t(locale, "auth.enableBiometrics")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setWebviewSession({
+                origin: authPrompt.origin,
+                sessionToken: authPrompt.sessionToken,
+                bootstrapToken: authPrompt.bootstrapToken,
+              });
+              setAuthPrompt(null);
+              setView("webview");
+            }}
+          >
+            {t(locale, "auth.skipBiometrics")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "webview" && webviewSession) {
+    return (
+      <WebViewScreen
+        locale={locale}
+        origin={webviewSession.origin}
+        sessionToken={webviewSession.sessionToken}
+        bootstrapToken={webviewSession.bootstrapToken}
+        onBack={() => {
+          setWebviewSession(null);
+          setView("servers");
+        }}
+        onLogout={() => {
+          void clearSessionForServer(webviewSession.origin);
+          setWebviewSession(null);
           setView("servers");
         }}
       />
@@ -133,6 +285,10 @@ function App() {
         const previous = servers.find((s) => s.id === activeId)?.url ?? null;
         await switchActiveServer(preferencesStore, id, previous);
         await refreshServers();
+      }}
+      onOpen={(id) => {
+        const server = servers.find((s) => s.id === id);
+        if (server) void openServer(server);
       }}
     />
   );

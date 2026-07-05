@@ -44,12 +44,14 @@ export function ServerListScreen({
   activeId,
   onAdd,
   onSwitch,
+  onOpen,
 }: {
   locale: Locale;
   servers: ServerBookmark[];
   activeId: string | null;
   onAdd: () => void;
   onSwitch: (id: string) => void;
+  onOpen?: (id: string) => void;
 }) {
   return (
     <ScreenShell title={t(locale, "servers.title")} locale={locale}>
@@ -72,8 +74,22 @@ export function ServerListScreen({
                 {server.url}
               </div>
               {activeId === server.id ? (
-                <div style={{ marginTop: "0.5rem", color: "#0a0" }}>
-                  {t(locale, "servers.active")}
+                <div
+                  style={{
+                    marginTop: "0.5rem",
+                    display: "flex",
+                    gap: "0.5rem",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ color: "#0a0" }}>
+                    {t(locale, "servers.active")}
+                  </span>
+                  {onOpen ? (
+                    <button type="button" onClick={() => onOpen(server.id)}>
+                      {t(locale, "servers.open")}
+                    </button>
+                  ) : null}
                 </div>
               ) : (
                 <button

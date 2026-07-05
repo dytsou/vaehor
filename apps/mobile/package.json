@@ -12,10 +12,13 @@
   },
   "dependencies": {
     "@capacitor/android": "7.6.7",
+    "@capacitor/app": "7.1.2",
+    "@capacitor/browser": "7.0.5",
     "@capacitor/core": "7.6.7",
     "@capacitor/ios": "7.6.7",
     "@capacitor/network": "7.0.4",
     "@capacitor/preferences": "7.0.4",
+    "@capgo/capacitor-native-biometric": "7.6.0",
     "@zee-index/sdk": "workspace:*",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"

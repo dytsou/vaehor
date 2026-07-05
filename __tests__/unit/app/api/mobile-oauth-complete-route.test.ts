@@ -7,12 +7,14 @@ const {
   mockConsumeMobileOAuthState,
   mockMintMobileExchangeToken,
   mockRedeemMobileExchangeToken,
+  mockMintSessionBootstrapToken,
 } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockCheckRateLimit: vi.fn(),
   mockConsumeMobileOAuthState: vi.fn(),
   mockMintMobileExchangeToken: vi.fn(),
   mockRedeemMobileExchangeToken: vi.fn(),
+  mockMintSessionBootstrapToken: vi.fn(),
 }));
 
 vi.mock("@/auth", () => ({
@@ -27,6 +29,7 @@ vi.mock("@/lib/services/mobile-oauth", () => ({
   MOBILE_SESSION_COOKIE_NAME: "authjs.session-token",
   consumeMobileOAuthState: mockConsumeMobileOAuthState,
   mintMobileExchangeToken: mockMintMobileExchangeToken,
+  mintSessionBootstrapToken: mockMintSessionBootstrapToken,
   redeemMobileExchangeToken: mockRedeemMobileExchangeToken,
 }));
 
@@ -93,6 +96,7 @@ describe("app/api/mobile/oauth-complete route", () => {
 
   it("POST returns session material for a valid exchange token", async () => {
     mockRedeemMobileExchangeToken.mockResolvedValue("session-jwt");
+    mockMintSessionBootstrapToken.mockResolvedValue("bootstrap-token");
 
     const response = await POST(
       new NextRequest("http://localhost:3000/api/mobile/oauth-complete", {
@@ -109,6 +113,7 @@ describe("app/api/mobile/oauth-complete route", () => {
     await expect(response.json()).resolves.toEqual({
       cookieName: "authjs.session-token",
       sessionToken: "session-jwt",
+      bootstrapToken: "bootstrap-token",
     });
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
       "capacitor://localhost",

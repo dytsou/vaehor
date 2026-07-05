@@ -20,5 +20,14 @@
   "upload.title": "Uploading",
   "upload.progress": "{{percent}}% complete",
   "upload.error": "Upload failed",
-  "common.back": "Back"
+  "common.back": "Back",
+  "servers.open": "Open",
+  "webview.title": "Zee Index",
+  "webview.loading": "Loading…",
+  "webview.errorBootstrap": "Could not start a session in the browser view.",
+  "webview.signOut": "Sign out",
+  "auth.unlock": "Unlock with biometrics",
+  "auth.signInGoogle": "Sign in with Google",
+  "auth.enableBiometrics": "Enable biometric unlock",
+  "auth.skipBiometrics": "Not now"
 }

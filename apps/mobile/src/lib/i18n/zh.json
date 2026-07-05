@@ -20,5 +20,14 @@
   "upload.title": "上传中",
   "upload.progress": "已完成 {{percent}}%",
   "upload.error": "上传失败",
-  "common.back": "返回"
+  "common.back": "返回",
+  "servers.open": "打开",
+  "webview.title": "Zee Index",
+  "webview.loading": "加载中…",
+  "webview.errorBootstrap": "无法在浏览器视图中启动会话。",
+  "webview.signOut": "退出登录",
+  "auth.unlock": "使用生物识别解锁",
+  "auth.signInGoogle": "使用 Google 登录",
+  "auth.enableBiometrics": "启用生物识别解锁",
+  "auth.skipBiometrics": "暂不启用"
 }

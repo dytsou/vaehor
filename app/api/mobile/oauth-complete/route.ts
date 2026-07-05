@@ -6,6 +6,7 @@ import {
   MOBILE_SESSION_COOKIE_NAME,
   consumeMobileOAuthState,
   mintMobileExchangeToken,
+  mintSessionBootstrapToken,
   redeemMobileExchangeToken,
 } from "@/lib/services/mobile-oauth";
 
@@ -56,10 +57,12 @@ export const POST = createPublicRoute(
     }
 
     const cors = mobileApiCorsHeaders(request.headers.get("Origin"));
+    const bootstrapToken = await mintSessionBootstrapToken(sessionToken);
     return NextResponse.json(
       {
         cookieName: MOBILE_SESSION_COOKIE_NAME,
         sessionToken,
+        bootstrapToken,
       },
       cors ? { headers: cors } : undefined,
     );

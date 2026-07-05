@@ -335,6 +335,12 @@ importers:
       '@capacitor/android':
         specifier: 7.6.7
         version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/app':
+        specifier: 7.1.2
+        version: 7.1.2(@capacitor/core@7.6.7)
+      '@capacitor/browser':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
       '@capacitor/core':
         specifier: 7.6.7
         version: 7.6.7
@@ -347,6 +353,9 @@ importers:
       '@capacitor/preferences':
         specifier: 7.0.4
         version: 7.0.4(@capacitor/core@7.6.7)
+      '@capgo/capacitor-native-biometric':
+        specifier: 7.6.0
+        version: 7.6.0(@capacitor/core@7.6.7)
       '@zee-index/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -1120,6 +1129,16 @@ packages:
     peerDependencies:
       '@capacitor/core': ^7.6.0
 
+  '@capacitor/app@7.1.2':
+    resolution: {integrity: sha512-d4I/oF/PRu4megL7/IGKYfe5j7yzSON1FRFgq6kH+m5kH6g7V+wyjHRLauCzGNjdRx4S+nWOumINds0qcRBtKg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/browser@7.0.5':
+    resolution: {integrity: sha512-YF/kC1m1e6c81X/agtAnYItVlqiQ/nXLG+Q3QXNDuiMoRynqa3Guu8ZaV9kWvqQcHoE2w18xz7WGpPOuh+R1fA==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
   '@capacitor/cli@7.6.7':
     resolution: {integrity: sha512-nV9j1+431/rsiabGs1UK0SbETrl2JfAf3SSlsM9RbMMjAL7WmruxnlJcbB9IXPoa6L99GljSO5q/9UCNvYz6Ag==}
     engines: {node: '>=20.0.0'}
@@ -1140,6 +1159,11 @@ packages:
 
   '@capacitor/preferences@7.0.4':
     resolution: {integrity: sha512-TJhkwaI2RCs/iDC9PjNczZV4h6JM4gUtTuKMeFdy0OwGgFEHf4TrtW2mFMc1TnPDalYQ91p9NT+UKgiJs9/xtg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capgo/capacitor-native-biometric@7.6.0':
+    resolution: {integrity: sha512-ZQ+Nc+uS2sT8TED/REYlmGV34ASFsBe30YdABBQIRL+A2iVbWtdiL0FbX+1sKKXzrS2DGf+mD657Qwl1jGSDLg==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -10086,6 +10110,14 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.7
 
+  '@capacitor/app@7.1.2(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
+  '@capacitor/browser@7.0.5(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
   '@capacitor/cli@7.6.7':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
@@ -10121,6 +10153,10 @@ snapshots:
       '@capacitor/core': 7.6.7
 
   '@capacitor/preferences@7.0.4(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
+  '@capgo/capacitor-native-biometric@7.6.0(@capacitor/core@7.6.7)':
     dependencies:
       '@capacitor/core': 7.6.7
 

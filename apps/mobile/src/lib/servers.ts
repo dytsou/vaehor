@@ -1,10 +1,13 @@
 import { Preferences } from "@capacitor/preferences";
 import { checkServerHealth, normalizeServerOrigin } from "./api-client";
 
-/** U4 WebViewScreen wires real cookie jar clearing; noop until then. */
+import { clearSessionForServer } from "./session-store";
+
 export async function clearWebViewCookiesForOrigin(
-  _origin: string,
-): Promise<void> {}
+  origin: string,
+): Promise<void> {
+  await clearSessionForServer(origin);
+}
 
 export type ServerBookmark = {
   id: string;
