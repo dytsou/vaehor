@@ -15,6 +15,7 @@ export default defineConfig({
       "node_modules",
       ".next/**",
       "e2e/**",
+      "apps/mobile/node_modules/**",
       "packages/mcp/node_modules/**",
       "packages/sdk/node_modules/**",
     ],

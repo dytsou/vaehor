@@ -341,6 +341,12 @@ importers:
       '@capacitor/ios':
         specifier: 7.6.7
         version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/network':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
+      '@capacitor/preferences':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
       '@zee-index/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
@@ -1126,6 +1132,16 @@ packages:
     resolution: {integrity: sha512-ZXw1tO1orV6yDpkJyXxoerLC6S+UW8HFa280TX57Pgo4tPwuqWDF22vInjaolKmL/+k70R+zuRjul+hhiBWvlw==}
     peerDependencies:
       '@capacitor/core': ^7.6.0
+
+  '@capacitor/network@7.0.4':
+    resolution: {integrity: sha512-fNhN3968AQWMnzasPJ0B8e+nyk7+R6V9PWIBQWSQRHrKndDgWRHpxkjEzJPgnJr3EjnKLjbwO+UYy+EwBlGs3A==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/preferences@7.0.4':
+    resolution: {integrity: sha512-TJhkwaI2RCs/iDC9PjNczZV4h6JM4gUtTuKMeFdy0OwGgFEHf4TrtW2mFMc1TnPDalYQ91p9NT+UKgiJs9/xtg==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
 
   '@commander-js/extra-typings@14.0.0':
     resolution: {integrity: sha512-hIn0ncNaJRLkZrxBIp5AsW/eXEHNKYQBh0aPdoUqNgD+Io3NIykQqpKFyKcuasZhicGaEZJX/JBSIkZ4e5x8Dg==}
@@ -10097,6 +10113,14 @@ snapshots:
       tslib: 2.8.1
 
   '@capacitor/ios@7.6.7(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
+  '@capacitor/network@7.0.4(@capacitor/core@7.6.7)':
+    dependencies:
+      '@capacitor/core': 7.6.7
+
+  '@capacitor/preferences@7.0.4(@capacitor/core@7.6.7)':
     dependencies:
       '@capacitor/core': 7.6.7
 
