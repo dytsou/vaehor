@@ -23,6 +23,7 @@ import {
   ERROR_MESSAGES,
   GOOGLE_DRIVE_API_BASE_URL,
 } from "@/lib/constants";
+import { applyDownloadCorsHeaders } from "@/lib/mobile-origins";
 
 export interface DownloadContext {
   fileId: string;
@@ -435,12 +436,7 @@ export function prepareResponseHeaders(
   responseHeaders.set("X-Content-Type-Options", "nosniff");
   responseHeaders.set("Connection", "keep-alive");
 
-  const allowedOrigin = requestOrigin || process.env.NEXTAUTH_URL || "";
-  responseHeaders.set("Access-Control-Allow-Origin", allowedOrigin);
-  responseHeaders.set(
-    "Access-Control-Expose-Headers",
-    "Content-Range, Content-Length, Accept-Ranges",
-  );
+  applyDownloadCorsHeaders(responseHeaders, requestOrigin);
 
   if (isHEAD) return responseHeaders;
 

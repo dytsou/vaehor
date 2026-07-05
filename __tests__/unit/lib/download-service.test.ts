@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
 const {
@@ -204,6 +204,16 @@ describe("lib/services/download", () => {
   });
 
   describe("prepareResponseHeaders", () => {
+    const originalNextAuthUrl = process.env.NEXTAUTH_URL;
+
+    beforeEach(() => {
+      process.env.NEXTAUTH_URL = "https://files.example.com";
+    });
+
+    afterEach(() => {
+      process.env.NEXTAUTH_URL = originalNextAuthUrl;
+    });
+
     it("sets inline streaming headers for ranged media", () => {
       const upstreamResponse = new Response(null, {
         headers: {
@@ -224,6 +234,52 @@ describe("lib/services/download", () => {
       expect(headers.get("Content-Disposition")).toContain("inline");
       expect(headers.get("Content-Range")).toBe("bytes 0-1023/4096");
       expect(headers.get("Accept-Ranges")).toBe("bytes");
+    });
+
+    it("echoes allowed mobile Origin in CORS headers", () => {
+      const headers = prepareResponseHeaders(
+        "video/mp4",
+        "movie.mp4",
+        "bytes=0-1023",
+        "video",
+        new Response(null, {
+          headers: { "Content-Range": "bytes 0-1023/4096" },
+        }),
+        false,
+        "capacitor://localhost",
+      );
+
+      expect(headers.get("Access-Control-Allow-Origin")).toBe(
+        "capacitor://localhost",
+      );
+    });
+
+    it("omits permissive CORS for disallowed origins", () => {
+      const headers = prepareResponseHeaders(
+        "video/mp4",
+        "movie.mp4",
+        null,
+        null,
+        null,
+        false,
+        "https://evil.example",
+      );
+
+      expect(headers.get("Access-Control-Allow-Origin")).toBeNull();
+    });
+
+    it("keeps NEXTAUTH_URL fallback when Origin is absent", () => {
+      const headers = prepareResponseHeaders(
+        "video/mp4",
+        "movie.mp4",
+        null,
+        null,
+        null,
+      );
+
+      expect(headers.get("Access-Control-Allow-Origin")).toBe(
+        "https://files.example.com",
+      );
     });
   });
 });

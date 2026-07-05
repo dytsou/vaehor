@@ -68,6 +68,7 @@ const authConfig: NextAuthConfig = {
       name: `authjs.session-token`,
       options: {
         httpOnly: true,
+        // Capacitor WebView loads NEXTAUTH_URL as first-party; lax + secure-on-HTTPS is sufficient.
         sameSite: "lax",
         path: "/",
         secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
