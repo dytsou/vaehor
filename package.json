@@ -33,6 +33,8 @@
     "mobile:dev": "pnpm --filter @zee-index/mobile dev",
     "mobile:build": "pnpm --filter @zee-index/mobile build",
     "mobile:sync": "pnpm --filter @zee-index/mobile cap:sync",
+    "mobile:sync:android": "pnpm --filter @zee-index/mobile cap:sync:android",
+    "mobile:sync:ios": "pnpm --filter @zee-index/mobile cap:sync:ios",
     "build:redocly": "pnpm compile:openapi && redocly build-docs ./docs/api/openapi.yaml -o ./docs/api/website/index.html",
     "api:compile": "tsp compile docs/api/spec/entry.tsp --config docs/api/spec/tspconfig.yaml",
     "api:docs:redoc": "pnpm api:compile && redocly preview-docs ./docs/api/openapi.yaml",

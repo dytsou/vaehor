@@ -1,0 +1,64 @@
+PODS:
+  - Capacitor (7.6.7):
+    - CapacitorCordova
+  - CapacitorApp (7.1.2):
+    - Capacitor
+  - CapacitorBrowser (7.0.5):
+    - Capacitor
+  - CapacitorCordova (7.6.7)
+  - CapacitorNetwork (7.0.4):
+    - Capacitor
+  - CapacitorPreferences (7.0.4):
+    - Capacitor
+  - CapawesomeCapacitorBackgroundTask (7.0.1):
+    - Capacitor
+  - CapawesomeCapacitorFilePicker (7.2.0):
+    - Capacitor
+  - CapgoCapacitorNativeBiometric (7.1.13):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../../../node_modules/.pnpm/@capacitor+ios@7.6.7_@capacitor+core@7.6.7/node_modules/@capacitor/ios`)"
+  - "CapacitorApp (from `../../../../node_modules/.pnpm/@capacitor+app@7.1.2_@capacitor+core@7.6.7/node_modules/@capacitor/app`)"
+  - "CapacitorBrowser (from `../../../../node_modules/.pnpm/@capacitor+browser@7.0.5_@capacitor+core@7.6.7/node_modules/@capacitor/browser`)"
+  - "CapacitorCordova (from `../../../../node_modules/.pnpm/@capacitor+ios@7.6.7_@capacitor+core@7.6.7/node_modules/@capacitor/ios`)"
+  - "CapacitorNetwork (from `../../../../node_modules/.pnpm/@capacitor+network@7.0.4_@capacitor+core@7.6.7/node_modules/@capacitor/network`)"
+  - "CapacitorPreferences (from `../../../../node_modules/.pnpm/@capacitor+preferences@7.0.4_@capacitor+core@7.6.7/node_modules/@capacitor/preferences`)"
+  - "CapawesomeCapacitorBackgroundTask (from `../../../../node_modules/.pnpm/@capawesome+capacitor-background-task@7.0.1_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-background-task`)"
+  - "CapawesomeCapacitorFilePicker (from `../../../../node_modules/.pnpm/@capawesome+capacitor-file-picker@7.2.0_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-file-picker`)"
+  - "CapgoCapacitorNativeBiometric (from `../../../../node_modules/.pnpm/@capgo+capacitor-native-biometric@7.6.0_@capacitor+core@7.6.7/node_modules/@capgo/capacitor-native-biometric`)"
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../../../node_modules/.pnpm/@capacitor+ios@7.6.7_@capacitor+core@7.6.7/node_modules/@capacitor/ios"
+  CapacitorApp:
+    :path: "../../../../node_modules/.pnpm/@capacitor+app@7.1.2_@capacitor+core@7.6.7/node_modules/@capacitor/app"
+  CapacitorBrowser:
+    :path: "../../../../node_modules/.pnpm/@capacitor+browser@7.0.5_@capacitor+core@7.6.7/node_modules/@capacitor/browser"
+  CapacitorCordova:
+    :path: "../../../../node_modules/.pnpm/@capacitor+ios@7.6.7_@capacitor+core@7.6.7/node_modules/@capacitor/ios"
+  CapacitorNetwork:
+    :path: "../../../../node_modules/.pnpm/@capacitor+network@7.0.4_@capacitor+core@7.6.7/node_modules/@capacitor/network"
+  CapacitorPreferences:
+    :path: "../../../../node_modules/.pnpm/@capacitor+preferences@7.0.4_@capacitor+core@7.6.7/node_modules/@capacitor/preferences"
+  CapawesomeCapacitorBackgroundTask:
+    :path: "../../../../node_modules/.pnpm/@capawesome+capacitor-background-task@7.0.1_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-background-task"
+  CapawesomeCapacitorFilePicker:
+    :path: "../../../../node_modules/.pnpm/@capawesome+capacitor-file-picker@7.2.0_@capacitor+core@7.6.7/node_modules/@capawesome/capacitor-file-picker"
+  CapgoCapacitorNativeBiometric:
+    :path: "../../../../node_modules/.pnpm/@capgo+capacitor-native-biometric@7.6.0_@capacitor+core@7.6.7/node_modules/@capgo/capacitor-native-biometric"
+
+SPEC CHECKSUMS:
+  Capacitor: 8ef25ba872436d2c5ac2a4791f7255529bdcd93b
+  CapacitorApp: f01a913211780e0718dae9750442c3e23f96e106
+  CapacitorBrowser: 6d09f59655e89aede71654ef08b98de55cf032b6
+  CapacitorCordova: 139e2ed3d91c54b5aeae7941135c9f9aefc6da1d
+  CapacitorNetwork: b719d692a8d1310da8d26d6648d3aa1ef1e100e1
+  CapacitorPreferences: 69d9991307507aeab8ef8019c10b9babfda0e9ca
+  CapawesomeCapacitorBackgroundTask: e17ea2608e9bdd14889d8eba2d793ff9c337db6c
+  CapawesomeCapacitorFilePicker: 0f4a913a00e39dd77213449f0d917e92f35a5ca9
+  CapgoCapacitorNativeBiometric: ede2c497c810fcad523b4e3d1895f989d33fe72b
+
+PODFILE CHECKSUM: 5ccb10b36c88f05f8dc4dc9ebbd1c49fc0c748fa
+
+COCOAPODS: 1.16.2

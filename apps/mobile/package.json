@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "cap:assets": "capacitor-assets generate --iconBackgroundColor '#1B2026' --splashBackgroundColor '#1B2026' --assetPath resources --ios --android",
     "cap:sync": "cap sync",
+    "cap:sync:android": "cap sync android",
+    "cap:sync:ios": "cap sync ios",
     "cap:open:ios": "cap open ios",
     "cap:open:android": "cap open android"
   },
@@ -26,6 +29,7 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@capacitor/assets": "3.0.5",
     "@capacitor/cli": "7.6.7",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
