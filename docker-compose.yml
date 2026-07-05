@@ -84,6 +84,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.zee-index.rule=Host(`${DOMAIN:-localhost}`)
+      - traefik.http.routers.zee-index.entrypoints=websecure
+      - traefik.http.routers.zee-index.tls=true
+      - traefik.http.routers.zee-index.tls.certresolver=letsencrypt
+      - traefik.http.services.zee-index.loadbalancer.server.port=3000
 
   cron-monitor:
     image: curlimages/curl:8.10.1
@@ -126,9 +133,9 @@ services:
         limits:
           memory: 30M
 
-  caddy:
-    image: caddy:alpine
-    container_name: caddy
+  traefik:
+    image: traefik:v3.3.5
+    container_name: traefik
     restart: unless-stopped
     dns:
       - 8.8.8.8
@@ -137,13 +144,17 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_data:/letsencrypt
+      - ./deploy/traefik/traefik.yml:/traefik.yml:ro
+      - ./deploy/traefik/dynamic:/dynamic:ro
+    command:
+      - --configFile=/traefik.yml
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
     deploy:
       resources:
         limits:
-          memory: 50M
+          memory: 128M
     depends_on:
       zee-index:
         condition: service_healthy
@@ -151,5 +162,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  caddy_data:
-  caddy_config:
+  traefik_data:

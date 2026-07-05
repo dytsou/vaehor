@@ -1,0 +1,3 @@
+# No buffering middleware — large uploads must stream to zee-index (R17).
+http:
+  middlewares: {}
