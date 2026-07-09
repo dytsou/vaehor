@@ -94,7 +94,7 @@ describe("app/api/mobile/oauth-complete route", () => {
     });
   });
 
-  it("POST returns session material for a valid exchange token", async () => {
+  it("POST returns bootstrap material for a valid exchange token", async () => {
     mockRedeemMobileExchangeToken.mockResolvedValue("session-jwt");
     mockMintSessionBootstrapToken.mockResolvedValue("bootstrap-token");
 
@@ -112,7 +112,6 @@ describe("app/api/mobile/oauth-complete route", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       cookieName: "authjs.session-token",
-      sessionToken: "session-jwt",
       bootstrapToken: "bootstrap-token",
     });
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(

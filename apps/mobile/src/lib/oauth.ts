@@ -9,9 +9,12 @@ export type OAuthDeps = {
     token: string,
   ) => Promise<{
     cookieName: string;
-    sessionToken: string;
-    bootstrapToken?: string;
+    bootstrapToken: string;
   }>;
+  redeemBootstrap: (
+    origin: string,
+    bootstrapToken: string,
+  ) => Promise<{ sessionToken: string }>;
 };
 
 export const defaultOAuthDeps: OAuthDeps = {
@@ -33,9 +36,17 @@ export const defaultOAuthDeps: OAuthDeps = {
     if (!res.ok) throw new Error("oauth_redeem_failed");
     return (await res.json()) as {
       cookieName: string;
-      sessionToken: string;
-      bootstrapToken?: string;
+      bootstrapToken: string;
     };
+  },
+  async redeemBootstrap(origin, bootstrapToken) {
+    const res = await fetch(`${origin}/api/mobile/session-bootstrap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bootstrapToken }),
+    });
+    if (!res.ok) throw new Error("oauth_bootstrap_redeem_failed");
+    return (await res.json()) as { sessionToken: string };
   },
 };
 
@@ -78,14 +89,21 @@ export async function completeOAuthFromCallback(
   origin: string;
   cookieName: string;
   sessionToken: string;
-  bootstrapToken?: string;
 }> {
   const origin = normalizeServerOrigin(expectedOrigin);
   const parsed = parseOAuthCallbackUrl(callbackUrl);
   if (!parsed) throw new Error("oauth_callback_invalid");
 
-  const session = await deps.redeemExchange(origin, parsed.token);
-  return { origin, ...session };
+  const exchanged = await deps.redeemExchange(origin, parsed.token);
+  const { sessionToken } = await deps.redeemBootstrap(
+    origin,
+    exchanged.bootstrapToken,
+  );
+  return {
+    origin,
+    cookieName: exchanged.cookieName,
+    sessionToken,
+  };
 }
 
 export function bootstrapPathFromToken(bootstrapToken: string): string {

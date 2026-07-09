@@ -70,7 +70,6 @@ function App() {
   const [authPrompt, setAuthPrompt] = useState<{
     origin: string;
     sessionToken: string;
-    bootstrapToken?: string;
   } | null>(null);
 
   const refreshServers = useCallback(async () => {
@@ -188,10 +187,7 @@ function App() {
                 biometricsEnabled: false,
               },
               result.sessionToken,
-              {
-                bootstrapToken: result.bootstrapToken,
-                initialPath: deepLinkPath,
-              },
+              { initialPath: deepLinkPath },
             );
             return;
           }
@@ -199,7 +195,6 @@ function App() {
           setAuthPrompt({
             origin: result.origin,
             sessionToken: result.sessionToken,
-            bootstrapToken: result.bootstrapToken,
           });
           setView("auth");
         } catch {
@@ -272,13 +267,13 @@ function App() {
   );
 
   const enableBiometricsForActive = useCallback(
-    async (origin: string, sessionToken: string, bootstrapToken?: string) => {
+    async (origin: string, sessionToken: string) => {
       const list = await preferencesStore.getServers();
       const updated = list.map((s) =>
         s.url === origin ? { ...s, biometricsEnabled: true } : s,
       );
       await preferencesStore.setServers(updated);
-      setWebviewSession({ origin, sessionToken, bootstrapToken });
+      setWebviewSession({ origin, sessionToken });
       setAuthPrompt(null);
       setView("webview");
     },
@@ -330,7 +325,6 @@ function App() {
               void enableBiometricsForActive(
                 authPrompt.origin,
                 authPrompt.sessionToken,
-                authPrompt.bootstrapToken,
               )
             }
           >
@@ -342,7 +336,6 @@ function App() {
               setWebviewSession({
                 origin: authPrompt.origin,
                 sessionToken: authPrompt.sessionToken,
-                bootstrapToken: authPrompt.bootstrapToken,
               });
               setAuthPrompt(null);
               setView("webview");

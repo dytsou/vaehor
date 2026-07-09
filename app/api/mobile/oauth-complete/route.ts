@@ -61,7 +61,6 @@ export const POST = createPublicRoute(
     return NextResponse.json(
       {
         cookieName: MOBILE_SESSION_COOKIE_NAME,
-        sessionToken,
         bootstrapToken,
       },
       cors ? { headers: cors } : undefined,
