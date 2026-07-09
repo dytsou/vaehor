@@ -71,3 +71,25 @@ export function mobileApiCorsHeaders(
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
+
+/** Same-origin relative path only; blocks open redirects. */
+export function safeMobileRedirectPath(
+  redirect: string | null | undefined,
+  fallback = "/",
+): string | null {
+  if (!redirect) return fallback;
+  if (!redirect.startsWith("/") || redirect.startsWith("//")) return null;
+  if (redirect.includes("\\")) return null;
+
+  try {
+    const parsed = new URL(redirect, "http://localhost");
+    if (parsed.origin !== "http://localhost") return null;
+    const pathname = decodeURIComponent(parsed.pathname);
+    if (!pathname.startsWith("/") || pathname.startsWith("//")) {
+      return null;
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return null;
+  }
+}

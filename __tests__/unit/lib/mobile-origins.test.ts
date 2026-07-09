@@ -3,6 +3,7 @@ import {
   applyDownloadCorsHeaders,
   isAllowedMobileOrigin,
   resolveDownloadCorsOrigin,
+  safeMobileRedirectPath,
 } from "@/lib/mobile-origins";
 
 describe("lib/mobile-origins", () => {
@@ -56,5 +57,15 @@ describe("lib/mobile-origins", () => {
     expect(headers.get("Access-Control-Allow-Origin")).toBe(
       "https://files.example.com",
     );
+  });
+
+  it("allows same-origin relative redirect paths only", () => {
+    expect(safeMobileRedirectPath("/en/share/abc")).toBe("/en/share/abc");
+    expect(safeMobileRedirectPath("/en/share/abc?token=1")).toBe(
+      "/en/share/abc?token=1",
+    );
+    expect(safeMobileRedirectPath("https://evil.com")).toBeNull();
+    expect(safeMobileRedirectPath("//evil.com")).toBeNull();
+    expect(safeMobileRedirectPath("/%2F%2Fevil.com")).toBeNull();
   });
 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { decode } from "next-auth/jwt";
 import { z } from "zod";
 import { createPublicRoute } from "@/lib/api-middleware";
+import { safeMobileRedirectPath } from "@/lib/mobile-origins";
 import {
   MOBILE_SESSION_COOKIE_NAME,
   createMobileOAuthState,
@@ -53,10 +54,17 @@ export const GET = createPublicRoute(
       );
     }
 
-    const redirectTo =
-      request.nextUrl.searchParams.get("redirect") ??
-      new URL("/", request.url).pathname;
-    const response = NextResponse.redirect(new URL(redirectTo, request.url));
+    const rawRedirect = request.nextUrl.searchParams.get("redirect");
+    const redirectTo = safeMobileRedirectPath(
+      rawRedirect,
+      new URL("/", request.url).pathname,
+    );
+    if (rawRedirect && !redirectTo) {
+      return NextResponse.json({ error: "Invalid redirect" }, { status: 400 });
+    }
+    const response = NextResponse.redirect(
+      new URL(redirectTo ?? "/", request.url),
+    );
     response.cookies.set(
       MOBILE_SESSION_COOKIE_NAME,
       sessionToken,
