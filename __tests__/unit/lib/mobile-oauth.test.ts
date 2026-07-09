@@ -19,8 +19,8 @@ import {
 } from "@/lib/services/mobile-oauth";
 
 describe("lib/services/mobile-oauth", () => {
-  beforeEach(() => {
-    resetMobileOAuthNonceStoreForTests();
+  beforeEach(async () => {
+    await resetMobileOAuthNonceStoreForTests();
   });
 
   it("creates and consumes OAuth state once", async () => {

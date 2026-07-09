@@ -1,12 +1,17 @@
 import { SignJWT, jwtVerify } from "jose";
+import { REDIS_KEYS } from "@/lib/constants";
+import { kv } from "@/lib/kv";
 import { getLocalStorageAuthSecret } from "@/lib/local-auth-secret";
 
 const PURPOSE_STATE = "mobile-oauth-state";
 const PURPOSE_EXCHANGE = "mobile-oauth-exchange";
 const PURPOSE_BOOTSTRAP = "mobile-session-bootstrap";
 
-// ponytail: in-memory one-time jti set; lost on process restart; upgrade to KV for multi-instance
-const consumedJtis = new Set<string>();
+const JTI_TTL_SECONDS = {
+  state: 600,
+  exchange: 120,
+  bootstrap: 120,
+} as const;
 
 export const MOBILE_SESSION_COOKIE_NAME = "authjs.session-token";
 
@@ -18,9 +23,18 @@ function signingSecret(): Uint8Array {
   return secret;
 }
 
-function markJtiConsumed(jti: string): boolean {
-  if (consumedJtis.has(jti)) return false;
-  consumedJtis.add(jti);
+function jtiKey(jti: string): string {
+  return `${REDIS_KEYS.MOBILE_OAUTH_JTI}${jti}`;
+}
+
+async function markJtiConsumed(
+  jti: string,
+  ttlSeconds: number,
+): Promise<boolean> {
+  const key = jtiKey(jti);
+  const count = await kv.incr(key);
+  if (count !== 1) return false;
+  await kv.expire(key, ttlSeconds);
   return true;
 }
 
@@ -40,7 +54,7 @@ export async function consumeMobileOAuthState(state: string): Promise<boolean> {
     if (payload.purpose !== PURPOSE_STATE || typeof payload.jti !== "string") {
       return false;
     }
-    return markJtiConsumed(payload.jti);
+    return markJtiConsumed(payload.jti, JTI_TTL_SECONDS.state);
   } catch {
     return false;
   }
@@ -69,7 +83,9 @@ export async function redeemMobileExchangeToken(
     ) {
       return null;
     }
-    if (!markJtiConsumed(payload.jti)) return null;
+    if (!(await markJtiConsumed(payload.jti, JTI_TTL_SECONDS.exchange))) {
+      return null;
+    }
     return typeof payload.sessionToken === "string"
       ? payload.sessionToken
       : null;
@@ -101,7 +117,9 @@ export async function redeemSessionBootstrapToken(
     ) {
       return null;
     }
-    if (!markJtiConsumed(payload.jti)) return null;
+    if (!(await markJtiConsumed(payload.jti, JTI_TTL_SECONDS.bootstrap))) {
+      return null;
+    }
     return typeof payload.sessionToken === "string"
       ? payload.sessionToken
       : null;
@@ -110,6 +128,9 @@ export async function redeemSessionBootstrapToken(
   }
 }
 
-export function resetMobileOAuthNonceStoreForTests(): void {
-  consumedJtis.clear();
+export async function resetMobileOAuthNonceStoreForTests(): Promise<void> {
+  const keys = await kv.keys(`${REDIS_KEYS.MOBILE_OAUTH_JTI}*`);
+  if (keys.length > 0) {
+    await kv.del(...keys);
+  }
 }

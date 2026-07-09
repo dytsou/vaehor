@@ -48,6 +48,7 @@ export const REDIS_KEYS = {
   FOLDER_PATH: "zee-index:folder-path-v7:",
   ADMIN_USERS: "zee-index:admins",
   ADMIN_EDITORS: "zee-index:editors",
+  MOBILE_OAUTH_JTI: "zee-index:mobile-oauth:jti:",
 } as const;
 
 export const REDIS_TTL = {
