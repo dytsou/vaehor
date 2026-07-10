@@ -23,6 +23,10 @@ runs:
       shell: bash
       run: pnpm --filter @zee-index/mcp build
 
+    - name: Build SDK package
+      shell: bash
+      run: pnpm compile:sdk
+
     - name: Generate Prisma Client
       shell: bash
       run: pnpm prisma generate
