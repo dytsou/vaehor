@@ -33,6 +33,10 @@
   </div>
 </div>
 
+<p align="center">
+  <strong>English</strong> · <a href="README-zh.md">繁體中文</a>
+</p>
+
 <br />
 
 ---
@@ -62,7 +66,7 @@
   - [Password Hashing (bcrypt)](#password-hashing-bcrypt)
   - [Mobile OAuth (Capacitor)](#mobile-oauth-capacitor)
   - [Security Headers & CSP](#security-headers--csp)
-- [API Reference](#-api-reference)
+- [API Reference](#-api-reference) ([OpenAPI](docs/api/openapi.yaml))
 - [Keyboard Shortcuts](#️-keyboard-shortcuts)
 - [Internationalization (i18n)](#-internationalization-i18n)
 - [Project Structure](#-project-structure)
@@ -220,12 +224,12 @@ flowchart TB
 
 ### Prerequisites
 
-| Requirement                                                    | Version    | Required              |
-| -------------------------------------------------------------- | ---------- | --------------------- |
-| [Docker](https://docs.docker.com/get-docker/) + Docker Compose | Latest     | ✅ Yes                |
-| [Git](https://git-scm.com/)                                    | Latest     | ✅ Yes                |
-| [Node.js](https://nodejs.org/) + pnpm                          | 26.x / 11+ | 🔶 Only for local dev |
-| Google Cloud Project                                           | —          | ✅ Yes                |
+| Requirement                                                    | Version       | Required              |
+| -------------------------------------------------------------- | ------------- | --------------------- |
+| [Docker](https://docs.docker.com/get-docker/) + Docker Compose | Latest        | ✅ Yes                |
+| [Git](https://git-scm.com/)                                    | Latest        | ✅ Yes                |
+| [Node.js](https://nodejs.org/) + pnpm                          | 26.x / 11+    | 🔶 Only for local dev |
+| Google Cloud Project                                           | —             | ✅ Yes                |
 
 ### 🐳 Quick Start with Docker (Recommended)
 
@@ -596,7 +600,7 @@ Native Google sign-in does **not** use an embedded WebView login. The shell open
 
 1. Register `zeeindex://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
 2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
-3. Server routes used by the shell: `POST /api/mobile/oauth-state`, `GET|POST /api/mobile/oauth-complete`, `POST /api/mobile/session-bootstrap`.
+3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
 4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
 
 Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/store-release.md](docs/mobile/store-release.md).
@@ -616,51 +620,20 @@ Zee-Index includes comprehensive security headers:
 
 ## 📖 API Reference
 
-### Public Endpoints
+API contracts live in **OpenAPI** (generated from TypeSpec):
 
-| Method | Endpoint                     | Description                            |
-| ------ | ---------------------------- | -------------------------------------- |
-| `GET`  | `/api/health`                | Health check                           |
-| `GET`  | `/api/config/public`         | Public app configuration               |
-| `GET`  | `/api/files`                 | List files (with optional share token) |
-| `GET`  | `/api/download?fileId=…`     | Download / stream file                 |
-| `GET`  | `/api/folderpath?folderId=…` | Get folder breadcrumb path             |
-| `GET`  | `/api/metadata?fileId=…`     | Get file metadata                      |
+| Artifact       | Path                                             |
+| -------------- | ------------------------------------------------ |
+| Spec source    | [`docs/api/spec/`](docs/api/spec/)               |
+| OpenAPI 3      | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
+| Operator notes | [`docs/api/README.md`](docs/api/README.md)       |
 
-### Authenticated Endpoints
+```bash
+pnpm compile:openapi     # regenerate openapi.yaml from TypeSpec
+pnpm api:docs:redoc      # preview with Redoc
+```
 
-| Method | Endpoint            | Description        |
-| ------ | ------------------- | ------------------ |
-| `GET`  | `/api/search?q=…`   | Search files       |
-| `GET`  | `/api/datausage`    | Storage usage info |
-| `POST` | `/api/favorites`    | Toggle favorites   |
-| `POST` | `/api/tags`         | Manage file tags   |
-| `POST` | `/api/share/create` | Create share link  |
-
-### Mobile Endpoints (Capacitor shell)
-
-| Method     | Endpoint                        | Description                                      |
-| ---------- | ------------------------------- | ------------------------------------------------ |
-| `POST`     | `/api/mobile/oauth-state`       | Start native OAuth (state / PKCE material)       |
-| `GET/POST` | `/api/mobile/oauth-complete`    | Finish OAuth → `zeeindex://auth/callback?token=` |
-| `POST`     | `/api/mobile/session-bootstrap` | Redeem exchange token into WebView session       |
-
-### Admin Endpoints
-
-| Method   | Endpoint                       | Description              |
-| -------- | ------------------------------ | ------------------------ |
-| `GET`    | `/api/admin/analytics`         | Analytics data           |
-| `GET`    | `/api/admin/activity-log`      | Activity logs            |
-| `GET`    | `/api/admin/cache-stats`       | Cache statistics         |
-| `POST`   | `/api/admin/config`            | Update app configuration |
-| `POST`   | `/api/admin/users`             | Manage admin users       |
-| `DELETE` | `/api/admin/users`             | Remove admin users       |
-| `POST`   | `/api/admin/editors`           | Manage editors           |
-| `DELETE` | `/api/admin/editors`           | Remove editors           |
-| `POST`   | `/api/admin/2fa/setup`         | Configure 2FA            |
-| `POST`   | `/api/admin/protected-folders` | Manage folder passwords  |
-| `POST`   | `/api/admin/manual-drives`     | Manage drives            |
-| `DELETE` | `/api/admin/clearcache`        | Clear all caches         |
+Import `docs/api/openapi.yaml` into Swagger UI / Postman. Mobile OAuth routes are under the **Mobile** tag.
 
 ---
 
