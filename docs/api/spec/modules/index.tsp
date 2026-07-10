@@ -2,6 +2,7 @@ import "./health/index.tsp";
 import "./admin/index.tsp";
 import "./files/index.tsp";
 import "./auth/index.tsp";
+import "./mobile/index.tsp";
 import "./share/index.tsp";
 import "./file-requests/index.tsp";
 import "./setup/index.tsp";

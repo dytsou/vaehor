@@ -50,6 +50,18 @@ pnpm compile:openapi
 | POST   | `/api/auth/2fa/disable`   | Disable 2FA for the current user      |
 | `*`    | `/api/auth/[...nextauth]` | NextAuth handler route                |
 
+### Mobile (Capacitor)
+
+| Method | Endpoint                        | Description                                                |
+| ------ | ------------------------------- | ---------------------------------------------------------- |
+| GET    | `/api/mobile/oauth-state`       | Create one-time OAuth state for native Google sign-in      |
+| GET    | `/api/mobile/oauth-complete`    | Finish browser OAuth → redirect `zeeindex://auth/callback` |
+| POST   | `/api/mobile/oauth-complete`    | Redeem exchange token → bootstrap material                 |
+| GET    | `/api/mobile/session-bootstrap` | Redeem bootstrap token via redirect + set session cookie   |
+| POST   | `/api/mobile/session-bootstrap` | Mint bootstrap URL or redeem bootstrap token               |
+
+Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/openapi.yaml` (tag **Mobile**).
+
 ### Files and Search
 
 | Method | Endpoint                        | Description                          |
