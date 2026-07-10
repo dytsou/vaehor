@@ -96,6 +96,7 @@ describe("lib/app-config", () => {
     mockKvGet.mockResolvedValueOnce({
       ...DEFAULT_APP_CONFIG,
       hideAuthor: true,
+      disableGuestLogin: true,
       localStorageAuthEnabled: true,
       appName: "Hidden",
     });
@@ -104,8 +105,23 @@ describe("lib/app-config", () => {
 
     expect(result).toEqual({
       hideAuthor: true,
+      disableGuestLogin: true,
       localStorageAuthEnabled: true,
     });
+  });
+
+  it("falls back to defaults when the database is unavailable", async () => {
+    mockFindUnique.mockRejectedValueOnce(
+      new Error("Authentication failed against the database server"),
+    );
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await getAppConfig();
+
+    expect(result).toEqual(DEFAULT_APP_CONFIG);
+    expect(mockKvSet).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 
   it("normalizes empty app names back to the default label", async () => {

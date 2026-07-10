@@ -17,16 +17,18 @@ describe("app/api/config route", () => {
 
   it("returns public app config", async () => {
     mockGetPublicAppConfig.mockResolvedValue({
-      appName: "vaehor",
+      hideAuthor: false,
       disableGuestLogin: false,
+      localStorageAuthEnabled: false,
     });
 
     const response = await GET();
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      appName: "vaehor",
+      hideAuthor: false,
       disableGuestLogin: false,
+      localStorageAuthEnabled: false,
     });
   });
 

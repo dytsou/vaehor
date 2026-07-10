@@ -34,6 +34,7 @@ export const appConfigUpdateSchema = appConfigSchema.partial();
 
 export const publicAppConfigSchema = appConfigSchema.pick({
   hideAuthor: true,
+  disableGuestLogin: true,
   localStorageAuthEnabled: true,
 });
 
