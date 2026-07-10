@@ -29,5 +29,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "packages/mcp", "packages/sdk"]
+  "exclude": ["node_modules", "packages/mcp", "packages/sdk", "apps/mobile"]
 }

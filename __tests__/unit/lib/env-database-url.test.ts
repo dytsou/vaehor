@@ -18,7 +18,7 @@ describe("applyDatabaseUrlFromPostgres", () => {
   });
 
   it("builds 127.0.0.1:5432 URL from POSTGRES_* when DATABASE_URL is missing", () => {
-    const env: NodeJS.ProcessEnv = {
+    const env: Record<string, string | undefined> = {
       POSTGRES_USER: "postgres",
       POSTGRES_PASSWORD: "s3cret@x",
       POSTGRES_DB: "vaehor",
@@ -30,7 +30,7 @@ describe("applyDatabaseUrlFromPostgres", () => {
   });
 
   it("honors POSTGRES_PORT override", () => {
-    const env: NodeJS.ProcessEnv = {
+    const env = {
       POSTGRES_USER: "postgres",
       POSTGRES_PASSWORD: "postgres",
       POSTGRES_DB: "vaehor",
@@ -48,12 +48,12 @@ describe("applyDatabaseUrlFromPostgres", () => {
 
 describe("applyLocalRedisUrl", () => {
   it("leaves an existing REDIS_URL alone", () => {
-    const env: NodeJS.ProcessEnv = { REDIS_URL: "redis://cache:6379" };
+    const env = { REDIS_URL: "redis://cache:6379" };
     expect(applyLocalRedisUrl(env)).toBe("redis://cache:6379");
   });
 
   it("defaults to local Redis outside production/CI", () => {
-    const env: NodeJS.ProcessEnv = { NODE_ENV: "development" };
+    const env: Record<string, string | undefined> = { NODE_ENV: "development" };
     expect(applyLocalRedisUrl(env)).toBe("redis://127.0.0.1:6379");
     expect(env.REDIS_URL).toBe("redis://127.0.0.1:6379");
   });

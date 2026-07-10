@@ -20,7 +20,7 @@
     "docker:stop": "docker compose down",
     "start": "dotenv -- next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p apps/mobile/tsconfig.json --noEmit",
     "typecheck:6": "tsc6 --noEmit",
     "format:check": "prettier --check .",
     "format:fix": "prettier --write .",

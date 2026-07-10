@@ -9,7 +9,10 @@
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@vaehor/sdk": ["../../packages/sdk/src/index.ts"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "__tests__"]
 }
