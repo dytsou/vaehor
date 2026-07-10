@@ -1,6 +1,12 @@
 name: Setup project
 description: Install dependencies and prepare the workspace for CI jobs.
 
+inputs:
+  node-version:
+    description: Node.js version for setup-node
+    required: false
+    default: "26"
+
 runs:
   using: composite
   steps:
@@ -12,7 +18,7 @@ runs:
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: "24"
+        node-version: ${{ inputs.node-version }}
         cache: pnpm
 
     - name: Install dependencies

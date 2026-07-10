@@ -208,7 +208,7 @@ flowchart TB
 | -------------------------------------------------------------- | ---------- | --------------------- |
 | [Docker](https://docs.docker.com/get-docker/) + Docker Compose | Latest     | ✅ Yes                |
 | [Git](https://git-scm.com/)                                    | Latest     | ✅ Yes                |
-| [Node.js](https://nodejs.org/) + pnpm                          | 24.x / 11+ | 🔶 Only for local dev |
+| [Node.js](https://nodejs.org/) + pnpm                          | 26.x / 11+ | 🔶 Only for local dev |
 | Google Cloud Project                                           | —          | ✅ Yes                |
 
 ---

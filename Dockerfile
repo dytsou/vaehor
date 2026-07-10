@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Stage 1: Base
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 RUN set -eux; \
   for i in 1 2 3 4 5; do \
   if apk add --no-cache libc6-compat openssl; then \
@@ -62,7 +62,7 @@ ENV NEXT_PUBLIC_LOCAL_STORAGE_NAME=$NEXT_PUBLIC_LOCAL_STORAGE_NAME
 RUN --mount=type=cache,target=/app/.next/cache pnpm run build
 
 # Stage 4: Runner
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
