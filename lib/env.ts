@@ -163,8 +163,7 @@ export function applyDatabaseUrlFromPostgres(
   if (!user || !password || !db) return undefined;
 
   const host = stripEnvQuotes(env.POSTGRES_HOST) || "127.0.0.1";
-  // Default 5433 matches docker-compose host publish (5432 is often another local DB).
-  const port = stripEnvQuotes(env.POSTGRES_PORT) || "5433";
+  const port = stripEnvQuotes(env.POSTGRES_PORT) || "5432";
   const url = `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}?schema=public`;
   env.DATABASE_URL = url;
   return url;

@@ -14,16 +14,16 @@ describe("applyDatabaseUrlFromPostgres", () => {
     );
   });
 
-  it("builds 127.0.0.1:5433 URL from POSTGRES_* when DATABASE_URL is missing", () => {
+  it("builds 127.0.0.1:5432 URL from POSTGRES_* when DATABASE_URL is missing", () => {
     const env: NodeJS.ProcessEnv = {
       POSTGRES_USER: "postgres",
       POSTGRES_PASSWORD: "s3cret@x",
       POSTGRES_DB: "vaehor",
     };
     expect(applyDatabaseUrlFromPostgres(env)).toBe(
-      "postgresql://postgres:s3cret%40x@127.0.0.1:5433/vaehor?schema=public",
+      "postgresql://postgres:s3cret%40x@127.0.0.1:5432/vaehor?schema=public",
     );
-    expect(env.DATABASE_URL).toContain("127.0.0.1:5433");
+    expect(env.DATABASE_URL).toContain("127.0.0.1:5432");
   });
 
   it("honors POSTGRES_PORT override", () => {
@@ -31,9 +31,9 @@ describe("applyDatabaseUrlFromPostgres", () => {
       POSTGRES_USER: "postgres",
       POSTGRES_PASSWORD: "postgres",
       POSTGRES_DB: "vaehor",
-      POSTGRES_PORT: "5432",
+      POSTGRES_PORT: "5433",
     };
-    expect(applyDatabaseUrlFromPostgres(env)).toContain(":5432/");
+    expect(applyDatabaseUrlFromPostgres(env)).toContain(":5433/");
   });
 
   it("returns undefined when POSTGRES_* is incomplete", () => {

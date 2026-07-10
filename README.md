@@ -307,7 +307,7 @@ pnpm install
 cp .env.example .env
 # Edit .env — secrets + Google credentials; POSTGRES_* / REDIS_URL defaults are fine for local
 
-# 3. Start Postgres + Redis (host ports 127.0.0.1:5432 / 127.0.0.1:6379 — avoids clashing with other local DBs on 5432)
+# 3. Start Postgres + Redis (127.0.0.1:5432 / 127.0.0.1:6379)
 pnpm deps:up
 
 # 4. Setup database

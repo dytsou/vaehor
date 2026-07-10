@@ -3,9 +3,8 @@ services:
     image: postgres:16-alpine
     container_name: vaehor-postgres-dev
     restart: always
-    # Host 5433 — 5432 is often another local Postgres (wrong password → slow Prisma auth)
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
