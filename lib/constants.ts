@@ -47,6 +47,8 @@ export const REDIS_KEYS = {
   FILE_DETAILS: "gdrive:file-details-v2:",
   FOLDER_PATH: "zee-index:folder-path-v7:",
   ADMIN_USERS: "zee-index:admins",
+  /** JSON array of emails last synced from ADMIN_EMAILS (for add/remove on env change). */
+  ADMIN_USERS_ENV_SYNC: "zee-index:admins:env-sync",
   ADMIN_EDITORS: "zee-index:editors",
   MOBILE_OAUTH_JTI: "zee-index:mobile-oauth:jti:",
 } as const;

@@ -4,41 +4,31 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { kv } from "@/lib/kv";
 import { REDIS_KEYS } from "@/lib/constants";
-import { normalizeAdminEmails } from "@/lib/services/credential-auth";
+import {
+  normalizeAdminEmails,
+  syncAdminsFromEnv,
+} from "@/lib/services/credential-auth";
 
 type AppRole = "ADMIN" | "EDITOR" | "USER";
 
 export async function resolveRole(email: string): Promise<AppRole> {
   const normalizedEmail = email.toLowerCase().trim();
+  await syncAdminsFromEnv();
   const normalizedEnvAdmins = normalizeAdminEmails();
 
   const dbUser = await db.user.findUnique({
     where: { email: normalizedEmail },
   });
 
-  const [adminCountRaw, isRedisAdminRaw, isRedisEditor] = await Promise.all([
-    kv.scard(REDIS_KEYS.ADMIN_USERS),
+  const [isRedisAdmin, isRedisEditor] = await Promise.all([
     kv.sismember(REDIS_KEYS.ADMIN_USERS, normalizedEmail),
     kv.sismember(REDIS_KEYS.ADMIN_EDITORS, normalizedEmail),
   ]);
 
-  const adminCount = adminCountRaw;
-  let isRedisAdmin = isRedisAdminRaw;
-
-  if (adminCount === 0 && normalizedEnvAdmins.length > 0) {
-    try {
-      await kv.sadd(REDIS_KEYS.ADMIN_USERS, ...normalizedEnvAdmins);
-      isRedisAdmin = normalizedEnvAdmins.includes(normalizedEmail) ? 1 : 0;
-      logger.warn(
-        { count: normalizedEnvAdmins.length },
-        "[Auth] Seeded ADMIN_USERS from ADMIN_EMAILS (bootstrap)",
-      );
-    } catch (err) {
-      logger.error({ err }, "[Auth] Failed to seed ADMIN_USERS from env");
-    }
-  }
-
-  const isAdmin = dbUser?.role === "ADMIN" || isRedisAdmin === 1;
+  const isAdmin =
+    dbUser?.role === "ADMIN" ||
+    isRedisAdmin === 1 ||
+    normalizedEnvAdmins.includes(normalizedEmail);
   const isEditor = dbUser?.role === "EDITOR" || isRedisEditor === 1;
 
   if (isAdmin) return "ADMIN";
