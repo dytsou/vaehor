@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://github.com/dytsou/drive-uploader">
-    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="Zee-Index Logo" width="130" height="130">
+    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
   </a>
 
-  <h1 align="center">⚡ Zee-Index</h1>
+  <h1 align="center">⚡ vaehor</h1>
 
   <p align="center">
     <strong>自架 Google Drive 瀏覽器、媒體庫與串流服務</strong>
@@ -182,7 +182,7 @@ flowchart TB
         B["自動 HTTPS · Let's Encrypt\n:443 → :3000"]
     end
 
-    subgraph APP["⚡ Zee-Index"]
+    subgraph APP["⚡ vaehor"]
         C["API Routes"]
         D["proxy.ts\nAuth · i18n · Rate Limit"]
         E["Server Components\nStreaming SSR"]
@@ -229,7 +229,7 @@ flowchart TB
 
 ```bash
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index
+cd drive-uploader
 cp .env.example .env
 nano .env   # 填入憑證（見「環境變數」）
 docker compose up -d --build
@@ -251,7 +251,7 @@ docker compose down -v            # ⚠️ 連資料一併刪除
 
 ```bash
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index
+cd drive-uploader
 pnpm install
 cp .env.example .env
 # 編輯 .env，設定本機 PostgreSQL 的 DATABASE_URL
@@ -377,7 +377,7 @@ ssh root@your-server-ip
 curl -fsSL https://get.docker.com | sh
 adduser zee && usermod -aG docker zee && su - zee
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index && cp .env.example .env && nano .env
+cd drive-uploader && cp .env.example .env && nano .env
 docker compose up -d --build
 docker compose ps
 ```
@@ -612,7 +612,7 @@ pnpm exec prisma generate
 
 ## 🙏 致謝
 
-本專案基於 [Muhammad Ibnu Fauzi](https://github.com/ifauzeee) 的 [Zee-Index](https://github.com/ifauzeee/Zee-Index)。並感謝 Next.js、VidStack、Radix UI、TanStack、Framer Motion、Zustand、Prisma、Lucide 等開源專案。
+本專案（vaehor）基於 [Muhammad Ibnu Fauzi](https://github.com/ifauzeee) 的 [Zee-Index](https://github.com/ifauzeee/Zee-Index)。並感謝 Next.js、VidStack、Radix UI、TanStack、Framer Motion、Zustand、Prisma、Lucide 等開源專案。
 
 ---
 

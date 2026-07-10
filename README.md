@@ -1,9 +1,9 @@
 <div align="center">
   <a href="https://github.com/dytsou/drive-uploader">
-    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="Zee-Index Logo" width="130" height="130">
+    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
   </a>
 
-  <h1 align="center">⚡ Zee-Index</h1>
+  <h1 align="center">⚡ vaehor</h1>
 
   <p align="center">
     <strong>Self-Hosted Google Drive Explorer, Media Gallery & Streaming Server</strong>
@@ -211,7 +211,7 @@ flowchart TB
         B["Auto-HTTPS · Let's Encrypt\n:443 → :3000"]
     end
 
-    subgraph APP["⚡ Zee-Index Application"]
+    subgraph APP["⚡ vaehor Application"]
         C["API Routes"]
         D["proxy.ts\nAuth · i18n · Rate Limit"]
         E["Server Components\nStreaming SSR"]
@@ -254,12 +254,12 @@ flowchart TB
 
 ### 🐳 Quick Start with Docker (Recommended)
 
-The fastest way to get Zee-Index running with **PostgreSQL**, **Redis**, **auto-HTTPS**, all preconfigured:
+The fastest way to get vaehor running with **PostgreSQL**, **Redis**, **auto-HTTPS**, all preconfigured:
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index
+cd drive-uploader
 
 # 2. Copy environment template
 cp .env.example .env
@@ -300,7 +300,7 @@ For contributors or those who prefer local development with hot reload:
 ```bash
 # 1. Clone and install
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index
+cd drive-uploader
 pnpm install
 
 # 2. Configure environment
@@ -454,13 +454,13 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 ### Email Configuration (Optional)
 
-| Variable     | Description                  | Default                            |
-| ------------ | ---------------------------- | ---------------------------------- |
-| `SMTP_HOST`  | SMTP server                  | `smtp.gmail.com`                   |
-| `SMTP_PORT`  | SMTP port                    | `465`                              |
-| `SMTP_USER`  | SMTP username                | —                                  |
-| `SMTP_PASS`  | SMTP password / app password | —                                  |
-| `EMAIL_FROM` | Sender email address         | `Zee Index <no-reply@example.com>` |
+| Variable     | Description                  | Default                         |
+| ------------ | ---------------------------- | ------------------------------- |
+| `SMTP_HOST`  | SMTP server                  | `smtp.gmail.com`                |
+| `SMTP_PORT`  | SMTP port                    | `465`                           |
+| `SMTP_USER`  | SMTP username                | —                               |
+| `SMTP_PASS`  | SMTP password / app password | —                               |
+| `EMAIL_FROM` | Sender email address         | `vaehor <no-reply@example.com>` |
 
 > **Full template:** copy [`.env.example`](.env.example) (`cp .env.example .env`). It is the source of truth for optional vars (`DOMAIN`, `ACME_EMAIL`, `SETUP_SECRET`, local storage, alerts, etc.).
 
@@ -470,7 +470,7 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 ### VPS / DigitalOcean
 
-Zee-Index is optimized for deployment on low-resource VPS instances (1 CPU / 1 GB RAM):
+vaehor is optimized for deployment on low-resource VPS instances (1 CPU / 1 GB RAM):
 
 ```bash
 # 1. SSH into your server
@@ -485,7 +485,7 @@ su - zee
 
 # 4. Clone and configure
 git clone https://github.com/dytsou/drive-uploader.git
-cd Zee-Index
+cd drive-uploader
 cp .env.example .env
 nano .env  # Configure all required variables
 
@@ -591,13 +591,13 @@ Device live reload and store release: [docs/mobile/development.md](docs/mobile/d
 
 ### Roles & Permissions
 
-Zee-Index resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
+vaehor resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
 
 - **ADMIN**: manage via `POST/DELETE /api/admin/users`
 - **EDITOR**: manage via `POST/DELETE /api/admin/editors`
 - **USER**: default role when not in the above lists
 
-**`ADMIN_EMAILS` sync**: on auth, Zee-Index syncs Redis admins with `ADMIN_EMAILS` — new addresses are granted, addresses removed from the env list are revoked. Admins added only via the Admin API (never listed in `ADMIN_EMAILS`) are kept. You can still manage the live list with `POST/DELETE /api/admin/users`.
+**`ADMIN_EMAILS` sync**: on auth, vaehor syncs Redis admins with `ADMIN_EMAILS` — new addresses are granted, addresses removed from the env list are revoked. Admins added only via the Admin API (never listed in `ADMIN_EMAILS`) are kept. You can still manage the live list with `POST/DELETE /api/admin/users`.
 
 ### Password Hashing (bcrypt)
 
@@ -628,7 +628,7 @@ Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs
 
 ### Security Headers & CSP
 
-Zee-Index includes comprehensive security headers:
+vaehor includes comprehensive security headers:
 
 - **Content-Security-Policy** — Prevents XSS by restricting script/style/media sources
 - **Strict-Transport-Security** — Forces HTTPS (63072000s / ~2 years)
@@ -676,7 +676,7 @@ Import `docs/api/openapi.yaml` into Swagger UI / Postman. Mobile OAuth routes ar
 
 ## 🌍 Internationalization (i18n)
 
-Zee-Index supports multiple languages via `next-intl`:
+vaehor supports multiple languages via `next-intl`:
 
 | Language                 | Code    | Status      |
 | ------------------------ | ------- | ----------- |
@@ -708,7 +708,7 @@ Zee-Index supports multiple languages via `next-intl`:
 ## 📂 Project Structure
 
 ```
-zee-index/
+vaehor/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/               # Main layout (sidebar + content)
@@ -894,8 +894,8 @@ Contributions are welcome! Here's how to get started:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/Zee-Index.git
-cd Zee-Index
+git clone https://github.com/YOUR_USERNAME/drive-uploader.git
+cd drive-uploader
 
 # 2. Create a feature branch
 git checkout -b feat/amazing-feature
@@ -945,7 +945,7 @@ See the [LICENSE](LICENSE) file for full details.
 
 ## 🙏 Acknowledgments
 
-Based on [Zee-Index](https://github.com/ifauzeee/Zee-Index) by [Muhammad Ibnu Fauzi](https://github.com/ifauzeee). Built with these open-source projects:
+**vaehor** is based on [Zee-Index](https://github.com/ifauzeee/Zee-Index) by [Muhammad Ibnu Fauzi](https://github.com/ifauzeee). Built with these open-source projects:
 
 - [Next.js](https://nextjs.org/) — The React framework
 - [VidStack](https://www.vidstack.io/) — Video player components
