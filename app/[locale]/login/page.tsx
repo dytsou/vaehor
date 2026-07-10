@@ -36,6 +36,7 @@ const messageAlertClasses: Record<
 
 function CustomLoginPage() {
   const t = useTranslations("LoginPage");
+  const tFooter = useTranslations("Footer");
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<LoginMessage | null>(null);
   const [isGuestLoginDisabled, setIsGuestLoginDisabled] = useState(true);
@@ -357,7 +358,7 @@ function CustomLoginPage() {
             suppressHydrationWarning
           >
             <span className="block">
-              © 2025 All rights reserved -{" "}
+              © 2025 {tFooter("rightsReserved")}{" "}
               <a
                 href="https://ifauzeee.vercel.app/"
                 target="_blank"
@@ -368,9 +369,9 @@ function CustomLoginPage() {
               </a>
             </span>
             <span className="block">
-              © {new Date().getFullYear()} Modifications by{" "}
+              © {new Date().getFullYear()} {tFooter("modificationsBy")}{" "}
               <a
-                href="https://github.com/dytsou/drive-uploader"
+                href="https://github.com/dytsou/vaehor"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-foreground hover:text-primary"

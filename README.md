@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/dytsou/drive-uploader">
+  <a href="https://github.com/dytsou/vaehor">
     <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
   </a>
 
@@ -16,8 +16,8 @@
 
   <div align="center">
     <a href="https://zee-index.duckdns.org"><img src="https://img.shields.io/badge/🔴_Live_Demo-Visit-FF4444?style=for-the-badge" alt="Live Demo" /></a>
-    <a href="https://github.com/dytsou/drive-uploader/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
-    <a href="https://github.com/dytsou/drive-uploader/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
+    <a href="https://github.com/dytsou/vaehor/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
+    <a href="https://github.com/dytsou/vaehor/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
   </div>
 
   <br />
@@ -258,8 +258,8 @@ The fastest way to get vaehor running with **PostgreSQL**, **Redis**, **auto-HTT
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 
 # 2. Copy environment template
 cp .env.example .env
@@ -299,8 +299,8 @@ For contributors or those who prefer local development with hot reload:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 pnpm install
 
 # 2. Configure environment
@@ -484,8 +484,8 @@ adduser zee && usermod -aG docker zee
 su - zee
 
 # 4. Clone and configure
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 cp .env.example .env
 nano .env  # Configure all required variables
 
@@ -894,8 +894,8 @@ Contributions are welcome! Here's how to get started:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/YOUR_USERNAME/vaehor.git
+cd vaehor
 
 # 2. Create a feature branch
 git checkout -b feat/amazing-feature
@@ -932,7 +932,7 @@ git push origin feat/amazing-feature
 This fork is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with the upstream attribution requirement.
 
 - **Upstream:** [ifauzeee/Zee-Index](https://github.com/ifauzeee/Zee-Index) — Copyright (C) 2025 Muhammad Ibnu Fauzi
-- **This fork:** [dytsou/drive-uploader](https://github.com/dytsou/drive-uploader) — Copyright (C) 2026 dytsou
+- **This fork:** [dytsou/vaehor](https://github.com/dytsou/vaehor) — Copyright (C) 2026 dytsou
 
 - ✅ Free to use, modify, and distribute
 - ✅ Commercial use allowed
@@ -969,10 +969,10 @@ See the [LICENSE](LICENSE) file for full details.
     · based on <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a> / <a href="https://github.com/ifauzeee/Zee-Index">Zee-Index</a>
   </p>
   <p>
-    <a href="https://github.com/dytsou/drive-uploader">GitHub</a>
+    <a href="https://github.com/dytsou/vaehor">GitHub</a>
     ·
     <a href="https://zee-index.duckdns.org">Live Demo</a>
     ·
-    <a href="https://github.com/dytsou/drive-uploader/issues">Issues</a>
+    <a href="https://github.com/dytsou/vaehor/issues">Issues</a>
   </p>
 </div>

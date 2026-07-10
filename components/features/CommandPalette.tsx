@@ -223,7 +223,7 @@ export default function CommandPalette() {
             onSelect={() =>
               runCommand(() =>
                 window.open(
-                  "https://github.com/dytsou/drive-uploader",
+                  "https://github.com/dytsou/vaehor",
                   "_blank",
                   "noopener,noreferrer",
                 ),

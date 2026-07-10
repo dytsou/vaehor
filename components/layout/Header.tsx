@@ -220,7 +220,7 @@ export default function Header() {
     },
     {
       id: "github",
-      href: "https://github.com/dytsou/drive-uploader",
+      href: "https://github.com/dytsou/vaehor",
       target: "_blank",
       rel: "noopener noreferrer",
       icon: Github,

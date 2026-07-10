@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   applicationName: "vaehor",
   authors: [
     { name: "Muhammad Ibnu Fauzi", url: "https://ifauzeee.vercel.app" },
-    { name: "dytsou", url: "https://github.com/dytsou/drive-uploader" },
+    { name: "dytsou", url: "https://github.com/dytsou/vaehor" },
   ],
   generator: "Next.js",
   keywords: ["Google Drive", "Index", "File Manager", "Streaming", "Next.js"],

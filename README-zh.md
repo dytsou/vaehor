@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/dytsou/drive-uploader">
+  <a href="https://github.com/dytsou/vaehor">
     <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
   </a>
 
@@ -16,8 +16,8 @@
 
   <div align="center">
     <a href="https://zee-index.duckdns.org"><img src="https://img.shields.io/badge/🔴_線上展示-Visit-FF4444?style=for-the-badge" alt="Live Demo" /></a>
-    <a href="https://github.com/dytsou/drive-uploader/issues"><img src="https://img.shields.io/badge/🐛_回報問題-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
-    <a href="https://github.com/dytsou/drive-uploader/pulls"><img src="https://img.shields.io/badge/✨_功能建議-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
+    <a href="https://github.com/dytsou/vaehor/issues"><img src="https://img.shields.io/badge/🐛_回報問題-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
+    <a href="https://github.com/dytsou/vaehor/pulls"><img src="https://img.shields.io/badge/✨_功能建議-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
   </div>
 
   <br />
@@ -228,8 +228,8 @@ flowchart TB
 最快方式：一次啟動 **PostgreSQL**、**Redis**、**自動 HTTPS**。
 
 ```bash
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 cp .env.example .env
 nano .env   # 填入憑證（見「環境變數」）
 docker compose up -d --build
@@ -250,8 +250,8 @@ docker compose down -v            # ⚠️ 連資料一併刪除
 ### 💻 本機開發
 
 ```bash
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 pnpm install
 cp .env.example .env
 # 編輯 .env，設定本機 PostgreSQL 的 DATABASE_URL
@@ -376,8 +376,8 @@ Drive API 使用 **服務帳戶 JWT**（穩定、不需瀏覽器 refresh token�
 ssh root@your-server-ip
 curl -fsSL https://get.docker.com | sh
 adduser zee && usermod -aG docker zee && su - zee
-git clone https://github.com/dytsou/drive-uploader.git
-cd drive-uploader && cp .env.example .env && nano .env
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor && cp .env.example .env && nano .env
 docker compose up -d --build
 docker compose ps
 ```
@@ -600,7 +600,7 @@ pnpm exec prisma generate
 本 fork 採用 **AGPL-3.0**，並須遵守上游強制標示條款：
 
 - **上游：** [ifauzeee/Zee-Index](https://github.com/ifauzeee/Zee-Index) — Copyright (C) 2025 Muhammad Ibnu Fauzi
-- **本 fork：** [dytsou/drive-uploader](https://github.com/dytsou/drive-uploader) — Copyright (C) 2026 dytsou
+- **本 fork：** [dytsou/vaehor](https://github.com/dytsou/vaehor) — Copyright (C) 2026 dytsou
 
 - ✅ 可自由使用、修改、散布；允許商業使用
 - ⚠️ **強制標示（不得移除或更改）：** 使用者介面須顯示 `© 2025 All rights reserved - Muhammad Ibnu Fauzi`
@@ -625,10 +625,10 @@ pnpm exec prisma generate
   <p>
     <a href="README.md">English README</a>
     ·
-    <a href="https://github.com/dytsou/drive-uploader">GitHub</a>
+    <a href="https://github.com/dytsou/vaehor">GitHub</a>
     ·
     <a href="https://zee-index.duckdns.org">線上展示</a>
     ·
-    <a href="https://github.com/dytsou/drive-uploader/issues">Issues</a>
+    <a href="https://github.com/dytsou/vaehor/issues">Issues</a>
   </p>
 </div>

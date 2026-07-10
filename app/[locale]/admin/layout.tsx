@@ -44,7 +44,7 @@ const AppFooter = () => {
       <p className="mt-1">
         &copy; {currentYear} {t("modificationsBy")}{" "}
         <a
-          href="https://github.com/dytsou/drive-uploader"
+          href="https://github.com/dytsou/vaehor"
           target="_blank"
           rel="noopener noreferrer"
           className="font-medium text-foreground hover:text-primary"
