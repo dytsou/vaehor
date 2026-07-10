@@ -40,6 +40,7 @@ Thank you for your interest in contributing to Zee-Index! We welcome contributio
   ```bash
   pnpm check:all
   ```
+- **TypeScript**: `pnpm typecheck` uses the TypeScript 7 compiler (`tsc` from `@typescript/native`). ESLint and OpenAPI tooling still resolve the TypeScript 6 API via the `typescript` package alias (`@typescript/typescript6`). Use `pnpm typecheck:6` only if you need to compare against the legacy compiler.
 - **Testing**: Run unit tests and E2E tests to ensure no regressions.
   ```bash
   pnpm test

@@ -151,7 +151,7 @@
 <tr><td>Prisma + PostgreSQL 16</td><td>Database ORM with migration support</td></tr>
 <tr><td rowspan="2"><strong>Infrastructure</strong></td><td>Redis 7</td><td>Caching, rate limiting, session data</td></tr>
 <tr><td>Docker + Caddy</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
-<tr><td rowspan="3"><strong>Dev Tools</strong></td><td>TypeScript 5 (strict)</td><td>Type safety across the entire codebase</td></tr>
+<tr><td rowspan="3"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
 <tr><td>Vitest + Playwright</td><td>Unit tests + end-to-end testing</td></tr>
 <tr><td>ESLint + Prettier + Husky</td><td>Linting, formatting, git hooks</td></tr>
 </table>
