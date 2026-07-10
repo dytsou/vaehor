@@ -319,11 +319,23 @@ pnpm dev
 # 6. Open http://localhost:3000
 ```
 
+If Turbopack panics with **Read-only file system** (or a wedged compile after a bad `.next`), clear the cache and/or use Webpack:
+
+```bash
+pnpm dev:clean        # rm -rf .next
+pnpm dev:fresh        # clean + Turbopack
+pnpm dev:webpack      # Webpack fallback (ROFS / Turbopack panic)
+```
+
+Turbopack’s on-disk FS cache is **off by default** here (avoids restore panics). Re-enable with `TURBOPACK_FS_CACHE=1` if you want faster repeat cold starts on a healthy machine.
+
 **Development commands:**
 
 ```bash
 pnpm dev              # Start with Turbopack (fast)
-pnpm dev:webpack      # Start with Webpack (fallback)
+pnpm dev:webpack      # Start with Webpack (ROFS / Turbopack fallback)
+pnpm dev:clean        # Delete .next cache
+pnpm dev:fresh        # Clean cache, then Turbopack
 pnpm build            # Production build
 pnpm typecheck        # TypeScript type checking
 pnpm lint             # ESLint

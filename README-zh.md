@@ -261,6 +261,16 @@ pnpm dev
 # http://localhost:3000
 ```
 
+若 Turbopack 出現 **Read-only file system**（或 `.next` 損壞導致編譯卡住），清快取或改用 Webpack：
+
+```bash
+pnpm dev:clean     # 刪除 .next
+pnpm dev:fresh     # 清快取後再開 Turbopack
+pnpm dev:webpack   # Webpack 後備（ROFS／Turbopack panic）
+```
+
+本專案預設關閉 Turbopack 磁碟 FS cache（避免 restore panic）。若機器正常、想加速重複冷啟動，可設 `TURBOPACK_FS_CACHE=1`。
+
 ```bash
 pnpm check:all   # 全部檢查
 pnpm test        # 單元測試
