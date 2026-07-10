@@ -6,12 +6,12 @@
   <h1 align="center">⚡ Zee-Index</h1>
 
   <p align="center">
-    <strong>Self-Hosted Google Drive Explorer, CMS & Streaming Platform</strong>
+    <strong>Self-Hosted Google Drive Explorer, Media Gallery & Streaming Server</strong>
   </p>
 
   <p align="center">
     Transform your Google Drive into a professional file manager, media gallery, and streaming server.<br>
-    <strong>Shared Drive</strong> management · <strong>Video Streaming</strong> · <strong>Password-Protected Folders</strong> · <strong>Share Links</strong>
+    <strong>Shared Drive</strong> management · <strong>Video Streaming</strong> · <strong>Mobile App</strong> · <strong>Share Links</strong>
   </p>
 
   <div align="center">
@@ -49,16 +49,18 @@
   - [Prerequisites](#prerequisites)
   - [Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
   - [Local Development](#-local-development)
-- [Google Cloud Setup](#-google-cloud-setup)
+- [Google Cloud Setup](#google-cloud-setup)
 - [Environment Variables](#️-environment-variables)
 - [Deployment Guide](#-deployment-guide)
   - [VPS / DigitalOcean](#vps--digitalocean)
   - [Auto HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
   - [Mobile app (Capacitor)](#mobile-app-capacitor)
-  - [Railway / Render / Vercel](#other-platforms)
+  - [Railway / Render](#other-platforms)
 - [Security](#-security)
   - [Authentication & Authorization](#authentication--authorization)
+  - [Roles & Permissions](#roles--permissions)
   - [Password Hashing (bcrypt)](#password-hashing-bcrypt)
+  - [Mobile OAuth (Capacitor)](#mobile-oauth-capacitor)
   - [Security Headers & CSP](#security-headers--csp)
 - [API Reference](#-api-reference)
 - [Keyboard Shortcuts](#️-keyboard-shortcuts)
@@ -78,14 +80,14 @@
 
 ### ⚡ Performance & UI
 
-| Feature                   | Description                                                               |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Virtualized Rendering** | Smooth scrolling through **10,000+ files** with `@tanstack/react-virtual` |
-| **Smart Prefetching**     | Preloads folder contents on hover for instant navigation                  |
-| **Multi-Layer Caching**   | Redis + in-memory cache for blazing-fast API responses                    |
-| **Turbopack**             | Next.js 16 Turbopack for ultra-fast development builds                    |
-| **PWA Support**           | Installable as a Progressive Web App with offline caching                 |
-| **Dark/Light Mode**       | Automatic theme detection with manual toggle                              |
+| Feature                   | Description                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| **Virtualized Rendering** | Smooth scrolling through **10,000+ files** with `@tanstack/react-virtual`          |
+| **Smart Prefetching**     | Preloads folder contents on hover for instant navigation                           |
+| **Multi-Layer Caching**   | Redis + in-memory cache for blazing-fast API responses                             |
+| **Turbopack**             | Next.js 16 Turbopack for ultra-fast development builds                             |
+| **PWA Support**           | Installable Progressive Web App (shell/asset caching; Drive content needs network) |
+| **Dark/Light Mode**       | Automatic theme detection with manual toggle                                       |
 
 ### 🎬 Media & File Previews
 
@@ -137,6 +139,18 @@
 | **System Health**   | Monitor database, Redis, API health               |
 | **File Request**    | Create public upload links                        |
 
+### 📱 Mobile (Capacitor)
+
+| Feature            | Description                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| **iOS / Android**  | Installable hybrid shell in `apps/mobile/` (WebView UI on your self-hosted origin) |
+| **Native OAuth**   | Google sign-in via system browser + `zeeindex://auth/callback`                     |
+| **Biometrics**     | Optional biometric unlock for stored sessions per server                           |
+| **Native Uploads** | File picker / camera bridge into the existing resumable upload API                 |
+| **Deep Links**     | Custom scheme + optional Universal / App Links                                     |
+
+See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/mobile/).
+
 ---
 
 ## 🛠️ Tech Stack
@@ -146,7 +160,7 @@
 <tr><td rowspan="3"><strong>Frontend</strong></td><td>Next.js 16 + React 19</td><td>App Router, Server Components, Streaming SSR</td></tr>
 <tr><td>Tailwind CSS + Framer Motion</td><td>Styling, glassmorphism, micro-animations</td></tr>
 <tr><td>Zustand + TanStack Query</td><td>Global state + server state management</td></tr>
-<tr><td rowspan="4"><strong>Backend</strong></td><td>Next.js API Routes</td><td>REST API with edge-compatible middleware</td></tr>
+<tr><td rowspan="4"><strong>Backend</strong></td><td>Next.js API Routes</td><td>REST API with Next.js 16 request proxy (`proxy.ts`)</td></tr>
 <tr><td>NextAuth.js v5 (Beta)</td><td>OAuth, credentials, JWT sessions</td></tr>
 <tr><td>Google Drive API v3</td><td>File storage, streaming, metadata</td></tr>
 <tr><td>Prisma + PostgreSQL 16</td><td>Database ORM with migration support</td></tr>
@@ -164,8 +178,8 @@
 
 ```mermaid
 flowchart TB
-    subgraph CLIENT["🌐 Client Browser"]
-        A["React 19 + Next.js 16\nApp Router · Zustand · TanStack Query"]
+    subgraph CLIENT["🌐 Web Browser + Capacitor Mobile Shell"]
+        A["React 19 + Next.js 16 (WebView)\nApp Router · Zustand · TanStack Query"]
     end
 
     subgraph TRAEFIK["🔒 Traefik Reverse Proxy"]
@@ -174,7 +188,7 @@ flowchart TB
 
     subgraph APP["⚡ Zee-Index Application"]
         C["API Routes"]
-        D["Middleware\nAuth · i18n · Rate Limit"]
+        D["proxy.ts\nAuth · i18n · Rate Limit"]
         E["Server Components\nStreaming SSR"]
     end
 
@@ -193,7 +207,7 @@ flowchart TB
     E --- C
 
     style CLIENT fill:#1a1a2e,stroke:#e94560,color:#fff
-    style CADDY fill:#0f3460,stroke:#e94560,color:#fff
+    style TRAEFIK fill:#0f3460,stroke:#e94560,color:#fff
     style APP fill:#16213e,stroke:#0f3460,color:#fff
     style SERVICES fill:#1a1a2e,stroke:#533483,color:#fff
 ```
@@ -212,18 +226,6 @@ flowchart TB
 | [Git](https://git-scm.com/)                                    | Latest     | ✅ Yes                |
 | [Node.js](https://nodejs.org/) + pnpm                          | 26.x / 11+ | 🔶 Only for local dev |
 | Google Cloud Project                                           | —          | ✅ Yes                |
-
----
-
-## 🔐 Roles & Permissions (ADMIN / EDITOR / USER)
-
-Zee-Index resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
-
-- **ADMIN**: manage via `POST/DELETE /api/admin/users`
-- **EDITOR**: manage via `POST/DELETE /api/admin/editors`
-- **USER**: default role when not in the above lists
-
-**Bootstrap**: on the very first start (when the admin list is empty), Zee-Index seeds initial admins from `ADMIN_EMAILS` once so you can access the admin UI, then ongoing changes should be done via the Admin API.
 
 ### 🐳 Quick Start with Docker (Recommended)
 
@@ -308,7 +310,7 @@ pnpm test:e2e         # E2E tests (Playwright)
 
 ---
 
-## ☁️ Google Cloud Setup
+## Google Cloud Setup
 
 <details>
 <summary><strong>Step-by-step Google Cloud configuration</strong></summary>
@@ -345,6 +347,7 @@ pnpm test:e2e         # E2E tests (Playwright)
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
    - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
+   - `zeeindex://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/store-release.md](docs/mobile/store-release.md))
 5. Save the **Client ID** and **Client Secret**
 
 ### 5. Connect Google Drive (choose one)
@@ -377,20 +380,25 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 ### Required Variables
 
-| Variable                       | Description                                                                            | Example                                                       |
-| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `NEXTAUTH_URL`                 | Your application URL                                                                   | `https://yourdomain.com`                                      |
-| `NEXTAUTH_SECRET`              | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`                                     |
-| `GOOGLE_CLIENT_ID`             | Google OAuth Client ID (NextAuth + optional `/setup`)                                  | `xxx.apps.googleusercontent.com`                              |
-| `GOOGLE_CLIENT_SECRET`         | Google OAuth Client Secret                                                             | `GOCSPX-xxx`                                                  |
-| `GOOGLE_REFRESH_TOKEN`         | OAuth refresh token (Drive, legacy)                                                    | From `/setup` OAuth flow, or empty if using a service account |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service account email (`…@….iam.gserviceaccount.com`)                                  | Set for JWT Drive access                                      |
-| `GOOGLE_SERVICE_ACCOUNT_KEY`   | Service account `private_key` PEM (escape newlines in `.env`)                          | From JSON key                                                 |
-| `NEXT_PUBLIC_ROOT_FOLDER_ID`   | Root Google Drive folder ID (share this folder with the service account when using SA) | `1ABcDeFgHiJkLmNoPqRsT`                                       |
-| `GOOGLE_DRIVE_ROOT_FOLDER_ID`  | Optional alias for the same folder ID as `NEXT_PUBLIC_ROOT_FOLDER_ID`                  | Same as root folder ID                                        |
-| `ADMIN_EMAILS`                 | Comma-separated admin emails                                                           | `admin@example.com`                                           |
-| `ADMIN_PASSWORD`               | Admin fallback login password                                                          | Use a strong password                                         |
-| `SHARE_SECRET_KEY`             | JWT signing key (min 32 chars)                                                         | `openssl rand -base64 32`                                     |
+| Variable                     | Description                                                                            | Example                          |
+| ---------------------------- | -------------------------------------------------------------------------------------- | -------------------------------- |
+| `NEXTAUTH_URL`               | Your application URL                                                                   | `https://yourdomain.com`         |
+| `NEXTAUTH_SECRET`            | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`        |
+| `GOOGLE_CLIENT_ID`           | Google OAuth Client ID (NextAuth + optional `/setup`)                                  | `xxx.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET`       | Google OAuth Client Secret                                                             | `GOCSPX-xxx`                     |
+| `NEXT_PUBLIC_ROOT_FOLDER_ID` | Root Google Drive folder ID (share this folder with the service account when using SA) | `1ABcDeFgHiJkLmNoPqRsT`          |
+| `ADMIN_EMAILS`               | Comma-separated admin emails                                                           | `admin@example.com`              |
+| `ADMIN_PASSWORD_HASH`        | bcrypt hash of admin password (**required for production** credential login)           | `scripts/hash-password.sh`       |
+| `ADMIN_PASSWORD`             | Plaintext admin password — **dev only**; ignored for credential login when hash is set | Use a strong password            |
+| `SHARE_SECRET_KEY`           | JWT signing key (min 32 chars)                                                         | `openssl rand -base64 32`        |
+
+### Google Drive auth (pick one)
+
+| Mode                              | Variables                                                    | Notes                                                                 |
+| --------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| **Service account (recommended)** | `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` | Leave `GOOGLE_REFRESH_TOKEN` empty; share the root folder with the SA |
+| **OAuth refresh token (legacy)**  | `GOOGLE_REFRESH_TOKEN` (from `/setup`)                       | Still needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`               |
+| Optional alias                    | `GOOGLE_DRIVE_ROOT_FOLDER_ID`                                | Same folder ID as `NEXT_PUBLIC_ROOT_FOLDER_ID`                        |
 
 ### Database & Cache
 
@@ -404,18 +412,20 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 ### Optional Variables
 
-| Variable                       | Description                                 | Default |
-| ------------------------------ | ------------------------------------------- | ------- |
-| `ADMIN_PASSWORD_HASH`          | bcrypt hash of admin password (recommended) | —       |
-| `NEXT_PUBLIC_ROOT_FOLDER_NAME` | Display name for root folder                | `Home`  |
-| `NEXT_PUBLIC_MANUAL_DRIVES`    | JSON array of additional drives             | `[]`    |
-| `PRIVATE_FOLDER_IDS`           | JSON array of private folder IDs            | `[]`    |
-| `STORAGE_LIMIT_GB`             | Storage warning limit                       | `15`    |
-| `STORAGE_WARNING_THRESHOLD`    | Warning threshold (0–1)                     | `0.90`  |
-| `CRON_SECRET`                  | Cron job authentication token               | —       |
-| `TMDB_API_KEY`                 | TMDB API key for movie metadata             | —       |
-| `DUCKDNS_DOMAIN`               | DuckDNS subdomain                           | —       |
-| `DUCKDNS_TOKEN`                | DuckDNS authentication token                | —       |
+| Variable                       | Description                                                                       | Default             |
+| ------------------------------ | --------------------------------------------------------------------------------- | ------------------- |
+| `NEXT_PUBLIC_ROOT_FOLDER_NAME` | Display name for root folder                                                      | `Home`              |
+| `NEXT_PUBLIC_MANUAL_DRIVES`    | JSON array of additional drives                                                   | `[]`                |
+| `PRIVATE_FOLDER_IDS`           | JSON array of private folder IDs                                                  | `[]`                |
+| `STORAGE_LIMIT_GB`             | Storage warning limit                                                             | `15`                |
+| `STORAGE_WARNING_THRESHOLD`    | Warning threshold (0–1)                                                           | `0.90`              |
+| `CRON_SECRET`                  | Cron job authentication token                                                     | —                   |
+| `TMDB_API_KEY`                 | TMDB API key for movie metadata                                                   | —                   |
+| `SETUP_SECRET`                 | Gate `POST /api/setup/*` via `X-Setup-Secret` (recommended for public first boot) | —                   |
+| `DOMAIN`                       | Public hostname for Traefik Host rule / TLS                                       | `files.example.com` |
+| `ACME_EMAIL`                   | Let's Encrypt registration email                                                  | `you@example.com`   |
+| `DUCKDNS_DOMAIN`               | DuckDNS subdomain                                                                 | —                   |
+| `DUCKDNS_TOKEN`                | DuckDNS authentication token                                                      | —                   |
 
 ### Email Configuration (Optional)
 
@@ -427,62 +437,7 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 | `SMTP_PASS`  | SMTP password / app password | —                                  |
 | `EMAIL_FROM` | Sender email address         | `Zee Index <no-reply@example.com>` |
 
-<details>
-<summary><strong>📋 Complete .env template</strong></summary>
-
-```bash
-# ==============================================================================
-# ZEE-INDEX CONFIGURATION
-# ==============================================================================
-
-# 1. CORE
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET=""          # openssl rand -base64 32
-SHARE_SECRET_KEY=""         # openssl rand -base64 32
-
-ADMIN_EMAILS="admin@example.com"
-ADMIN_PASSWORD="your-secure-password"
-# ADMIN_PASSWORD_HASH=""    # Generate: scripts/hash-password.sh "password"
-
-# 2. GOOGLE DRIVE
-# Service account (recommended for Drive API)
-# GOOGLE_SERVICE_ACCOUNT_EMAIL=""
-# GOOGLE_SERVICE_ACCOUNT_KEY=""
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-GOOGLE_REFRESH_TOKEN=""
-NEXT_PUBLIC_ROOT_FOLDER_ID=""
-NEXT_PUBLIC_ROOT_FOLDER_NAME="Home"
-
-# 3. DATABASE (Docker auto-configures DATABASE_URL)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=zee_index
-
-# 4. LIMITS & MONITORING
-STORAGE_LIMIT_GB=15
-STORAGE_WARNING_THRESHOLD=0.90
-CRON_SECRET="random-string"
-
-# 5. BUILD
-SKIP_ENV_VALIDATION=false
-
-# 6. HTTPS (Optional)
-# DUCKDNS_DOMAIN="your-subdomain"
-# DUCKDNS_TOKEN="your-token"
-
-# 7. EMAIL (Optional)
-# SMTP_HOST="smtp.gmail.com"
-# SMTP_PORT="465"
-# SMTP_USER="your-email@gmail.com"
-# SMTP_PASS="your-app-password"
-# EMAIL_FROM="Zee Index <no-reply@example.com>"
-
-# 8. EXTERNAL SERVICES (Optional)
-# TMDB_API_KEY=""
-```
-
-</details>
+> **Full template:** copy [`.env.example`](.env.example) (`cp .env.example .env`). It is the source of truth for optional vars (`DOMAIN`, `ACME_EMAIL`, `SETUP_SECRET`, local storage, alerts, etc.).
 
 ---
 
@@ -549,6 +504,13 @@ Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443.
 
 Installable iOS/Android client in `apps/mobile/` — WebView UI, native OAuth, biometrics, file upload, and deep links.
 
+**Operator checklist (self-hosted + mobile):**
+
+1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
+2. Register `zeeindex://auth/callback` on the Google OAuth client (see [Google Cloud Setup](#google-cloud-setup)).
+3. Bookmark that origin in the app on first launch.
+4. For Universal / App Links, host `.well-known` files — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md).
+
 ```bash
 pnpm mobile:dev          # Shell UI dev server
 pnpm mobile:build        # Production shell bundle
@@ -583,25 +545,16 @@ Device live reload and store release: [docs/mobile/development.md](docs/mobile/d
 
 ---
 
-## Prisma client troubleshooting
-
-If you see an error like **`Cannot find module '.prisma/client/default'`** during `next dev`/Turbopack startup, your Prisma Client was generated but the expected `node_modules/.prisma` path is missing (common with pnpm layouts).
-
-Fix it with:
-
-```bash
-node scripts/prisma-postinstall.mjs
-```
-
 ## 🔐 Security
 
 ### Authentication & Authorization
 
-| Method              | Description                       | Config                            |
-| ------------------- | --------------------------------- | --------------------------------- |
-| **Google OAuth**    | Login with Google account         | Set OAuth credentials             |
-| **Admin Password**  | Email + password login for admins | `ADMIN_EMAILS` + `ADMIN_PASSWORD` |
-| **Two-Factor Auth** | TOTP-based 2FA with QR code       | Admin dashboard setup             |
+| Method              | Description                                 | Config                                                                                |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Google OAuth**    | Login with Google account                   | Set OAuth credentials                                                                 |
+| **Admin Password**  | Email + password login for admins           | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` (prod); plaintext `ADMIN_PASSWORD` is dev-only |
+| **Two-Factor Auth** | TOTP-based 2FA with QR code                 | Admin dashboard setup                                                                 |
+| **Mobile OAuth**    | System-browser Google sign-in for Capacitor | `zeeindex://auth/callback` + mobile API routes (below)                                |
 
 **Role Hierarchy:**
 
@@ -610,6 +563,16 @@ node scripts/prisma-postinstall.mjs
 | `ADMIN`  | Full access — settings, user management, all files |
 | `EDITOR` | Can manage files but not system settings           |
 | `USER`   | Standard access to permitted folders               |
+
+### Roles & Permissions
+
+Zee-Index resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
+
+- **ADMIN**: manage via `POST/DELETE /api/admin/users`
+- **EDITOR**: manage via `POST/DELETE /api/admin/editors`
+- **USER**: default role when not in the above lists
+
+**`ADMIN_EMAILS` sync**: on auth, Zee-Index syncs Redis admins with `ADMIN_EMAILS` — new addresses are granted, addresses removed from the env list are revoked. Admins added only via the Admin API (never listed in `ADMIN_EMAILS`) are kept. You can still manage the live list with `POST/DELETE /api/admin/users`.
 
 ### Password Hashing (bcrypt)
 
@@ -625,7 +588,18 @@ ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
 # You can then remove the plaintext ADMIN_PASSWORD
 ```
 
-> **Migration path:** If `ADMIN_PASSWORD_HASH` is set, bcrypt is used. Otherwise, the system falls back to timing-safe comparison of `ADMIN_PASSWORD`.
+> **Production:** set `ADMIN_PASSWORD_HASH` (generate with `scripts/hash-password.sh`). Plaintext `ADMIN_PASSWORD` is for local/dev only — credential login in production requires the hash.
+
+### Mobile OAuth (Capacitor)
+
+Native Google sign-in does **not** use an embedded WebView login. The shell opens the system browser, then hands off via a custom scheme:
+
+1. Register `zeeindex://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
+2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
+3. Server routes used by the shell: `POST /api/mobile/oauth-state`, `GET|POST /api/mobile/oauth-complete`, `POST /api/mobile/session-bootstrap`.
+4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
+
+Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/store-release.md](docs/mobile/store-release.md).
 
 ### Security Headers & CSP
 
@@ -663,14 +637,26 @@ Zee-Index includes comprehensive security headers:
 | `POST` | `/api/tags`         | Manage file tags   |
 | `POST` | `/api/share/create` | Create share link  |
 
+### Mobile Endpoints (Capacitor shell)
+
+| Method     | Endpoint                        | Description                                      |
+| ---------- | ------------------------------- | ------------------------------------------------ |
+| `POST`     | `/api/mobile/oauth-state`       | Start native OAuth (state / PKCE material)       |
+| `GET/POST` | `/api/mobile/oauth-complete`    | Finish OAuth → `zeeindex://auth/callback?token=` |
+| `POST`     | `/api/mobile/session-bootstrap` | Redeem exchange token into WebView session       |
+
 ### Admin Endpoints
 
 | Method   | Endpoint                       | Description              |
 | -------- | ------------------------------ | ------------------------ |
 | `GET`    | `/api/admin/analytics`         | Analytics data           |
-| `GET`    | `/api/admin/activity`          | Activity logs            |
+| `GET`    | `/api/admin/activity-log`      | Activity logs            |
 | `GET`    | `/api/admin/cache-stats`       | Cache statistics         |
 | `POST`   | `/api/admin/config`            | Update app configuration |
+| `POST`   | `/api/admin/users`             | Manage admin users       |
+| `DELETE` | `/api/admin/users`             | Remove admin users       |
+| `POST`   | `/api/admin/editors`           | Manage editors           |
+| `DELETE` | `/api/admin/editors`           | Remove editors           |
 | `POST`   | `/api/admin/2fa/setup`         | Configure 2FA            |
 | `POST`   | `/api/admin/protected-folders` | Manage folder passwords  |
 | `POST`   | `/api/admin/manual-drives`     | Manage drives            |
@@ -768,7 +754,7 @@ zee-index/
 │
 ├── hooks/                        # Custom React Hooks
 ├── types/                        # TypeScript definitions
-├── messages/                     # i18n translations (en, id)
+├── messages/                     # i18n translations (en, id, zh-TW)
 ├── prisma/                       # Database schema & migrations
 │   ├── schema.prisma
 │   └── migrations/               # Prisma migration history
@@ -839,10 +825,31 @@ docker compose logs zee-index --tail 50
 <details>
 <summary><strong>🔴 Google Drive API errors (401/403)</strong></summary>
 
+**Service account (recommended):**
+
+1. Confirm `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_KEY` are set
+2. In Google Drive, share the root folder with the service account email (Editor)
+3. Prefer SA over refresh token when both are configured (the app uses the SA)
+
+**OAuth refresh token (legacy):**
+
 1. Verify `GOOGLE_REFRESH_TOKEN` is valid
-2. Re-run `/setup` flow to obtain a new token
-3. Check API quota at [Google Cloud Console](https://console.cloud.google.com/apis/dashboard)
-4. Ensure the Google account has access to the target folders
+2. Re-run `/setup` → **OAuth refresh token** to obtain a new token
+3. Ensure the Google account has access to the target folders
+
+Also check API quota at [Google Cloud Console](https://console.cloud.google.com/apis/dashboard).
+
+</details>
+
+<details>
+<summary><strong>🟡 Prisma client missing (`.prisma/client/default`)</strong></summary>
+
+If you see **`Cannot find module '.prisma/client/default'`** during `next dev` / Turbopack startup (common with pnpm layouts), regenerate the client:
+
+```bash
+pnpm exec prisma generate
+```
+
 </details>
 
 <details>
