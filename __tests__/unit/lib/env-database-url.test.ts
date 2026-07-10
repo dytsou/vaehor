@@ -14,16 +14,16 @@ describe("applyDatabaseUrlFromPostgres", () => {
     );
   });
 
-  it("builds localhost:5433 URL from POSTGRES_* when DATABASE_URL is missing", () => {
+  it("builds 127.0.0.1:5433 URL from POSTGRES_* when DATABASE_URL is missing", () => {
     const env: NodeJS.ProcessEnv = {
       POSTGRES_USER: "postgres",
       POSTGRES_PASSWORD: "s3cret@x",
       POSTGRES_DB: "vaehor",
     };
     expect(applyDatabaseUrlFromPostgres(env)).toBe(
-      "postgresql://postgres:s3cret%40x@localhost:5433/vaehor?schema=public",
+      "postgresql://postgres:s3cret%40x@127.0.0.1:5433/vaehor?schema=public",
     );
-    expect(env.DATABASE_URL).toContain("localhost:5433");
+    expect(env.DATABASE_URL).toContain("127.0.0.1:5433");
   });
 
   it("honors POSTGRES_PORT override", () => {
@@ -49,10 +49,10 @@ describe("applyLocalRedisUrl", () => {
     expect(applyLocalRedisUrl(env)).toBe("redis://cache:6379");
   });
 
-  it("defaults to localhost Redis outside production/CI", () => {
+  it("defaults to local Redis outside production/CI", () => {
     const env: NodeJS.ProcessEnv = { NODE_ENV: "development" };
-    expect(applyLocalRedisUrl(env)).toBe("redis://localhost:6379");
-    expect(env.REDIS_URL).toBe("redis://localhost:6379");
+    expect(applyLocalRedisUrl(env)).toBe("redis://127.0.0.1:6379");
+    expect(env.REDIS_URL).toBe("redis://127.0.0.1:6379");
   });
 
   it("does not invent REDIS_URL in production or CI", () => {
