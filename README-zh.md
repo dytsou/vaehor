@@ -254,9 +254,9 @@ git clone https://github.com/dytsou/vaehor.git
 cd vaehor
 pnpm install
 cp .env.example .env
-# 編輯 .env，設定本機 PostgreSQL 的 DATABASE_URL
+# 編輯 .env（密鑰與 Google 憑證；本機 POSTGRES_* / REDIS_URL 預設即可）
+pnpm deps:up          # Postgres 127.0.0.1:5432 + Redis 127.0.0.1:6379
 pnpm prisma migrate deploy
-docker run -d --name vaehor-redis -p 6379:6379 redis:7-alpine
 pnpm dev
 # http://localhost:3000
 ```
@@ -272,6 +272,8 @@ pnpm dev:webpack   # Webpack 後備（ROFS／Turbopack panic）
 本專案預設關閉 Turbopack 磁碟 FS cache（避免 restore panic）。若機器正常、想加速重複冷啟動，可設 `TURBOPACK_FS_CACHE=1`。
 
 ```bash
+pnpm deps:up     # 啟動本機 Postgres + Redis
+pnpm deps:down   # 停止
 pnpm check:all   # 全部檢查
 pnpm test        # 單元測試
 pnpm test:e2e    # E2E

@@ -305,13 +305,13 @@ pnpm install
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL for a local PostgreSQL instance
+# Edit .env — secrets + Google credentials; POSTGRES_* / REDIS_URL defaults are fine for local
 
-# 3. Setup database
+# 3. Start Postgres + Redis (host ports 127.0.0.1:5432 / 127.0.0.1:6379 — avoids clashing with other local DBs on 5432)
+pnpm deps:up
+
+# 4. Setup database
 pnpm prisma migrate deploy   # or: pnpm prisma db push
-
-# 4. Start Redis (optional but recommended)
-docker run -d --name vaehor-redis -p 6379:6379 redis:7-alpine
 
 # 5. Start development server (with Turbopack)
 pnpm dev
@@ -332,6 +332,8 @@ Turbopack’s on-disk FS cache is **off by default** here (avoids restore panics
 **Development commands:**
 
 ```bash
+pnpm deps:up          # Start local Postgres + Redis (Docker)
+pnpm deps:down        # Stop them
 pnpm dev              # Start with Turbopack (fast)
 pnpm dev:webpack      # Start with Webpack (ROFS / Turbopack fallback)
 pnpm dev:clean        # Delete .next cache
