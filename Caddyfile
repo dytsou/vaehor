@@ -1,6 +1,6 @@
 # DEPRECATED: Production compose uses Traefik (see docs/deployment.md).
 # Kept for reference when migrating legacy deployments.
 
-zee-index.duckdns.org, localhost {
-    reverse_proxy zee-index:3000
+vaehor.duckdns.org, localhost {
+    reverse_proxy vaehor:3000
 }

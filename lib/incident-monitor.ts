@@ -57,12 +57,12 @@ export interface EvaluateIncidentResult {
 }
 
 const INCIDENT_KEYS = {
-  data: "zee-index:incidents:data",
-  timeline: "zee-index:incidents:timeline",
-  openIndex: "zee-index:incidents:open-index",
-  cursor: "zee-index:incidents:last-evaluated-at",
-  notifyCooldownPrefix: "zee-index:incidents:notify-cooldown:",
-  createCooldownPrefix: "zee-index:incidents:create-cooldown:",
+  data: "vaehor:incidents:data",
+  timeline: "vaehor:incidents:timeline",
+  openIndex: "vaehor:incidents:open-index",
+  cursor: "vaehor:incidents:last-evaluated-at",
+  notifyCooldownPrefix: "vaehor:incidents:notify-cooldown:",
+  createCooldownPrefix: "vaehor:incidents:create-cooldown:",
 } as const;
 
 const ALERT_AUTH_FAILURE_THRESHOLD = Number(
@@ -222,7 +222,7 @@ async function notifyIncident(incident: IncidentRecord): Promise<void> {
   const existingCooldown = await kv.get<number>(cooldownKey);
   if (existingCooldown) return;
 
-  const subject = `[Zee-Index Alert] ${incident.severity.toUpperCase()} - ${incident.title}`;
+  const subject = `[vaehor Alert] ${incident.severity.toUpperCase()} - ${incident.title}`;
   const html = `
     <h2>${incident.title}</h2>
     <p>${incident.description}</p>

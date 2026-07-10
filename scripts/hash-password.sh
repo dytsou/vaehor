@@ -1,6 +1,6 @@
 #!/bin/sh
 # Generate a bcrypt hash for ADMIN_PASSWORD_HASH env variable
-# Usage: docker compose exec zee-index sh /app/scripts/hash-password.sh "your-password"
+# Usage: docker compose exec vaehor sh /app/scripts/hash-password.sh "your-password"
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <password>"

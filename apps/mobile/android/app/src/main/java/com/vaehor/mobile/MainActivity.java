@@ -1,4 +1,4 @@
-package com.zeeindex.mobile;
+package com.vaehor.mobile;
 
 import com.getcapacitor.BridgeActivity;
 

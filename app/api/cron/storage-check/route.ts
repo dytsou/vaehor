@@ -5,7 +5,7 @@ import { sendMail } from "@/lib/mailer";
 import { formatBytes } from "@/lib/utils";
 import { kv } from "@/lib/kv";
 
-const WARNING_SENT_KEY = "zee-index:storage-warning-sent";
+const WARNING_SENT_KEY = "vaehor:storage-warning-sent";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,7 @@ export const GET = createCronRoute(async () => {
       }
 
       const warningHtml = `
-        <h1>⚠️ Peringatan Kapasitas Penyimpanan Zee Index</h1>
+        <h1>⚠️ Peringatan Kapasitas Penyimpanan vaehor</h1>
         <p>Penyimpanan Google Drive Anda hampir penuh!</p>
         <ul>
             <li><b>Kapasitas Terpakai:</b> ${formatBytes(details.usage)} (${(usagePercentage * 100).toFixed(2)}%)</li>

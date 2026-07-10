@@ -7,7 +7,7 @@ import "../../models/common.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   @tag("Setup")
   @post
   @route("/setup/finish")

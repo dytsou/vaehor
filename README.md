@@ -169,7 +169,7 @@
 | Feature            | Description                                                                        |
 | ------------------ | ---------------------------------------------------------------------------------- |
 | **iOS / Android**  | Installable hybrid shell in `apps/mobile/` (WebView UI on your self-hosted origin) |
-| **Native OAuth**   | Google sign-in via system browser + `zeeindex://auth/callback`                     |
+| **Native OAuth**   | Google sign-in via system browser + `vaehor://auth/callback`                       |
 | **Biometrics**     | Optional biometric unlock for stored sessions per server                           |
 | **Native Uploads** | File picker / camera bridge into the existing resumable upload API                 |
 | **Deep Links**     | Custom scheme + optional Universal / App Links                                     |
@@ -278,7 +278,7 @@ docker compose up -d --build
 
 ```bash
 # View logs
-docker compose logs -f zee-index
+docker compose logs -f vaehor
 
 # Restart after .env changes
 docker compose up -d
@@ -311,7 +311,7 @@ cp .env.example .env
 pnpm prisma migrate deploy   # or: pnpm prisma db push
 
 # 4. Start Redis (optional but recommended)
-docker run -d --name zee-redis -p 6379:6379 redis:7-alpine
+docker run -d --name vaehor-redis -p 6379:6379 redis:7-alpine
 
 # 5. Start development server (with Turbopack)
 pnpm dev
@@ -372,7 +372,7 @@ pnpm test:e2e         # E2E tests (Playwright)
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
    - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
-   - `zeeindex://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/store-release.md](docs/mobile/store-release.md))
+   - `vaehor://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/store-release.md](docs/mobile/store-release.md))
 5. Save the **Client ID** and **Client Secret**
 
 ### 5. Connect Google Drive (choose one)
@@ -431,7 +431,7 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 | ------------------- | ----------------------------------- | ----------------------------- |
 | `POSTGRES_USER`     | PostgreSQL username                 | `postgres`                    |
 | `POSTGRES_PASSWORD` | PostgreSQL password                 | `postgres`                    |
-| `POSTGRES_DB`       | Database name                       | `zee_index`                   |
+| `POSTGRES_DB`       | Database name                       | `vaehor`                      |
 | `DATABASE_URL`      | Full connection string (non-Docker) | Auto-generated in Docker      |
 | `REDIS_URL`         | Redis connection string             | `redis://redis:6379` (Docker) |
 
@@ -499,13 +499,13 @@ docker compose logs -f   # Watch startup logs
 
 **Resource usage (approximate):**
 
-| Container   | Memory Limit | Typical Usage |
-| ----------- | ------------ | ------------- |
-| `zee-index` | 512 MB       | ~300 MB       |
-| `postgres`  | 200 MB       | ~50 MB        |
-| `redis`     | 150 MB       | ~20 MB        |
-| `traefik`   | 50 MB        | ~10 MB        |
-| **Total**   | **~912 MB**  | **~380 MB**   |
+| Container  | Memory Limit | Typical Usage |
+| ---------- | ------------ | ------------- |
+| `vaehor`   | 512 MB       | ~300 MB       |
+| `postgres` | 200 MB       | ~50 MB        |
+| `redis`    | 150 MB       | ~20 MB        |
+| `traefik`  | 50 MB        | ~10 MB        |
+| **Total**  | **~912 MB**  | **~380 MB**   |
 
 ### Automatic HTTPS with DuckDNS + Traefik
 
@@ -532,7 +532,7 @@ Installable iOS/Android client in `apps/mobile/` — WebView UI, native OAuth, b
 **Operator checklist (self-hosted + mobile):**
 
 1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
-2. Register `zeeindex://auth/callback` on the Google OAuth client (see [Google Cloud Setup](#google-cloud-setup)).
+2. Register `vaehor://auth/callback` on the Google OAuth client (see [Google Cloud Setup](#google-cloud-setup)).
 3. Bookmark that origin in the app on first launch.
 4. For Universal / App Links, host `.well-known` files — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md).
 
@@ -579,7 +579,7 @@ Device live reload and store release: [docs/mobile/development.md](docs/mobile/d
 | **Google OAuth**    | Login with Google account                   | Set OAuth credentials                                                                 |
 | **Admin Password**  | Email + password login for admins           | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` (prod); plaintext `ADMIN_PASSWORD` is dev-only |
 | **Two-Factor Auth** | TOTP-based 2FA with QR code                 | Admin dashboard setup                                                                 |
-| **Mobile OAuth**    | System-browser Google sign-in for Capacitor | `zeeindex://auth/callback` + mobile API routes (below)                                |
+| **Mobile OAuth**    | System-browser Google sign-in for Capacitor | `vaehor://auth/callback` + mobile API routes (below)                                  |
 
 **Role Hierarchy:**
 
@@ -605,7 +605,7 @@ Admin passwords support **bcrypt hashing** for production security:
 
 ```bash
 # Generate a bcrypt hash for your password
-docker compose exec zee-index sh /app/scripts/hash-password.sh "your-password"
+docker compose exec vaehor sh /app/scripts/hash-password.sh "your-password"
 
 # Add the output to .env
 ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
@@ -619,7 +619,7 @@ ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
 
 Native Google sign-in does **not** use an embedded WebView login. The shell opens the system browser, then hands off via a custom scheme:
 
-1. Register `zeeindex://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
+1. Register `vaehor://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
 2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
 3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
 4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
@@ -796,7 +796,7 @@ npx playwright show-report # View HTML report
 
 ```bash
 # Check logs for errors
-docker compose logs zee-index --tail 50
+docker compose logs vaehor --tail 50
 
 # Common causes:
 # 1. Database not ready — increase start_period in healthcheck
@@ -813,7 +813,7 @@ docker compose logs zee-index --tail 50
 2. Check `ADMIN_PASSWORD` has no surrounding quotes in `.env`
 3. For bcrypt: ensure `ADMIN_PASSWORD_HASH` is a valid bcrypt hash
 4. Clear browser cookies and retry
-5. Check `docker compose logs zee-index` for `[Auth]` messages
+5. Check `docker compose logs vaehor` for `[Auth]` messages
 </details>
 
 <details>
@@ -851,7 +851,7 @@ pnpm exec prisma generate
 
 1. Enable Redis (don't rely on in-memory fallback)
 2. Check Google Drive API quota (default: 12,000 requests/min)
-3. Monitor with `docker compose exec zee-index sh -c "cat /proc/1/status | grep VmRSS"`
+3. Monitor with `docker compose exec vaehor sh -c "cat /proc/1/status | grep VmRSS"`
 4. Increase memory limit if needed: `NODE_OPTIONS=--max-old-space-size=512`
 </details>
 
@@ -875,13 +875,13 @@ df -h
 
 ```bash
 # Check migration status
-docker compose exec zee-index npx prisma migrate status
+docker compose exec vaehor npx prisma migrate status
 
 # Force apply migration
-docker compose exec zee-index npx prisma migrate deploy
+docker compose exec vaehor npx prisma migrate deploy
 
 # Reset database (⚠️ destructive)
-docker compose exec zee-index npx prisma migrate reset
+docker compose exec vaehor npx prisma migrate reset
 ```
 
 </details>

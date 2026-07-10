@@ -1,8 +1,8 @@
 # Operator Universal Links and App Links
 
-Zee Index Mobile opens share URLs in the native app via two mechanisms:
+vaehor Mobile opens share URLs in the native app via two mechanisms:
 
-1. **Custom scheme (default, no server setup)** — `zeeindex://share?origin=…&path=…&share_token=…`
+1. **Custom scheme (default, no server setup)** — `vaehor://share?origin=…&path=…&share_token=…`
 2. **HTTPS Universal Links / App Links (optional)** — `https://your-domain/en/share/…?share_token=…`
 
 Share authorization (login required, prevent-download, token expiry) is enforced by the existing web app and `lib/share-scope.ts`. The mobile shell only navigates the WebView; it does not bypass share rules.
@@ -12,7 +12,7 @@ Share authorization (login required, prevent-download, token expiry) is enforced
 Generate links in this form:
 
 ```text
-zeeindex://share?origin=https://files.example.com&path=/en/share/SHARE_ID&share_token=TOKEN
+vaehor://share?origin=https://files.example.com&path=/en/share/SHARE_ID&share_token=TOKEN
 ```
 
 - `origin` — operator public URL (scheme + host, no path)
@@ -53,5 +53,5 @@ If a deep link targets a host that is not in the user's server list, the app pro
 
 ## Testing
 
-- **AE6:** Install the app → open a `zeeindex://share?…` link → share page loads in WebView.
+- **AE6:** Install the app → open a `vaehor://share?…` link → share page loads in WebView.
 - **HTTPS:** After AASA/assetlinks + entitlements → tap `https://operator/share/…` → app opens (device matrix in release QA).

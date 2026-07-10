@@ -27,7 +27,7 @@ runs:
 
     - name: Build MCP package
       shell: bash
-      run: pnpm --filter @zee-index/mcp build
+      run: pnpm --filter @vaehor/mcp build
 
     - name: Build SDK package
       shell: bash

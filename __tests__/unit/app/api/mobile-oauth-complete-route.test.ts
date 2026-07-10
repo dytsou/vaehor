@@ -73,7 +73,7 @@ describe("app/api/mobile/oauth-complete route", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe(
-      "zeeindex://auth/callback?token=exchange-token",
+      "vaehor://auth/callback?token=exchange-token",
     );
     expect(mockConsumeMobileOAuthState).toHaveBeenCalledWith("valid-state");
     expect(mockMintMobileExchangeToken).toHaveBeenCalledWith("session-jwt");

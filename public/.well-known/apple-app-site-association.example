@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.com.zeeindex.mobile"],
+        "appIDs": ["TEAMID.com.vaehor.mobile"],
         "components": [
           {
             "/": "/en/share/*",

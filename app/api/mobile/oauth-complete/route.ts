@@ -40,7 +40,7 @@ export const GET = createUserRoute(
     }
 
     const exchange = await mintMobileExchangeToken(sessionToken);
-    const callback = `zeeindex://auth/callback?token=${encodeURIComponent(exchange)}`;
+    const callback = `vaehor://auth/callback?token=${encodeURIComponent(exchange)}`;
     return NextResponse.redirect(callback);
   },
   { rateLimit: false },

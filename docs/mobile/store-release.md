@@ -2,7 +2,7 @@
 
 See [development.md](./development.md) for local device testing before submission.
 
-Checklist for shipping **Zee Index Mobile** (`com.zeeindex.mobile`) to App Store and Google Play. This is a single publisher app; operators self-host the backend and add their server URL in the app.
+Checklist for shipping **vaehor Mobile** (`com.vaehor.mobile`) to App Store and Google Play. This is a single publisher app; operators self-host the backend and add their server URL in the app.
 
 ## CI workflow
 
@@ -49,7 +49,7 @@ Without iOS secrets, the iOS job still adds the platform and runs `pod install` 
 
 - [ ] Apple Developer Program (A4 team account)
 - [ ] Google Play Console developer account (A4)
-- [ ] Bundle ID / application ID: `com.zeeindex.mobile` (matches `apps/mobile/capacitor.config.ts`)
+- [ ] Bundle ID / application ID: `com.vaehor.mobile` (matches `apps/mobile/capacitor.config.ts`)
 - [ ] App Store Connect app record created
 - [ ] Play Console app created
 
@@ -61,7 +61,7 @@ Without iOS secrets, the iOS job still adds the platform and runs `pod install` 
 
 ### OAuth (mobile Google sign-in)
 
-- [ ] Register authorized redirect URI: `zeeindex://auth/callback` on the Google OAuth client used for mobile (or document operator-specific clients)
+- [ ] Register authorized redirect URI: `vaehor://auth/callback` on the Google OAuth client used for mobile (or document operator-specific clients)
 - [ ] `NEXTAUTH_URL` on each operator server matches their public HTTPS domain
 
 ### Privacy and compliance
@@ -79,13 +79,13 @@ Without iOS secrets, the iOS job still adds the platform and runs `pod install` 
 
 ### Google Play
 
-1. Download `zee-index-android-aab` artifact from the workflow run.
+1. Download `vaehor-android-aab` artifact from the workflow run.
 2. Play Console → **Release** → **Production** (or internal testing) → upload AAB.
 3. Complete content rating and target audience if not done.
 
 ### App Store
 
-1. Download `zee-index-ios-archive` artifact.
+1. Download `vaehor-ios-archive` artifact.
 2. Open Xcode → **Window → Organizer** → import archive, or use `xcodebuild -exportArchive` with an ExportOptions.plist.
 3. Upload to App Store Connect via Xcode or Transporter.
 4. Submit for review with test account notes (self-hosted server URL required).
@@ -98,7 +98,7 @@ Without iOS secrets, the iOS job still adds the platform and runs `pod install` 
 ## Local release build (optional)
 
 ```bash
-pnpm --filter @zee-index/mobile run build
+pnpm --filter @vaehor/mobile run build
 cd apps/mobile && pnpm exec cap sync
 cd android && ./gradlew :app:bundleRelease   # set ANDROID_KEYSTORE_* env vars
 ```

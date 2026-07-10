@@ -1,12 +1,12 @@
 # Mobile development
 
-Native shell lives in `apps/mobile/`. It wraps the self-hosted Zee-Index web UI in a WebView and adds OAuth, biometrics, file upload, and deep links.
+Native shell lives in `apps/mobile/`. It wraps the self-hosted vaehor web UI in a WebView and adds OAuth, biometrics, file upload, and deep links.
 
 ## Prerequisites
 
 - Node 24 + pnpm 11 (same as the monorepo root)
 - Android Studio (Android) or Xcode + CocoaPods (iOS)
-- A reachable Zee-Index instance for OAuth and WebView testing (local `pnpm dev`, Docker dev stack, or staging HTTPS)
+- A reachable vaehor instance for OAuth and WebView testing (local `pnpm dev`, Docker dev stack, or staging HTTPS)
 
 ## Shell-only development
 

@@ -59,7 +59,7 @@ export const POST = createAdminRoute(
 
       const rootFolderId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID;
       if (rootFolderId) {
-        await kv.del(`zee-index:folder-tree:${rootFolderId}`);
+        await kv.del(`vaehor:folder-tree:${rootFolderId}`);
       }
 
       await logActivity("UPLOAD", {

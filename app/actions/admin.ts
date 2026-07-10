@@ -292,7 +292,7 @@ export async function createManualDriveAction(input: unknown) {
   const updatedDrives = [...currentDrives, newDrive];
 
   await kv.set(MANUAL_DRIVES_KEY, updatedDrives);
-  await kv.del(`zee-index:folder-path-v7:${id}`);
+  await kv.del(`vaehor:folder-path-v7:${id}`);
 
   revalidateTag("manual-drives", "max");
   return { success: true, drives: updatedDrives };
@@ -309,7 +309,7 @@ export async function deleteManualDriveAction(input: unknown) {
 
   await kv.set(MANUAL_DRIVES_KEY, updatedDrives);
   await db.protectedFolder.delete({ where: { folderId: id } }).catch(() => {});
-  await kv.del(`zee-index:folder-path-v7:${id}`);
+  await kv.del(`vaehor:folder-path-v7:${id}`);
 
   revalidateTag("manual-drives", "max");
   return { success: true, drives: updatedDrives };
@@ -348,7 +348,7 @@ const folderAccessSchema = z.object({
   email: z.string().email("Format email tidak valid."),
 });
 
-const FOLDERS_WITH_ACCESS_KEY = "zee-index:user-access:folders";
+const FOLDERS_WITH_ACCESS_KEY = "vaehor:user-access:folders";
 const getFolderAccessKey = (folderId: string) => `folder:access:${folderId}`;
 
 export async function getUserAccessPermissionsAction() {

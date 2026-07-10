@@ -33,13 +33,10 @@ describe("lib/cache", () => {
 
     expect(kv.scanKeys).toHaveBeenNthCalledWith(
       1,
-      "zee-index:folder-content-v3:folder-123:*",
+      "vaehor:folder-content-v3:folder-123:*",
     );
-    expect(kv.scanKeys).toHaveBeenNthCalledWith(
-      2,
-      "zee-index:folder-path-v7:*",
-    );
-    expect(kv.scanKeys).toHaveBeenNthCalledWith(3, "zee-index:folder-tree*");
+    expect(kv.scanKeys).toHaveBeenNthCalledWith(2, "vaehor:folder-path-v7:*");
+    expect(kv.scanKeys).toHaveBeenNthCalledWith(3, "vaehor:folder-tree*");
 
     expect(kv.del).toHaveBeenCalledTimes(2);
     expect(kv.del).toHaveBeenNthCalledWith(1, "k1", "k2");

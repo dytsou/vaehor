@@ -1,8 +1,8 @@
-# Zee-Index API Documentation
+# vaehor API Documentation
 
 ## Overview
 
-This folder contains the maintained API reference for Zee-Index.
+This folder contains the maintained API reference for vaehor.
 
 - `spec/entry.tsp` is the **source of truth** (TypeSpec entrypoint).
 - TypeSpec is organized into:
@@ -52,13 +52,13 @@ pnpm compile:openapi
 
 ### Mobile (Capacitor)
 
-| Method | Endpoint                        | Description                                                |
-| ------ | ------------------------------- | ---------------------------------------------------------- |
-| GET    | `/api/mobile/oauth-state`       | Create one-time OAuth state for native Google sign-in      |
-| GET    | `/api/mobile/oauth-complete`    | Finish browser OAuth → redirect `zeeindex://auth/callback` |
-| POST   | `/api/mobile/oauth-complete`    | Redeem exchange token → bootstrap material                 |
-| GET    | `/api/mobile/session-bootstrap` | Redeem bootstrap token via redirect + set session cookie   |
-| POST   | `/api/mobile/session-bootstrap` | Mint bootstrap URL or redeem bootstrap token               |
+| Method | Endpoint                        | Description                                              |
+| ------ | ------------------------------- | -------------------------------------------------------- |
+| GET    | `/api/mobile/oauth-state`       | Create one-time OAuth state for native Google sign-in    |
+| GET    | `/api/mobile/oauth-complete`    | Finish browser OAuth → redirect `vaehor://auth/callback` |
+| POST   | `/api/mobile/oauth-complete`    | Redeem exchange token → bootstrap material               |
+| GET    | `/api/mobile/session-bootstrap` | Redeem bootstrap token via redirect + set session cookie |
+| POST   | `/api/mobile/session-bootstrap` | Mint bootstrap URL or redeem bootstrap token             |
 
 Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/openapi.yaml` (tag **Mobile**).
 
@@ -162,7 +162,7 @@ Most endpoints use one of these mechanisms:
 
 ## Rate Limits
 
-The API layer is standardized through the route factory in [`lib/api-middleware.ts`](/C:/Users/Ifauze/Project/zee-index/lib/api-middleware.ts).
+The API layer is standardized through the route factory in [`lib/api-middleware.ts`](/C:/Users/Ifauze/Project/vaehor/lib/api-middleware.ts).
 
 | Scope       | Limit                   |
 | ----------- | ----------------------- |

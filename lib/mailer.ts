@@ -26,7 +26,7 @@ export async function sendMail({ to, subject, html }: MailOptions) {
 
   try {
     await transporter.sendMail({
-      from: EMAIL_FROM || '"Zee Index" <no-reply@example.com>',
+      from: EMAIL_FROM || '"vaehor" <no-reply@example.com>',
       to: Array.isArray(to) ? to.join(", ") : to,
       subject: subject,
       html: html,

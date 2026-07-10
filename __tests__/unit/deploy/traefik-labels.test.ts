@@ -22,18 +22,18 @@ describe("deploy/traefik production stack", () => {
     expect(compose).not.toContain("caddy_data");
   });
 
-  it("labels zee-index for Traefik routing and TLS", () => {
+  it("labels vaehor for Traefik routing and TLS", () => {
     expect(compose).toContain("traefik.enable=true");
-    expect(compose).toContain("traefik.http.routers.zee-index.rule=Host");
+    expect(compose).toContain("traefik.http.routers.vaehor.rule=Host");
     expect(compose).toContain(
-      "traefik.http.routers.zee-index.entrypoints=websecure",
+      "traefik.http.routers.vaehor.entrypoints=websecure",
     );
-    expect(compose).toContain("traefik.http.routers.zee-index.tls=true");
+    expect(compose).toContain("traefik.http.routers.vaehor.tls=true");
     expect(compose).toContain(
-      "traefik.http.routers.zee-index.tls.certresolver=letsencrypt",
+      "traefik.http.routers.vaehor.tls.certresolver=letsencrypt",
     );
     expect(compose).toContain(
-      "traefik.http.services.zee-index.loadbalancer.server.port=3000",
+      "traefik.http.services.vaehor.loadbalancer.server.port=3000",
     );
   });
 

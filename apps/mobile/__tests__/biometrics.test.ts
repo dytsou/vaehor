@@ -35,10 +35,10 @@ describe("oauth helpers", () => {
     );
   });
 
-  it("parses zeeindex callback URLs", () => {
-    expect(parseOAuthCallbackUrl("zeeindex://auth/callback?token=abc")).toEqual(
-      { token: "abc" },
-    );
+  it("parses vaehor callback URLs", () => {
+    expect(parseOAuthCallbackUrl("vaehor://auth/callback?token=abc")).toEqual({
+      token: "abc",
+    });
     expect(parseOAuthCallbackUrl("https://evil.example")).toBeNull();
   });
 });

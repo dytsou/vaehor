@@ -38,7 +38,7 @@ export async function generateMetadata(props: {
   const folderId = decodeURIComponent(params.folderId);
   const path = await getUnifiedPath(folderId, params.locale);
   const folderName = path[path.length - 1]?.name || "Folder";
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || "Zee Index";
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "vaehor";
 
   const description =
     params.locale === "id"

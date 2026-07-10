@@ -1,14 +1,14 @@
-# Contributing to Zee-Index
+# Contributing to vaehor
 
-Thank you for your interest in contributing to Zee-Index! We welcome contributions from the community to help improve this project.
+Thank you for your interest in contributing to vaehor! We welcome contributions from the community to help improve this project.
 
 ## Getting Started
 
 1.  **Fork the repository** to your GitHub account.
 2.  **Clone the repository** to your local machine:
     ```bash
-    git clone https://github.com/your-username/Zee-Index.git
-    cd Zee-Index
+    git clone https://github.com/your-username/vaehor.git
+    cd vaehor
     ```
 3.  **Install dependencies**:
     ```bash

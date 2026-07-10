@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getHealthCheckUrl } from "@zee-index/sdk";
+import { getHealthCheckUrl } from "@vaehor/sdk";
 import { checkServerHealth } from "../src/lib/api-client";
 
 describe("api-client", () => {

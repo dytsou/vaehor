@@ -1,15 +1,15 @@
 {
-  "name": "@zee-index/mcp",
+  "name": "@vaehor/mcp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "stdio MCP server for Zee-Index (HTTP tools + optional session cookie)",
+  "description": "stdio MCP server for vaehor (HTTP tools + optional session cookie)",
   "files": [
     "dist",
     "messages"
   ],
   "bin": {
-    "zee-index-mcp": "./dist/index.js"
+    "vaehor-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

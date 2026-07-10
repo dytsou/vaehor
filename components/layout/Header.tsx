@@ -298,7 +298,7 @@ export default function Header() {
           className="w-8 h-8 mr-3 dark:invert"
         />
       )}
-      <span className="font-bold">{appName || "Zee Index"}</span>
+      <span className="font-bold">{appName || "vaehor"}</span>
     </>
   );
 

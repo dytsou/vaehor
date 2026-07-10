@@ -4,7 +4,7 @@ import "@typespec/openapi";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   model MobileOAuthStateResponse {
     state: string;
   }

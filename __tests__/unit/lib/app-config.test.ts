@@ -45,10 +45,7 @@ describe("lib/app-config", () => {
     const result = await getAppConfig();
 
     expect(result).toEqual(DEFAULT_APP_CONFIG);
-    expect(mockKvSet).toHaveBeenCalledWith(
-      "zee-index:config",
-      DEFAULT_APP_CONFIG,
-    );
+    expect(mockKvSet).toHaveBeenCalledWith("vaehor:config", DEFAULT_APP_CONFIG);
   });
 
   it("normalizes legacy partial config from the database", async () => {
@@ -88,11 +85,11 @@ describe("lib/app-config", () => {
       localStorageAuthEnabled: true,
     });
     expect(mockUpsert).toHaveBeenCalledWith({
-      where: { key: "zee-index:config" },
+      where: { key: "vaehor:config" },
       update: { value: JSON.stringify(result) },
-      create: { key: "zee-index:config", value: JSON.stringify(result) },
+      create: { key: "vaehor:config", value: JSON.stringify(result) },
     });
-    expect(mockKvSet).toHaveBeenLastCalledWith("zee-index:config", result);
+    expect(mockKvSet).toHaveBeenLastCalledWith("vaehor:config", result);
   });
 
   it("returns only public fields from the shared config source", async () => {
@@ -133,9 +130,9 @@ describe("lib/app-config", () => {
       true,
     );
     expect(mockUpsert).toHaveBeenCalledWith({
-      where: { key: "zee-index:config" },
+      where: { key: "vaehor:config" },
       update: { value: JSON.stringify(result) },
-      create: { key: "zee-index:config", value: JSON.stringify(result) },
+      create: { key: "vaehor:config", value: JSON.stringify(result) },
     });
   });
 

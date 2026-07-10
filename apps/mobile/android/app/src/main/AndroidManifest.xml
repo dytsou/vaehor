@@ -23,14 +23,14 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="zeeindex" android:host="auth" android:pathPrefix="/callback" />
+                <data android:scheme="vaehor" android:host="auth" android:pathPrefix="/callback" />
             </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="zeeindex" android:host="share" />
+                <data android:scheme="vaehor" android:host="share" />
             </intent-filter>
         </activity>
 

@@ -1,6 +1,6 @@
-/** Native shell HTTP helpers; paths and types from @zee-index/sdk (R20). */
+/** Native shell HTTP helpers; paths and types from @vaehor/sdk (R20). */
 
-import { getHealthCheckUrl } from "@zee-index/sdk";
+import { getHealthCheckUrl } from "@vaehor/sdk";
 
 export const SESSION_COOKIE_NAME = "authjs.session-token";
 

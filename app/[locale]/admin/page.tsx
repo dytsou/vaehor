@@ -18,7 +18,7 @@ import { sortStrings } from "@/lib/utils";
 export default async function AdminPage() {
   const session = await requireAdminSession();
 
-  const foldersWithAccessKey = "zee-index:user-access:folders";
+  const foldersWithAccessKey = "vaehor:user-access:folders";
   const getFolderAccessKey = (folderId: string) => `folder:access:${folderId}`;
 
   const [

@@ -2,7 +2,7 @@ import "@typespec/http";
 
 using TypeSpec.Http;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   // =============================================================================
   // Domain models (mirrors docs/api/openapi.yaml + Zod schemas)
   // =============================================================================

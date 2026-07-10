@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const title = searchParams.get("title") || "Zee Index";
-    const appName = process.env.NEXT_PUBLIC_APP_NAME || "Zee Index";
+    const title = searchParams.get("title") || "vaehor";
+    const appName = process.env.NEXT_PUBLIC_APP_NAME || "vaehor";
 
     return new ImageResponse(
       (

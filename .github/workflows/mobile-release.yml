@@ -20,7 +20,7 @@ jobs:
 
       - name: Build shell and sync Android
         run: |
-          pnpm --filter @zee-index/mobile run build
+          pnpm --filter @vaehor/mobile run build
           cd apps/mobile && pnpm exec cap sync android
 
       - name: Mobile unit tests
@@ -74,7 +74,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: zee-index-android-aab
+          name: vaehor-android-aab
           path: apps/mobile/android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
           if-no-files-found: error
@@ -125,10 +125,10 @@ jobs:
         working-directory: apps/mobile/ios/App
         run: |
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
-            -archivePath $RUNNER_TEMP/ZeeIndex.xcarchive archive CODE_SIGN_STYLE=Manual
+            -archivePath $RUNNER_TEMP/Vaehor.xcarchive archive CODE_SIGN_STYLE=Manual
 
       - uses: actions/upload-artifact@v4
         with:
-          name: zee-index-ios-archive
-          path: ${{ runner.temp }}/ZeeIndex.xcarchive
+          name: vaehor-ios-archive
+          path: ${{ runner.temp }}/Vaehor.xcarchive
           retention-days: 30

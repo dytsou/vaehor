@@ -2,7 +2,7 @@ import {
   getUploadFileUrl,
   UploadMode,
   type ResumableUploadInitBody,
-} from "@zee-index/sdk";
+} from "@vaehor/sdk";
 
 export const CHUNK_SIZE = 2 * 1024 * 1024;
 export const MAX_RETRIES = 3;

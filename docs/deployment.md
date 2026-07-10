@@ -1,13 +1,13 @@
 # Deployment
 
-Production Zee-Index runs via Docker Compose with **Traefik v3** as the reverse proxy on ports 80 and 443. Traefik terminates TLS and routes traffic to the `zee-index` Next.js container.
+Production vaehor runs via Docker Compose with **Traefik v3** as the reverse proxy on ports 80 and 443. Traefik terminates TLS and routes traffic to the `vaehor` Next.js container.
 
 ## Required environment variables
 
-| Variable     | Description                                                                                               |
-| ------------ | --------------------------------------------------------------------------------------------------------- |
-| `DOMAIN`     | Public hostname users and the mobile app connect to (e.g. `files.example.com` or `zee-index.duckdns.org`) |
-| `ACME_EMAIL` | Email for Let's Encrypt certificate registration and expiry notices                                       |
+| Variable     | Description                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| `DOMAIN`     | Public hostname users and the mobile app connect to (e.g. `files.example.com` or `vaehor.duckdns.org`) |
+| `ACME_EMAIL` | Email for Let's Encrypt certificate registration and expiry notices                                    |
 
 Set these in `.env` alongside existing app variables (`NEXTAUTH_URL` should use `https://${DOMAIN}`).
 
@@ -44,7 +44,7 @@ Static config: `deploy/traefik/traefik.yml`
 - No body-buffering middleware (uploads stream to the app)
 - ACME HTTP-01 challenge on port 80
 
-Router labels on `zee-index` are defined in `docker-compose.yml` and picked up by Traefik's Docker provider.
+Router labels on `vaehor` are defined in `docker-compose.yml` and picked up by Traefik's Docker provider.
 
 ## Migrating from Caddy
 
@@ -57,7 +57,7 @@ If you previously ran the stack with Caddy:
 
    ```bash
    docker compose down
-   docker volume rm zee-index_caddy_data zee-index_caddy_config 2>/dev/null || true
+   docker volume rm vaehor_caddy_data vaehor_caddy_config 2>/dev/null || true
    ```
 
 5. Start with Traefik:

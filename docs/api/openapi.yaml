@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Zee-Index API
+  title: vaehor API
   version: 0.0.0
 tags:
   - name: Health
@@ -1687,7 +1687,7 @@ paths:
   /api/mobile/oauth-complete:
     get:
       operationId: completeMobileOAuthGet
-      description: 'Finish browser OAuth: validate state, mint exchange token, redirect to zeeindex://auth/callback.'
+      description: 'Finish browser OAuth: validate state, mint exchange token, redirect to vaehor://auth/callback.'
       parameters:
         - name: state
           in: query

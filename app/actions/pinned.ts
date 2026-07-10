@@ -6,7 +6,7 @@ import { getFileDetailsFromDrive, DriveFile } from "@/lib/drive";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
 
-const PINNED_KEY = "zee-index:pinned-folders";
+const PINNED_KEY = "vaehor:pinned-folders";
 
 const pinSchema = z.object({
   folderId: z.string().min(1),

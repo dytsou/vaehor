@@ -517,7 +517,7 @@ export function buildGoogleDriveFetchHeaders(
 ): Headers {
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${accessToken}`);
-  headers.set("User-Agent", "Zee-Index-Streamer/1.0");
+  headers.set("User-Agent", "vaehor-Streamer/1.0");
   headers.set("Accept-Encoding", "identity");
 
   const isGoogleDoc = mimeType.startsWith("application/vnd.google-apps.");

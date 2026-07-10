@@ -362,7 +362,7 @@ importers:
       '@capgo/capacitor-native-biometric':
         specifier: 7.6.0
         version: 7.6.0(@capacitor/core@7.6.7)
-      '@zee-index/sdk':
+      '@vaehor/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       react:

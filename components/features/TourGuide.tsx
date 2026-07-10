@@ -150,7 +150,7 @@ export default function TourGuide() {
               },
             ],
       onDestroyed: () => {
-        localStorage.setItem("zee-index-tour-seen", "true");
+        localStorage.setItem("vaehor-tour-seen", "true");
       },
     });
 
@@ -158,7 +158,7 @@ export default function TourGuide() {
       driverObj.drive();
     };
 
-    const hasSeenTour = localStorage.getItem("zee-index-tour-seen");
+    const hasSeenTour = localStorage.getItem("vaehor-tour-seen");
     if (!hasSeenTour) {
       const timer = setTimeout(startTour, 1500);
       return () => clearTimeout(timer);

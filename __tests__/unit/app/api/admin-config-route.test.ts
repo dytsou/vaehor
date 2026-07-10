@@ -44,7 +44,7 @@ describe("app/api/admin/config route", () => {
     mockGetAppConfig.mockResolvedValue({
       hideAuthor: false,
       disableGuestLogin: false,
-      appName: "Zee Index",
+      appName: "vaehor",
       logoUrl: "",
       faviconUrl: "",
       primaryColor: "",
@@ -52,7 +52,7 @@ describe("app/api/admin/config route", () => {
     mockUpdateAppConfig.mockResolvedValue({
       hideAuthor: false,
       disableGuestLogin: true,
-      appName: "Zee Index",
+      appName: "vaehor",
       logoUrl: "https://example.com/logo.png",
       faviconUrl: "",
       primaryColor: "#112233",
@@ -68,7 +68,7 @@ describe("app/api/admin/config route", () => {
     await expect(response.json()).resolves.toEqual({
       hideAuthor: false,
       disableGuestLogin: false,
-      appName: "Zee Index",
+      appName: "vaehor",
       logoUrl: "",
       faviconUrl: "",
       primaryColor: "",
@@ -99,7 +99,7 @@ describe("app/api/admin/config route", () => {
       config: {
         hideAuthor: false,
         disableGuestLogin: true,
-        appName: "Zee Index",
+        appName: "vaehor",
         logoUrl: "https://example.com/logo.png",
         faviconUrl: "",
         primaryColor: "#112233",

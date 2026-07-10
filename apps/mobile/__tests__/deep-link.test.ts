@@ -15,7 +15,7 @@ describe("deep-link", () => {
 
   it("parses custom-scheme share links", () => {
     const result = parseDeepLink(
-      "zeeindex://share?origin=https://files.example.com&path=/en/share/abc123&share_token=token",
+      "vaehor://share?origin=https://files.example.com&path=/en/share/abc123&share_token=token",
     );
     expect(result).toEqual({
       kind: "share",
@@ -40,14 +40,14 @@ describe("deep-link", () => {
   });
 
   it("rejects malformed custom-scheme links", () => {
-    expect(parseDeepLink("zeeindex://share?origin=bogus")).toEqual({
+    expect(parseDeepLink("vaehor://share?origin=bogus")).toEqual({
       kind: "invalid",
       error: "malformed",
     });
   });
 
   it("ignores oauth callback URLs", () => {
-    expect(parseDeepLink("zeeindex://auth/callback?token=abc")).toEqual({
+    expect(parseDeepLink("vaehor://auth/callback?token=abc")).toEqual({
       kind: "ignored",
     });
   });

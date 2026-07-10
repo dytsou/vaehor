@@ -123,7 +123,7 @@ describe("app/api/cron/storage-check route", () => {
       }),
     );
     expect(mockKvSet).toHaveBeenCalledWith(
-      "zee-index:storage-warning-sent",
+      "vaehor:storage-warning-sent",
       expect.any(Number),
     );
   });

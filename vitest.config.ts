@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: "./test/setup.ts",
     alias: {
       "@": path.resolve(__dirname, "./"),
-      "@zee-index/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
+      "@vaehor/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
     },
     exclude: [
       "node_modules",

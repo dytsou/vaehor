@@ -148,7 +148,7 @@
 | 功能             | 說明                                                |
 | ---------------- | --------------------------------------------------- |
 | **iOS／Android** | `apps/mobile/` 混合殼層（WebView 載入你的自架站台） |
-| **原生 OAuth**   | 系統瀏覽器登入 + `zeeindex://auth/callback`         |
+| **原生 OAuth**   | 系統瀏覽器登入 + `vaehor://auth/callback`           |
 | **生物辨識**     | 依伺服器選用生物辨識解鎖工作階段                    |
 | **原生上傳**     | 檔案選擇／相機橋接既有可續傳上傳 API                |
 | **Deep Links**   | 自訂 scheme；可選 Universal／App Links              |
@@ -240,7 +240,7 @@ docker compose up -d --build
 **常用指令：**
 
 ```bash
-docker compose logs -f zee-index
+docker compose logs -f vaehor
 docker compose up -d              # .env 變更後重啟
 docker compose up -d --build      # 程式碼變更後重建
 docker compose down
@@ -256,7 +256,7 @@ pnpm install
 cp .env.example .env
 # 編輯 .env，設定本機 PostgreSQL 的 DATABASE_URL
 pnpm prisma migrate deploy
-docker run -d --name zee-redis -p 6379:6379 redis:7-alpine
+docker run -d --name vaehor-redis -p 6379:6379 redis:7-alpine
 pnpm dev
 # http://localhost:3000
 ```
@@ -296,7 +296,7 @@ pnpm test:e2e    # E2E
    - `http://localhost:3000/setup` — `/setup` 取得 refresh token（開發）
    - `http://localhost:3000/api/auth/callback/google` — NextAuth「以 Google 登入」（開發）
    - `https://yourdomain.com/setup` 與 `https://yourdomain.com/api/auth/callback/google`（正式）
-   - `zeeindex://auth/callback` — Capacitor 行動 Google 登入（見 [行動 App](#行動-appcapacitor)、[docs/mobile/store-release.md](docs/mobile/store-release.md)）
+   - `vaehor://auth/callback` — Capacitor 行動 Google 登入（見 [行動 App](#行動-appcapacitor)、[docs/mobile/store-release.md](docs/mobile/store-release.md)）
 3. 儲存 **Client ID**／**Client Secret**
 
 ### 5. 連接 Google Drive（二選一）
@@ -346,11 +346,11 @@ Drive API 使用 **服務帳戶 JWT**（穩定、不需瀏覽器 refresh token�
 
 ### 資料庫與快取
 
-| 變數                              | 預設（Docker）                      |
-| --------------------------------- | ----------------------------------- |
-| `POSTGRES_USER`／`PASSWORD`／`DB` | `postgres`／`postgres`／`zee_index` |
-| `DATABASE_URL`                    | Docker 內自動產生                   |
-| `REDIS_URL`                       | `redis://redis:6379`                |
+| 變數                              | 預設（Docker）                   |
+| --------------------------------- | -------------------------------- |
+| `POSTGRES_USER`／`PASSWORD`／`DB` | `postgres`／`postgres`／`vaehor` |
+| `DATABASE_URL`                    | Docker 內自動產生                |
+| `REDIS_URL`                       | `redis://redis:6379`             |
 
 ### 選用變數（節錄）
 
@@ -382,12 +382,12 @@ docker compose up -d --build
 docker compose ps
 ```
 
-| 容器        | 記憶體上限 | 典型用量 |
-| ----------- | ---------- | -------- |
-| `zee-index` | 512 MB     | ~300 MB  |
-| `postgres`  | 200 MB     | ~50 MB   |
-| `redis`     | 150 MB     | ~20 MB   |
-| `traefik`   | 50 MB      | ~10 MB   |
+| 容器       | 記憶體上限 | 典型用量 |
+| ---------- | ---------- | -------- |
+| `vaehor`   | 512 MB     | ~300 MB  |
+| `postgres` | 200 MB     | ~50 MB   |
+| `redis`    | 150 MB     | ~20 MB   |
+| `traefik`  | 50 MB      | ~10 MB   |
 
 ### DuckDNS + Traefik 自動 HTTPS
 
@@ -412,7 +412,7 @@ docker compose up -d --build
 **自架＋行動營運檢查清單：**
 
 1. 以公開 HTTPS 提供服務（`DOMAIN` + Traefik；`NEXTAUTH_URL=https://${DOMAIN}`）
-2. 在 Google OAuth client 註冊 `zeeindex://auth/callback`
+2. 在 Google OAuth client 註冊 `vaehor://auth/callback`
 3. 首次啟動在 App 內書籤該 origin
 4. Universal／App Links：託管 `.well-known` — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md)
 
@@ -451,7 +451,7 @@ Web Service：建置 `pnpm install && pnpm prisma migrate deploy && pnpm build`�
 | **Google OAuth** | 以 Google 帳號登入       | OAuth 憑證                                                 |
 | **管理員密碼**   | Email + 密碼             | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH`（正式）；明文僅開發 |
 | **雙因素**       | TOTP                     | 管理後台                                                   |
-| **行動 OAuth**   | Capacitor 系統瀏覽器登入 | `zeeindex://auth/callback` + mobile API                    |
+| **行動 OAuth**   | Capacitor 系統瀏覽器登入 | `vaehor://auth/callback` + mobile API                      |
 
 ### 角色與權限
 
@@ -469,7 +469,7 @@ Web Service：建置 `pnpm install && pnpm prisma migrate deploy && pnpm build`�
 ### 密碼雜湊（bcrypt）
 
 ```bash
-docker compose exec zee-index sh /app/scripts/hash-password.sh "your-password"
+docker compose exec vaehor sh /app/scripts/hash-password.sh "your-password"
 # 將輸出寫入 .env：ADMIN_PASSWORD_HASH=...
 ```
 
@@ -479,7 +479,7 @@ docker compose exec zee-index sh /app/scripts/hash-password.sh "your-password"
 
 原生 Google 登入**不**使用內嵌 WebView 登入頁：
 
-1. 註冊 `zeeindex://auth/callback`
+1. 註冊 `vaehor://auth/callback`
 2. `NEXTAUTH_URL` 與 App 書籤的公開 HTTPS origin 一致
 3. 相關路由見 OpenAPI **Mobile** 標籤（[`docs/api/openapi.yaml`](docs/api/openapi.yaml)）
 4. CORS 允許 `capacitor://localhost`、`ionic://localhost`；WebView 主流量為同源
@@ -555,7 +555,7 @@ pnpm test:e2e
 <summary><strong>🔴 容器 unhealthy</strong></summary>
 
 ```bash
-docker compose logs zee-index --tail 50
+docker compose logs vaehor --tail 50
 # 常見：資料庫未就緒、.env 缺漏、埠號衝突（3000／5432／6379）
 ```
 

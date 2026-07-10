@@ -37,7 +37,7 @@ function isShareWebPath(pathname: string, search: string): boolean {
 }
 
 function parseCustomShareLink(url: URL): ParseDeepLinkResult {
-  if (url.protocol !== "zeeindex:") return { kind: "ignored" };
+  if (url.protocol !== "vaehor:") return { kind: "ignored" };
   if (url.hostname === "auth") return { kind: "ignored" };
   if (url.hostname !== "share") return { kind: "invalid", error: "malformed" };
 
@@ -117,7 +117,7 @@ export function appendBootstrapRedirect(
 }
 
 export function buildShareCustomSchemeUrl(target: DeepLinkTarget): string {
-  const url = new URL("zeeindex://share");
+  const url = new URL("vaehor://share");
   const parsed = new URL(target.path, target.origin);
   url.searchParams.set("origin", target.origin);
   url.searchParams.set("path", parsed.pathname);

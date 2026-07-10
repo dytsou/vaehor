@@ -70,7 +70,7 @@ export async function startGoogleOAuth(
 export function parseOAuthCallbackUrl(url: string): { token: string } | null {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== "zeeindex:") return null;
+    if (parsed.protocol !== "vaehor:") return null;
     if (parsed.hostname !== "auth" || parsed.pathname !== "/callback") {
       return null;
     }

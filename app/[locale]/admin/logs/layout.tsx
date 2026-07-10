@@ -1,7 +1,7 @@
 import MainLayout from "@/app/[locale]/(main)/layout";
 
 export const metadata = {
-  title: "Log Aktivitas - Admin Zee Index",
+  title: "Log Aktivitas - Admin vaehor",
   description: "Lihat dan kelola log aktivitas sistem.",
 };
 

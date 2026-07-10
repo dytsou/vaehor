@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@zee-index/sdk": path.resolve(
+      "@vaehor/sdk": path.resolve(
         mobileRoot,
         "../../packages/sdk/src/index.ts",
       ),

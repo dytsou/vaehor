@@ -39,7 +39,7 @@ export const POST = createUserRoute(
 
       await kv.sadd(REDIS_KEYS.ACCESS_REQUESTS, requestData);
 
-      const adminEmails = await kv.smembers("zee-index:admins");
+      const adminEmails = await kv.smembers("vaehor:admins");
       if (adminEmails && adminEmails.length > 0) {
         const emailHtml = `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">

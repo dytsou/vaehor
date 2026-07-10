@@ -46,7 +46,7 @@ export const GET = createCronRoute(async () => {
     }
 
     const reportHtml = `
-        <h1>Laporan Aktivitas Mingguan Zee Index</h1>
+        <h1>Laporan Aktivitas Mingguan vaehor</h1>
         <p>Berikut adalah ringkasan aktivitas dalam 7 hari terakhir:</p>
         <ul>
             <li><b>Total File Diunggah:</b> ${uploadCount} file</li>
@@ -58,7 +58,7 @@ export const GET = createCronRoute(async () => {
 
     await sendMail({
       to: adminEmails,
-      subject: "Laporan Aktivitas Mingguan Zee Index",
+      subject: "Laporan Aktivitas Mingguan vaehor",
       html: reportHtml,
     });
 

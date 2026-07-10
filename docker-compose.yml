@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: zee-postgres
+    container_name: vaehor-postgres
     restart: always
     ports:
       - "127.0.0.1:5433:5432"
@@ -10,7 +10,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-zee_index}
+      POSTGRES_DB: ${POSTGRES_DB:-vaehor}
     deploy:
       resources:
         limits:
@@ -25,7 +25,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: zee-redis
+    container_name: vaehor-redis
     restart: always
     volumes:
       - redis_data:/data
@@ -42,8 +42,8 @@ services:
       timeout: 5s
       retries: 3
 
-  zee-index:
-    container_name: zee-index
+  vaehor:
+    container_name: vaehor
     build:
       context: .
       dockerfile: Dockerfile
@@ -61,7 +61,7 @@ services:
       - .env
     environment:
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-zee_index}?schema=public
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vaehor}?schema=public
       - NODE_OPTIONS=--max-old-space-size=384
     volumes:
       - .env:/app/.env
@@ -86,11 +86,11 @@ services:
       start_period: 40s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.zee-index.rule=Host(`${DOMAIN:-localhost}`)
-      - traefik.http.routers.zee-index.entrypoints=websecure
-      - traefik.http.routers.zee-index.tls=true
-      - traefik.http.routers.zee-index.tls.certresolver=letsencrypt
-      - traefik.http.services.zee-index.loadbalancer.server.port=3000
+      - traefik.http.routers.vaehor.rule=Host(`${DOMAIN:-localhost}`)
+      - traefik.http.routers.vaehor.entrypoints=websecure
+      - traefik.http.routers.vaehor.tls=true
+      - traefik.http.routers.vaehor.tls.certresolver=letsencrypt
+      - traefik.http.services.vaehor.loadbalancer.server.port=3000
 
   cron-monitor:
     image: curlimages/curl:8.10.1
@@ -104,16 +104,16 @@ services:
       while true; do
         if [ -n "$${CRON_SECRET}" ]; then
           echo "[cron-monitor] Running incident monitor cron..."
-          curl -fsS -H "Authorization: Bearer $${CRON_SECRET}" http://zee-index:3000/api/cron/incident-monitor || true
+          curl -fsS -H "Authorization: Bearer $${CRON_SECRET}" http://vaehor:3000/api/cron/incident-monitor || true
           echo "[cron-monitor] Running storage check cron..."
-          curl -fsS -H "Authorization: Bearer $${CRON_SECRET}" http://zee-index:3000/api/cron/storage-check || true
+          curl -fsS -H "Authorization: Bearer $${CRON_SECRET}" http://vaehor:3000/api/cron/storage-check || true
         else
           echo "[cron-monitor] CRON_SECRET is empty. Skipping jobs."
         fi
         sleep "$${CRON_MONITOR_INTERVAL_SECONDS:-300}"
       done
     depends_on:
-      zee-index:
+      vaehor:
         condition: service_healthy
     deploy:
       resources:
@@ -124,7 +124,7 @@ services:
     image: lscr.io/linuxserver/duckdns:latest
     container_name: duckdns
     environment:
-      - SUBDOMAINS=${DUCKDNS_DOMAIN:-zee-index}
+      - SUBDOMAINS=${DUCKDNS_DOMAIN:-vaehor}
       - TOKEN=${DUCKDNS_TOKEN}
       - LOG_FILE=false
     restart: unless-stopped
@@ -156,7 +156,7 @@ services:
         limits:
           memory: 128M
     depends_on:
-      zee-index:
+      vaehor:
         condition: service_healthy
 
 volumes:

@@ -57,7 +57,7 @@ export const POST = createAdminRoute(
       }
 
       if (action === "approve") {
-        await kv.sadd("zee-index:user-access:folders", requestData.folderId);
+        await kv.sadd("vaehor:user-access:folders", requestData.folderId);
         await kv.sadd(
           `folder:access:${requestData.folderId}`,
           requestData.email,

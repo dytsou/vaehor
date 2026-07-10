@@ -3,8 +3,8 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const devServerUrl = process.env.CAPACITOR_SERVER_URL?.trim();
 
 const config: CapacitorConfig = {
-  appId: "com.zeeindex.mobile",
-  appName: "Zee Index",
+  appId: "com.vaehor.mobile",
+  appName: "vaehor",
   webDir: "dist",
   server: devServerUrl
     ? {
@@ -22,7 +22,7 @@ const config: CapacitorConfig = {
     },
   },
   ios: {
-    scheme: "Zee Index",
+    scheme: "vaehor",
   },
   android: {
     allowMixedContent: true,

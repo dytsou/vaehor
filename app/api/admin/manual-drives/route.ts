@@ -57,7 +57,7 @@ export const POST = createAdminRoute(
 
       await kv.set(MANUAL_DRIVES_KEY, updatedDrives);
 
-      await kv.del(`zee-index:folder-path-v7:${id}`);
+      await kv.del(`vaehor:folder-path-v7:${id}`);
 
       return NextResponse.json({ success: true, drives: updatedDrives });
     } catch (error) {
@@ -88,7 +88,7 @@ export const DELETE = createAdminRoute(
         })
         .catch(() => {});
 
-      await kv.del(`zee-index:folder-path-v7:${id}`);
+      await kv.del(`vaehor:folder-path-v7:${id}`);
 
       return NextResponse.json({ success: true, drives: updatedDrives });
     } catch (error) {

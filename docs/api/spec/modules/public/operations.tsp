@@ -7,7 +7,7 @@ import "../../models/common.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   @tag("Public")
   @get
   @route("/proxy-image")

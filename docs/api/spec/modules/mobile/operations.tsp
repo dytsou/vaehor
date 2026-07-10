@@ -7,7 +7,7 @@ import "../../models/common.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   @tag("Mobile")
   @get
   @route("/mobile/oauth-state")
@@ -17,7 +17,7 @@ namespace ZeeIndexApi {
   @tag("Mobile")
   @get
   @route("/mobile/oauth-complete")
-  @doc("Finish browser OAuth: validate state, mint exchange token, redirect to zeeindex://auth/callback.")
+  @doc("Finish browser OAuth: validate state, mint exchange token, redirect to vaehor://auth/callback.")
   @useAuth(SessionAuth)
   op completeMobileOAuthGet(
     @query state: string,

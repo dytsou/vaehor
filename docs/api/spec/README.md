@@ -1,6 +1,6 @@
 # TypeSpec spec layout
 
-This folder is the **source of truth** for Zee-Index API documentation.
+This folder is the **source of truth** for vaehor API documentation.
 
 ## Entry point
 

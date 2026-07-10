@@ -12,7 +12,7 @@ export const defaultBiometricDeps: BiometricDeps = {
   async verifyIdentity(reason) {
     await NativeBiometric.verifyIdentity({
       reason,
-      title: "Unlock Zee Index",
+      title: "Unlock vaehor",
       subtitle: reason,
       description: reason,
     });
