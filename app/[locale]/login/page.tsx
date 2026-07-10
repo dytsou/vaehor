@@ -353,18 +353,31 @@ function CustomLoginPage() {
           </div>
 
           <p
-            className="text-center text-xs text-muted-foreground pt-12"
+            className="text-center text-xs text-muted-foreground pt-12 space-y-1"
             suppressHydrationWarning
           >
-            © {new Date().getFullYear()} - {t("footer")}{" "}
-            <a
-              href="https://ifauzeee.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-foreground hover:text-primary"
-            >
-              Muhammad Ibnu Fauzi
-            </a>
+            <span className="block">
+              © 2025 All rights reserved -{" "}
+              <a
+                href="https://ifauzeee.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                Muhammad Ibnu Fauzi
+              </a>
+            </span>
+            <span className="block">
+              © {new Date().getFullYear()} Modifications by{" "}
+              <a
+                href="https://github.com/dytsou/drive-uploader"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                dytsou
+              </a>
+            </span>
           </p>
         </div>
       </div>

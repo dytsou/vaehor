@@ -220,7 +220,7 @@ export default function Header() {
     },
     {
       id: "github",
-      href: "https://github.com/ifauzeee/Zee-Index",
+      href: "https://github.com/dytsou/drive-uploader",
       target: "_blank",
       rel: "noopener noreferrer",
       icon: Github,

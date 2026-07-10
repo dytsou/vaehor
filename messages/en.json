@@ -406,7 +406,8 @@
   },
   "Footer": {
     "dataUsage": "Total Data Usage:",
-    "rightsReserved": "All rights reserved -"
+    "rightsReserved": "All rights reserved -",
+    "modificationsBy": "Modifications by"
   },
   "RequestPage": {
     "invalidLink": "This link is invalid or expired.",

@@ -34,6 +34,7 @@ export const metadata: Metadata = {
   applicationName: "Zee Index",
   authors: [
     { name: "Muhammad Ibnu Fauzi", url: "https://ifauzeee.vercel.app" },
+    { name: "dytsou", url: "https://github.com/dytsou/drive-uploader" },
   ],
   generator: "Next.js",
   keywords: ["Google Drive", "Index", "File Manager", "Streaming", "Next.js"],

@@ -223,7 +223,7 @@ export default function CommandPalette() {
             onSelect={() =>
               runCommand(() =>
                 window.open(
-                  "https://github.com/ifauzeee/Zee-Index",
+                  "https://github.com/dytsou/drive-uploader",
                   "_blank",
                   "noopener,noreferrer",
                 ),

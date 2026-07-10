@@ -406,7 +406,8 @@
   },
   "Footer": {
     "dataUsage": "Total Penggunaan Data:",
-    "rightsReserved": "Hak cipta dilindungi -"
+    "rightsReserved": "Hak cipta dilindungi -",
+    "modificationsBy": "Modifikasi oleh"
   },
   "RequestPage": {
     "invalidLink": "Link ini tidak valid atau sudah kadaluarsa.",

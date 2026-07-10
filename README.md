@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/ifauzeee/Zee-Index">
+  <a href="https://github.com/dytsou/drive-uploader">
     <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="Zee-Index Logo" width="130" height="130">
   </a>
 
@@ -16,8 +16,8 @@
 
   <div align="center">
     <a href="https://zee-index.duckdns.org"><img src="https://img.shields.io/badge/🔴_Live_Demo-Visit-FF4444?style=for-the-badge" alt="Live Demo" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
+    <a href="https://github.com/dytsou/drive-uploader/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
+    <a href="https://github.com/dytsou/drive-uploader/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
   </div>
 
   <br />
@@ -46,35 +46,56 @@
 <details>
 <summary>Click to expand</summary>
 
-- [Key Features](#-key-features)
-- [Tech Stack](#️-tech-stack)
-- [Architecture Overview](#-architecture-overview)
-- [Getting Started](#-getting-started)
+- [📑 Table of Contents](#-table-of-contents)
+- [🌟 Key Features](#-key-features)
+  - [⚡ Performance \& UI](#-performance--ui)
+  - [🎬 Media \& File Previews](#-media--file-previews)
+  - [🛡️ Security \& Access Control](#️-security--access-control)
+  - [🗂️ Drive Management](#️-drive-management)
+  - [🛠️ Admin Dashboard](#️-admin-dashboard)
+  - [📱 Mobile (Capacitor)](#-mobile-capacitor)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [🏗 Architecture Overview](#-architecture-overview)
+- [🚀 Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
-  - [Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
-  - [Local Development](#-local-development)
+  - [🐳 Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
+  - [💻 Local Development](#-local-development)
 - [Google Cloud Setup](#google-cloud-setup)
-- [Environment Variables](#️-environment-variables)
-- [Deployment Guide](#-deployment-guide)
+  - [1. Create a Google Cloud Project](#1-create-a-google-cloud-project)
+  - [2. Enable Google Drive API](#2-enable-google-drive-api)
+  - [3. Configure OAuth Consent Screen](#3-configure-oauth-consent-screen)
+  - [4. Create OAuth 2.0 Credentials](#4-create-oauth-20-credentials)
+  - [5. Connect Google Drive (choose one)](#5-connect-google-drive-choose-one)
+    - [Option A — Service account (recommended)](#option-a--service-account-recommended)
+    - [Option B — OAuth refresh token (legacy)](#option-b--oauth-refresh-token-legacy)
+- [⚙️ Environment Variables](#️-environment-variables)
+  - [Required Variables](#required-variables)
+  - [Google Drive auth (pick one)](#google-drive-auth-pick-one)
+  - [Database \& Cache](#database--cache)
+  - [Optional Variables](#optional-variables)
+  - [Email Configuration (Optional)](#email-configuration-optional)
+- [📦 Deployment Guide](#-deployment-guide)
   - [VPS / DigitalOcean](#vps--digitalocean)
-  - [Auto HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
+  - [Automatic HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
   - [Mobile app (Capacitor)](#mobile-app-capacitor)
-  - [Railway / Render](#other-platforms)
-- [Security](#-security)
-  - [Authentication & Authorization](#authentication--authorization)
-  - [Roles & Permissions](#roles--permissions)
+  - [Other Platforms](#other-platforms)
+- [🔐 Security](#-security)
+  - [Authentication \& Authorization](#authentication--authorization)
+  - [Roles \& Permissions](#roles--permissions)
   - [Password Hashing (bcrypt)](#password-hashing-bcrypt)
   - [Mobile OAuth (Capacitor)](#mobile-oauth-capacitor)
-  - [Security Headers & CSP](#security-headers--csp)
-- [API Reference](#-api-reference) ([OpenAPI](docs/api/openapi.yaml))
-- [Keyboard Shortcuts](#️-keyboard-shortcuts)
-- [Internationalization (i18n)](#-internationalization-i18n)
-- [Project Structure](#-project-structure)
-- [Testing](#-testing)
-- [Troubleshooting](#️-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
+  - [Security Headers \& CSP](#security-headers--csp)
+- [📖 API Reference](#-api-reference)
+- [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
+- [🌍 Internationalization (i18n)](#-internationalization-i18n)
+- [📂 Project Structure](#-project-structure)
+- [🧪 Testing](#-testing)
+  - [Unit Tests (Vitest)](#unit-tests-vitest)
+  - [End-to-End Tests (Playwright)](#end-to-end-tests-playwright)
+- [⚠️ Troubleshooting](#️-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
 
 </details>
 
@@ -237,7 +258,7 @@ The fastest way to get Zee-Index running with **PostgreSQL**, **Redis**, **auto-
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index
 
 # 2. Copy environment template
@@ -278,7 +299,7 @@ For contributors or those who prefer local development with hot reload:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index
 pnpm install
 
@@ -463,7 +484,7 @@ adduser zee && usermod -aG docker zee
 su - zee
 
 # 4. Clone and configure
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index
 cp .env.example .env
 nano .env  # Configure all required variables
@@ -908,13 +929,15 @@ git push origin feat/amazing-feature
 
 ## 📜 License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with an attribution requirement.
+This fork is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with the upstream attribution requirement.
+
+- **Upstream:** [ifauzeee/Zee-Index](https://github.com/ifauzeee/Zee-Index) — Copyright (C) 2025 Muhammad Ibnu Fauzi
+- **This fork:** [dytsou/drive-uploader](https://github.com/dytsou/drive-uploader) — Copyright (C) 2026 dytsou
 
 - ✅ Free to use, modify, and distribute
 - ✅ Commercial use allowed
-- ⚠️ **Attribution required:** display `© 2025 Muhammad Ibnu Fauzi` in your deployment
-- ⚠️ Modified versions that are hosted must share source code
-- ⚠️ Changes must be documented
+- ⚠️ **Attribution required (cannot be removed):** display exactly `© 2025 All rights reserved - Muhammad Ibnu Fauzi` on user-facing pages
+- ⚠️ Modified versions that are hosted must share source code under AGPL-3.0
 
 See the [LICENSE](LICENSE) file for full details.
 
@@ -922,7 +945,7 @@ See the [LICENSE](LICENSE) file for full details.
 
 ## 🙏 Acknowledgments
 
-Built with these amazing open-source projects:
+Based on [Zee-Index](https://github.com/ifauzeee/Zee-Index) by [Muhammad Ibnu Fauzi](https://github.com/ifauzeee). Built with these open-source projects:
 
 - [Next.js](https://nextjs.org/) — The React framework
 - [VidStack](https://www.vidstack.io/) — Video player components
@@ -942,13 +965,14 @@ Built with these amazing open-source projects:
   </p>
   <br />
   <p>
-    Crafted with ❤️ by <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a>
+    Fork maintained by <a href="https://github.com/dytsou">dytsou</a>
+    · based on <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a> / <a href="https://github.com/ifauzeee/Zee-Index">Zee-Index</a>
   </p>
   <p>
-    <a href="https://github.com/ifauzeee/Zee-Index">GitHub</a>
+    <a href="https://github.com/dytsou/drive-uploader">GitHub</a>
     ·
     <a href="https://zee-index.duckdns.org">Live Demo</a>
     ·
-    <a href="https://github.com/ifauzeee/Zee-Index/issues">Issues</a>
+    <a href="https://github.com/dytsou/drive-uploader/issues">Issues</a>
   </p>
 </div>

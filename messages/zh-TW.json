@@ -401,7 +401,8 @@
   },
   "Footer": {
     "dataUsage": "總資料使用量：",
-    "rightsReserved": "版權所有 -"
+    "rightsReserved": "版權所有 -",
+    "modificationsBy": "修改由"
   },
   "RequestPage": {
     "invalidLink": "此連結無效或已到期。",

@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/ifauzeee/Zee-Index">
+  <a href="https://github.com/dytsou/drive-uploader">
     <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="Zee-Index Logo" width="130" height="130">
   </a>
 
@@ -16,8 +16,8 @@
 
   <div align="center">
     <a href="https://zee-index.duckdns.org"><img src="https://img.shields.io/badge/🔴_線上展示-Visit-FF4444?style=for-the-badge" alt="Live Demo" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/issues"><img src="https://img.shields.io/badge/🐛_回報問題-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/pulls"><img src="https://img.shields.io/badge/✨_功能建議-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
+    <a href="https://github.com/dytsou/drive-uploader/issues"><img src="https://img.shields.io/badge/🐛_回報問題-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
+    <a href="https://github.com/dytsou/drive-uploader/pulls"><img src="https://img.shields.io/badge/✨_功能建議-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
   </div>
 
   <br />
@@ -46,30 +46,53 @@
 <details>
 <summary>點此展開</summary>
 
-- [主要功能](#-主要功能)
-- [技術堆疊](#️-技術堆疊)
-- [架構概覽](#-架構概覽)
-- [快速開始](#-快速開始)
+- [📑 目錄](#-目錄)
+- [🌟 主要功能](#-主要功能)
+  - [⚡ 效能與介面](#-效能與介面)
+  - [🎬 媒體與預覽](#-媒體與預覽)
+  - [🛡️ 安全與存取控制](#️-安全與存取控制)
+  - [🗂️ 雲端硬碟管理](#️-雲端硬碟管理)
+  - [🛠️ 管理後台](#️-管理後台)
+  - [📱 行動 App（Capacitor）](#-行動-appcapacitor)
+- [🛠️ 技術堆疊](#️-技術堆疊)
+- [🏗 架構概覽](#-架構概覽)
+- [🚀 快速開始](#-快速開始)
   - [先決條件](#先決條件)
-  - [Docker 快速啟動（建議）](#-docker-快速啟動建議)
-  - [本機開發](#-本機開發)
+  - [🐳 Docker 快速啟動（建議）](#-docker-快速啟動建議)
+  - [💻 本機開發](#-本機開發)
 - [Google Cloud 設定](#google-cloud-設定)
-- [環境變數](#️-環境變數)
-- [部署指南](#-部署指南)
+  - [1. 建立專案](#1-建立專案)
+  - [2. 啟用 Google Drive API](#2-啟用-google-drive-api)
+  - [3. OAuth 同意畫面](#3-oauth-同意畫面)
+  - [4. 建立 OAuth 2.0 憑證](#4-建立-oauth-20-憑證)
+  - [5. 連接 Google Drive（二選一）](#5-連接-google-drive二選一)
+    - [選項 A — 服務帳戶（建議）](#選項-a--服務帳戶建議)
+    - [選項 B — OAuth refresh token（舊路徑）](#選項-b--oauth-refresh-token舊路徑)
+- [⚙️ 環境變數](#️-環境變數)
+  - [必要變數](#必要變數)
+  - [Google Drive 驗證（二選一）](#google-drive-驗證二選一)
+  - [資料庫與快取](#資料庫與快取)
+  - [選用變數（節錄）](#選用變數節錄)
+- [📦 部署指南](#-部署指南)
   - [VPS / DigitalOcean](#vps--digitalocean)
   - [DuckDNS + Traefik 自動 HTTPS](#duckdns--traefik-自動-https)
   - [行動 App（Capacitor）](#行動-appcapacitor)
   - [其他平台](#其他平台)
-- [安全性](#-安全性)
-- [API 參考](#-api-參考)（[OpenAPI](docs/api/openapi.yaml)）
-- [鍵盤快捷鍵](#️-鍵盤快捷鍵)
-- [國際化（i18n）](#-國際化i18n)
-- [專案結構](#-專案結構)
-- [測試](#-測試)
-- [疑難排解](#️-疑難排解)
-- [貢獻](#-貢獻)
-- [授權](#-授權)
-- [致謝](#-致謝)
+- [🔐 安全性](#-安全性)
+  - [驗證方式](#驗證方式)
+  - [角色與權限](#角色與權限)
+  - [密碼雜湊（bcrypt）](#密碼雜湊bcrypt)
+  - [行動 OAuth（Capacitor）](#行動-oauthcapacitor)
+  - [安全標頭](#安全標頭)
+- [📖 API 參考](#-api-參考)
+- [⌨️ 鍵盤快捷鍵](#️-鍵盤快捷鍵)
+- [🌍 國際化（i18n）](#-國際化i18n)
+- [📂 專案結構](#-專案結構)
+- [🧪 測試](#-測試)
+- [⚠️ 疑難排解](#️-疑難排解)
+- [🤝 貢獻](#-貢獻)
+- [📜 授權](#-授權)
+- [🙏 致謝](#-致謝)
 
 </details>
 
@@ -205,7 +228,7 @@ flowchart TB
 最快方式：一次啟動 **PostgreSQL**、**Redis**、**自動 HTTPS**。
 
 ```bash
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index
 cp .env.example .env
 nano .env   # 填入憑證（見「環境變數」）
@@ -227,7 +250,7 @@ docker compose down -v            # ⚠️ 連資料一併刪除
 ### 💻 本機開發
 
 ```bash
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index
 pnpm install
 cp .env.example .env
@@ -353,7 +376,7 @@ Drive API 使用 **服務帳戶 JWT**（穩定、不需瀏覽器 refresh token�
 ssh root@your-server-ip
 curl -fsSL https://get.docker.com | sh
 adduser zee && usermod -aG docker zee && su - zee
-git clone https://github.com/ifauzeee/Zee-Index.git
+git clone https://github.com/dytsou/drive-uploader.git
 cd Zee-Index && cp .env.example .env && nano .env
 docker compose up -d --build
 docker compose ps
@@ -574,11 +597,14 @@ pnpm exec prisma generate
 
 ## 📜 授權
 
-**AGPL-3.0**，並需標示出處：
+本 fork 採用 **AGPL-3.0**，並須遵守上游強制標示條款：
+
+- **上游：** [ifauzeee/Zee-Index](https://github.com/ifauzeee/Zee-Index) — Copyright (C) 2025 Muhammad Ibnu Fauzi
+- **本 fork：** [dytsou/drive-uploader](https://github.com/dytsou/drive-uploader) — Copyright (C) 2026 dytsou
 
 - ✅ 可自由使用、修改、散布；允許商業使用
-- ⚠️ 部署須顯示 `© 2025 Muhammad Ibnu Fauzi`
-- ⚠️ 修改後對外提供服務須公開原始碼
+- ⚠️ **強制標示（不得移除或更改）：** 使用者介面須顯示 `© 2025 All rights reserved - Muhammad Ibnu Fauzi`
+- ⚠️ 修改後對外提供服務須依 AGPL-3.0 公開原始碼
 
 詳見 [LICENSE](LICENSE)。
 
@@ -586,20 +612,23 @@ pnpm exec prisma generate
 
 ## 🙏 致謝
 
-Next.js、VidStack、Radix UI、TanStack、Framer Motion、Zustand、Prisma、Lucide 等開源專案。
+本專案基於 [Muhammad Ibnu Fauzi](https://github.com/ifauzeee) 的 [Zee-Index](https://github.com/ifauzeee/Zee-Index)。並感謝 Next.js、VidStack、Radix UI、TanStack、Framer Motion、Zustand、Prisma、Lucide 等開源專案。
 
 ---
 
 <div align="center">
   <p><strong>⭐ 若覺得有幫助，請給專案一顆星！</strong></p>
   <p>
-    Crafted with ❤️ by <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a>
+    Fork 維護：<a href="https://github.com/dytsou">dytsou</a>
+    · 基於 <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a> / <a href="https://github.com/ifauzeee/Zee-Index">Zee-Index</a>
   </p>
   <p>
     <a href="README.md">English README</a>
     ·
+    <a href="https://github.com/dytsou/drive-uploader">GitHub</a>
+    ·
     <a href="https://zee-index.duckdns.org">線上展示</a>
     ·
-    <a href="https://github.com/ifauzeee/Zee-Index/issues">Issues</a>
+    <a href="https://github.com/dytsou/drive-uploader/issues">Issues</a>
   </p>
 </div>
