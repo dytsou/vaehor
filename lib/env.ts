@@ -162,10 +162,21 @@ export function applyDatabaseUrlFromPostgres(
   const db = stripEnvQuotes(env.POSTGRES_DB);
   if (!user || !password || !db) return undefined;
 
-  const host = stripEnvQuotes(env.POSTGRES_HOST) || "localhost";
+  const host = stripEnvQuotes(env.POSTGRES_HOST) || "127.0.0.1";
   const port = stripEnvQuotes(env.POSTGRES_PORT) || "5432";
   const url = `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}?schema=public`;
   env.DATABASE_URL = url;
+  return url;
+}
+
+/** When REDIS_URL is unset outside production/CI, default to local compose Redis. */
+export function applyLocalRedisUrl(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  if (stripEnvQuotes(env.REDIS_URL)) return env.REDIS_URL;
+  if (env.NODE_ENV === "production" || env.CI === "true") return undefined;
+  const url = "redis://127.0.0.1:6379";
+  env.REDIS_URL = url;
   return url;
 }
 
@@ -175,6 +186,7 @@ export function validateOnStartup(): Env {
   }
 
   applyDatabaseUrlFromPostgres();
+  applyLocalRedisUrl();
 
   const result = envSchema.safeParse(process.env);
   const adminCredentialResult = result.success
