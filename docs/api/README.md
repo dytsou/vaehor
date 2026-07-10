@@ -23,8 +23,11 @@ This folder contains the maintained API reference for vaehor.
 2. Redoc
 
    ```bash
+   # Compiles TypeSpec → OpenAPI, builds static Redoc HTML, opens it in the browser
    pnpm api:docs:redoc
    ```
+
+   (`@redocly/cli` v2 removed `preview-docs`; this script uses `build-docs` instead.)
 
 3. Postman
 
