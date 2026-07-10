@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { applyDatabaseUrlFromPostgres, applyLocalRedisUrl } from "@/lib/env";
+import {
+  applyDatabaseUrlFromPostgres,
+  applyLocalRedisUrl,
+} from "@/lib/env-url";
 
 describe("applyDatabaseUrlFromPostgres", () => {
   it("leaves an existing DATABASE_URL alone", () => {
