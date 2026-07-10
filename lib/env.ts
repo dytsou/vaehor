@@ -152,10 +152,29 @@ function reportConfigWarnings(warnings: string[]): void {
   console.warn("");
 }
 
+/** When DATABASE_URL is unset, build it from POSTGRES_* (same as docker-compose). */
+export function applyDatabaseUrlFromPostgres(
+  env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+  if (stripEnvQuotes(env.DATABASE_URL)) return env.DATABASE_URL;
+  const user = stripEnvQuotes(env.POSTGRES_USER);
+  const password = stripEnvQuotes(env.POSTGRES_PASSWORD);
+  const db = stripEnvQuotes(env.POSTGRES_DB);
+  if (!user || !password || !db) return undefined;
+
+  const host = stripEnvQuotes(env.POSTGRES_HOST) || "localhost";
+  const port = stripEnvQuotes(env.POSTGRES_PORT) || "5432";
+  const url = `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${encodeURIComponent(db)}?schema=public`;
+  env.DATABASE_URL = url;
+  return url;
+}
+
 export function validateOnStartup(): Env {
   if (shouldSkipEnvValidation()) {
     return process.env as unknown as Env;
   }
+
+  applyDatabaseUrlFromPostgres();
 
   const result = envSchema.safeParse(process.env);
   const adminCredentialResult = result.success
