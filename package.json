@@ -29,6 +29,7 @@
     "fix:all": "npm run format:fix && npm run lint --fix",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:integration:entrypoint": "bash scripts/test-entrypoint-integration.sh",
     "test:e2e": "playwright test",
     "compile:openapi": "tsp compile docs/api/spec/entry.tsp --config docs/api/spec/tspconfig.yaml",
     "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js",
