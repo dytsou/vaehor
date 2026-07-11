@@ -2,10 +2,11 @@ name: Docker Build & Publish
 
 on:
   push:
-    branches: ["main"]
+    branches: [trunk]
     tags: ["v*.*.*"]
   pull_request:
-    branches: ["main"]
+    branches: [trunk]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -59,3 +60,5 @@ jobs:
           build-args: |
             NEXT_PUBLIC_ROOT_FOLDER_ID=${{ secrets.NEXT_PUBLIC_ROOT_FOLDER_ID }}
             NEXT_PUBLIC_ROOT_FOLDER_NAME=${{ secrets.NEXT_PUBLIC_ROOT_FOLDER_NAME }}
+            NEXT_PUBLIC_ENABLE_LOCAL_STORAGE=${{ vars.NEXT_PUBLIC_ENABLE_LOCAL_STORAGE }}
+            NEXT_PUBLIC_LOCAL_STORAGE_NAME=${{ vars.NEXT_PUBLIC_LOCAL_STORAGE_NAME }}
