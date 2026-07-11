@@ -6,13 +6,7 @@ import {
 } from "../lib/mobile-bridge-protocol";
 import { createServerFetch } from "../lib/api-client";
 import { runWithBackgroundUploadSupport } from "../lib/background-upload";
-import {
-  decodeBase64File,
-  runNativeChunkedUpload,
-  UploadAuthError,
-  type NativeUploadFile,
-  type NativeUploadProgress,
-} from "../lib/upload-bridge";
+import { nativeUploadErrorMessage } from "../lib/upload-errors";
 
 export type UploadBridgeHandlers = {
   origin: string;
@@ -86,12 +80,7 @@ async function handlePickAndUpload(
         status: "success",
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof UploadAuthError
-          ? "Session expired"
-          : error instanceof Error
-            ? error.message
-            : "Upload failed";
+      const errorMessage = nativeUploadErrorMessage(error);
       handlers.onProgress({
         fileName: file.name,
         percent: 0,
@@ -107,7 +96,7 @@ export function attachUploadBridge(handlers: UploadBridgeHandlers): () => void {
   const onMessage = (event: MessageEvent) => {
     if (event.source !== handlers.iframe.contentWindow) return;
     const data = event.data as ZeeMobileMessage | undefined;
-    if (!data || data.type !== ZEE_MOBILE_MESSAGE) return;
+    if (data?.type !== ZEE_MOBILE_MESSAGE) return;
 
     if (data.action === "upload/pick") {
       runWithBackgroundUploadSupport(() => handlePickAndUpload(data, handlers))

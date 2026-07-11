@@ -72,7 +72,7 @@ export async function loadSessionForServer(
   }
 
   const creds = await deps.getCredentials(serverCredentialKey(origin));
-  if (!creds || creds.username !== origin) return null;
+  if (creds?.username !== origin) return null;
   return creds.password;
 }
 
