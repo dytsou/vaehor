@@ -94,7 +94,7 @@ COPY --from=builder --chown=root:root --chmod=555 /app/.next/standalone ./
 COPY --from=builder --chown=root:root --chmod=555 /app/.next/static ./.next/static
 COPY --from=builder --chown=root:root --chmod=555 /app/prisma ./prisma
 COPY --from=builder --chown=root:root --chmod=444 /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=root:root --chmod=555 /app/scripts ./scripts
+COPY --chown=root:root --chmod=555 scripts ./scripts
 
 # Note: Standalone mode already includes necessary node_modules in .next/standalone/node_modules
 # We no longer need to copy the entire /app/node_modules from builder.
