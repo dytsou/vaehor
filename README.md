@@ -386,7 +386,7 @@ pnpm test:e2e         # E2E tests (Playwright)
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
    - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
-   - `vaehor://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/store-release.md](docs/mobile/store-release.md))
+   - `vaehor://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md))
 5. Save the **Client ID** and **Client Secret**
 
 ### 5. Connect Google Drive (choose one)
@@ -556,7 +556,7 @@ pnpm mobile:build        # Production shell bundle
 pnpm mobile:sync         # Copy into android/ (and ios/ when added)
 ```
 
-Device live reload and store release: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/store-release.md](docs/mobile/store-release.md).
+Device live reload and release builds: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
 
 ### Other Platforms
 
@@ -638,7 +638,7 @@ Native Google sign-in does **not** use an embedded WebView login. The shell open
 3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
 4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
 
-Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/store-release.md](docs/mobile/store-release.md).
+Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
 
 ### Security Headers & CSP
 

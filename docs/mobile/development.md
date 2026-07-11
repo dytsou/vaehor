@@ -53,7 +53,7 @@ Point the WebView at your dev machine on the LAN instead of bundled `dist/` asse
 
 5. **WebView content** still targets the operator server URL you configure in the app (your `pnpm dev` or staging host). Test against `http://YOUR_LAN_IP:3000` only if that origin is in the backend mobile CORS allowlist.
 
-Unset `CAPACITOR_SERVER_URL` (or omit it) before store builds so release bundles ship static assets from `dist/`.
+Unset `CAPACITOR_SERVER_URL` (or omit it) before release builds so release bundles ship static assets from `dist/`.
 
 ## Backend on the same network
 
@@ -73,6 +73,6 @@ pnpm exec vitest run apps/mobile/__tests__
 
 ## Related docs
 
-- [Store release](./store-release.md)
+- [Artifact release](./artifact-release.md)
 - [Operator Universal Links](./operator-universal-links.md)
 - [Deployment](../deployment.md) — Traefik TLS for staging/production

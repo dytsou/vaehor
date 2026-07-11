@@ -308,7 +308,7 @@ pnpm test:e2e    # E2E
    - `http://localhost:3000/setup` — `/setup` 取得 refresh token（開發）
    - `http://localhost:3000/api/auth/callback/google` — NextAuth「以 Google 登入」（開發）
    - `https://yourdomain.com/setup` 與 `https://yourdomain.com/api/auth/callback/google`（正式）
-   - `vaehor://auth/callback` — Capacitor 行動 Google 登入（見 [行動 App](#行動-appcapacitor)、[docs/mobile/store-release.md](docs/mobile/store-release.md)）
+   - `vaehor://auth/callback` — Capacitor 行動 Google 登入（見 [行動 App](#行動-appcapacitor)、[docs/mobile/artifact-release.md](docs/mobile/artifact-release.md)）
 3. 儲存 **Client ID**／**Client Secret**
 
 ### 5. 連接 Google Drive（二選一）
@@ -434,7 +434,7 @@ pnpm mobile:build
 pnpm mobile:sync
 ```
 
-裝置 live reload／商店發行：[docs/mobile/development.md](docs/mobile/development.md)、[docs/mobile/store-release.md](docs/mobile/store-release.md)。
+裝置 live reload／發行建置：[docs/mobile/development.md](docs/mobile/development.md)、[docs/mobile/artifact-release.md](docs/mobile/artifact-release.md)。
 
 ### 其他平台
 
