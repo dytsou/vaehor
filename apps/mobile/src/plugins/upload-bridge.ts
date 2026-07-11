@@ -7,6 +7,12 @@ import {
 import { createServerFetch } from "../lib/api-client";
 import { runWithBackgroundUploadSupport } from "../lib/background-upload";
 import { nativeUploadErrorMessage } from "../lib/upload-errors";
+import {
+  decodeBase64File,
+  runNativeChunkedUpload,
+  type NativeUploadFile,
+  type NativeUploadProgress,
+} from "../lib/upload-bridge";
 
 export type UploadBridgeHandlers = {
   origin: string;
