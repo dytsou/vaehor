@@ -3,7 +3,6 @@ name: Docker Build & Publish
 on:
   push:
     branches: [trunk]
-    tags: ["v*.*.*"]
   pull_request:
     branches: [trunk]
   workflow_dispatch:
@@ -23,6 +22,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Read package version
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
@@ -46,6 +49,11 @@ jobs:
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=pr
+            type=sha,format=short
+            type=raw,value=${{ steps.pkg.outputs.version }},enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=latest,enable=${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/trunk' }}
 
       - name: Build and push Docker image
         id: build-and-push
