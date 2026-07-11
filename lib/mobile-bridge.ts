@@ -1,44 +1,17 @@
-export const ZEE_MOBILE_MESSAGE = "zee-mobile";
+import {
+  ZEE_MOBILE_MESSAGE,
+  type ZeeMobileMessage,
+} from "./mobile-bridge-protocol";
 
-export type ZeeMobilePickUploadRequest = {
-  type: typeof ZEE_MOBILE_MESSAGE;
-  action: "upload/pick";
-  requestId: string;
-  parentId: string;
-};
-
-export type ZeeMobileUploadProgressMessage = {
-  type: typeof ZEE_MOBILE_MESSAGE;
-  action: "upload/progress";
-  requestId: string;
-  fileName: string;
-  percent: number;
-};
-
-export type ZeeMobilePickDoneMessage = {
-  type: typeof ZEE_MOBILE_MESSAGE;
-  action: "upload/pick-done";
-  requestId: string;
-};
-
-export type ZeeMobilePickErrorMessage = {
-  type: typeof ZEE_MOBILE_MESSAGE;
-  action: "upload/pick-error";
-  requestId: string;
-  error: string;
-};
-
-export type ZeeMobileLogoutMessage = {
-  type: typeof ZEE_MOBILE_MESSAGE;
-  action: "logout";
-};
-
-export type ZeeMobileMessage =
-  | ZeeMobilePickUploadRequest
-  | ZeeMobileUploadProgressMessage
-  | ZeeMobilePickDoneMessage
-  | ZeeMobilePickErrorMessage
-  | ZeeMobileLogoutMessage;
+export {
+  ZEE_MOBILE_MESSAGE,
+  type ZeeMobileMessage,
+  type ZeeMobileLogoutMessage,
+  type ZeeMobilePickDoneMessage,
+  type ZeeMobilePickErrorMessage,
+  type ZeeMobilePickUploadRequest,
+  type ZeeMobileUploadProgressMessage,
+} from "./mobile-bridge-protocol";
 
 export interface ZeeMobileBridge {
   isAvailable(): boolean;

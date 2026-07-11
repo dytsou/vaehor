@@ -13,6 +13,10 @@ export default defineConfig({
         mobileRoot,
         "../../packages/sdk/src/index.ts",
       ),
+      "@vaehor/mobile-bridge-protocol": path.resolve(
+        mobileRoot,
+        "../../lib/mobile-bridge-protocol.ts",
+      ),
     },
   },
   build: {

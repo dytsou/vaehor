@@ -1,4 +1,3 @@
-/** Keep in sync with lib/mobile-bridge.ts message protocol. */
 export const ZEE_MOBILE_MESSAGE = "zee-mobile";
 
 export type ZeeMobilePickUploadRequest = {

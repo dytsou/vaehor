@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ZEE_MOBILE_MESSAGE } from "../src/lib/mobile-bridge-protocol";
+import { ZEE_MOBILE_MESSAGE } from "@vaehor/mobile-bridge-protocol";
 import { attachUploadBridge } from "../src/plugins/upload-bridge";
 
 describe("attachUploadBridge", () => {

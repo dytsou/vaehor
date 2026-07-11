@@ -34,10 +34,12 @@ import {
 } from "@/lib/incident-monitor";
 import { kv } from "@/lib/kv";
 import {
+  addManualDrive,
   MANUAL_DRIVES_KEY,
   manualDriveCreateSchema,
   manualDriveDeleteSchema,
   parseManualDriveRecords,
+  removeManualDrive,
 } from "@/lib/manual-drives";
 import {
   getHealthServicesSnapshot,
@@ -268,51 +270,18 @@ export async function getManualDrivesAction() {
 
 export async function createManualDriveAction(input: unknown) {
   await requireAdminSession();
-  const { id, name, password } = manualDriveCreateSchema.parse(input);
-
-  const currentDrives = parseManualDriveRecords(
-    await kv.get(MANUAL_DRIVES_KEY),
-  );
-  if (currentDrives.some((d) => d.id === id)) {
-    throw new Error("Folder ID ini sudah ada dalam daftar.");
-  }
-
-  let isProtected = false;
-  if (password && password.trim() !== "") {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await db.protectedFolder.upsert({
-      where: { folderId: id },
-      update: { password: hashedPassword },
-      create: { folderId: id, password: hashedPassword },
-    });
-    isProtected = true;
-  }
-
-  const newDrive = { id, name, isProtected };
-  const updatedDrives = [...currentDrives, newDrive];
-
-  await kv.set(MANUAL_DRIVES_KEY, updatedDrives);
-  await kv.del(`vaehor:folder-path-v7:${id}`);
-
+  const drives = await addManualDrive(manualDriveCreateSchema.parse(input));
   revalidateTag("manual-drives", "max");
-  return { success: true, drives: updatedDrives };
+  return { success: true, drives };
 }
 
 export async function deleteManualDriveAction(input: unknown) {
   await requireAdminSession();
-  const { id } = manualDriveDeleteSchema.parse(input);
-
-  const currentDrives = parseManualDriveRecords(
-    await kv.get(MANUAL_DRIVES_KEY),
+  const drives = await removeManualDrive(
+    manualDriveDeleteSchema.parse(input).id,
   );
-  const updatedDrives = currentDrives.filter((d) => d.id !== id);
-
-  await kv.set(MANUAL_DRIVES_KEY, updatedDrives);
-  await db.protectedFolder.delete({ where: { folderId: id } }).catch(() => {});
-  await kv.del(`vaehor:folder-path-v7:${id}`);
-
   revalidateTag("manual-drives", "max");
-  return { success: true, drives: updatedDrives };
+  return { success: true, drives };
 }
 
 export async function scanDrivesAction() {

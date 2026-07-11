@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "resolveJsonModule": true,
     "paths": {
-      "@vaehor/sdk": ["../../packages/sdk/src/index.ts"]
+      "@vaehor/sdk": ["../../packages/sdk/src/index.ts"],
+      "@vaehor/mobile-bridge-protocol": ["../../lib/mobile-bridge-protocol.ts"]
     }
   },
   "include": ["src", "__tests__"]

@@ -3,7 +3,7 @@ import {
   ZEE_MOBILE_MESSAGE,
   type ZeeMobileMessage,
   type ZeeMobilePickUploadRequest,
-} from "../lib/mobile-bridge-protocol";
+} from "@vaehor/mobile-bridge-protocol";
 import { createServerFetch } from "../lib/api-client";
 import { runWithBackgroundUploadSupport } from "../lib/background-upload";
 import { nativeUploadErrorMessage } from "../lib/upload-errors";
