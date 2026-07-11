@@ -11,6 +11,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./"),
       "@vaehor/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
+      "@vaehor/mobile-bridge-protocol": path.resolve(
+        __dirname,
+        "./lib/mobile-bridge-protocol.ts",
+      ),
     },
     exclude: [
       "node_modules",
