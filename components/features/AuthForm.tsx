@@ -15,6 +15,15 @@ import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { getErrorMessage } from "@/lib/errors";
 
+async function pollFolderAccess(folderId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/files?folderId=${folderId}`);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 interface AuthFormProps {
   folderId?: string;
   folderName: string;
@@ -78,28 +87,18 @@ export default function AuthForm({
   useEffect(() => {
     if (!requestSent || !folderId) return;
 
-    const checkAccess = async () => {
-      try {
-        const res = await fetch(`/api/files?folderId=${folderId}`);
-        if (res.ok) {
-          addToast({
-            message: t("accessGranted"),
-            type: "success",
-          });
-          window.location.reload();
-        }
-      } catch {}
-    };
-
+    let countdown = 5;
     const interval = setInterval(() => {
-      setRefreshCountdown((previous) => {
-        if (previous <= 1) {
-          checkAccess().catch(() => {});
-          return 5;
-        }
-
-        return previous - 1;
-      });
+      countdown -= 1;
+      if (countdown <= 0) {
+        countdown = 5;
+        pollFolderAccess(folderId).then((granted) => {
+          if (!granted) return;
+          addToast({ message: t("accessGranted"), type: "success" });
+          window.location.reload();
+        });
+      }
+      setRefreshCountdown(countdown);
     }, 1000);
 
     return () => clearInterval(interval);
