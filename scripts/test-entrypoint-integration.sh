@@ -56,14 +56,14 @@ migration_count="$(
   psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$DB_NAME" -tAc \
     'SELECT COUNT(*) FROM "_prisma_migrations"' 2>/dev/null || true
 )"
-[ "${migration_count:-0}" -ge 1 ] ||
+[[ "${migration_count:-0}" -ge 1 ]] ||
   fail "expected _prisma_migrations rows after first run, got: ${migration_count:-0}"
 
 user_table="$(
   psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$DB_NAME" -tAc \
     "SELECT to_regclass('public.\"User\"') IS NOT NULL" 2>/dev/null || true
 )"
-[ "$user_table" = "t" ] || fail "User table not created after migrations"
+[[ "$user_table" == "t" ]] || fail "User table not created after migrations"
 
 output2="$(run_entrypoint 2>&1)" || fail "entrypoint failed on second run (idempotency)"
 echo "$output2" | grep -q ENTRYPOINT_OK ||
