@@ -15,12 +15,12 @@ export function ScreenShell({
   children,
   onBack,
   locale,
-}: {
+}: Readonly<{
   title: string;
   children: ReactNode;
   onBack?: () => void;
   locale: Locale;
-}) {
+}>) {
   return (
     <div style={shell}>
       {onBack ? (
@@ -45,14 +45,14 @@ export function ServerListScreen({
   onAdd,
   onSwitch,
   onOpen,
-}: {
+}: Readonly<{
   locale: Locale;
   servers: ServerBookmark[];
   activeId: string | null;
   onAdd: () => void;
   onSwitch: (id: string) => void;
   onOpen?: (id: string) => void;
-}) {
+}>) {
   return (
     <ScreenShell title={t(locale, "servers.title")} locale={locale}>
       {servers.length === 0 ? (
@@ -118,14 +118,14 @@ export function AddServerScreen({
   saving,
   errorKey,
   initialUrl,
-}: {
+}: Readonly<{
   locale: Locale;
   onCancel: () => void;
   onSave: (url: string, label: string) => void;
   saving: boolean;
   errorKey?: MessageKey;
   initialUrl?: string;
-}) {
+}>) {
   return (
     <ScreenShell
       title={t(locale, "add.title")}
@@ -186,10 +186,10 @@ export function AddServerScreen({
 export function OfflineScreen({
   locale,
   onRetry,
-}: {
+}: Readonly<{
   locale: Locale;
   onRetry: () => void;
-}) {
+}>) {
   return (
     <ScreenShell title={t(locale, "offline.title")} locale={locale}>
       <p>{t(locale, "offline.message")}</p>
@@ -211,11 +211,11 @@ export function UploadProgressScreen({
   locale,
   upload,
   onDismiss,
-}: {
+}: Readonly<{
   locale: Locale;
   upload: UploadState;
   onDismiss?: () => void;
-}) {
+}>) {
   return (
     <ScreenShell title={t(locale, "upload.title")} locale={locale}>
       <p style={{ marginBottom: "0.5rem" }}>{upload.fileName}</p>
