@@ -110,7 +110,7 @@ export function createZeeMobileBridge(): ZeeMobileBridge {
         const handler = (event: MessageEvent) => {
           const data = event.data as ZeeMobileMessage | undefined;
           if (data?.type !== ZEE_MOBILE_MESSAGE) return;
-          if (data.requestId !== requestId) return;
+          if (!("requestId" in data) || data.requestId !== requestId) return;
 
           if (data.action === "upload/pick-done") {
             cleanup();
