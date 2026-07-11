@@ -8,7 +8,7 @@ import "../../models/domain.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   @tag("Health")
   @get
   @route("/health")

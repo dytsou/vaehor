@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const APP_CONFIG_KEY = "zee-index:config";
-const DEFAULT_APP_NAME = "Zee Index";
+export const APP_CONFIG_KEY = "vaehor:config";
+const DEFAULT_APP_NAME = "vaehor";
 
 const emptyUrl = z.literal("");
 const relativeUrl = z.string().startsWith("/");
@@ -34,6 +34,7 @@ export const appConfigUpdateSchema = appConfigSchema.partial();
 
 export const publicAppConfigSchema = appConfigSchema.pick({
   hideAuthor: true,
+  disableGuestLogin: true,
   localStorageAuthEnabled: true,
 });
 

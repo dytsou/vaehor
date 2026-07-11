@@ -31,7 +31,7 @@ const AppFooter = () => {
         {t("dataUsage")} <span id="data-usage-value">{dataUsage.value}</span>
       </p>
       <p>
-        &copy; {currentYear} {t("rightsReserved")}{" "}
+        &copy; 2025 {t("rightsReserved")}{" "}
         <a
           href="https://ifauzeee.vercel.app/"
           target="_blank"
@@ -39,6 +39,17 @@ const AppFooter = () => {
           className="font-medium text-foreground hover:text-primary"
         >
           Muhammad Ibnu Fauzi
+        </a>
+      </p>
+      <p className="mt-1">
+        &copy; {currentYear} {t("modificationsBy")}{" "}
+        <a
+          href="https://github.com/dytsou/vaehor"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-foreground hover:text-primary"
+        >
+          dytsou
         </a>
       </p>
     </footer>

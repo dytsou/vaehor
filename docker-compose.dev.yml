@@ -1,14 +1,14 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: zee-postgres-dev
+    container_name: vaehor-postgres-dev
     restart: always
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: zee_index
+      POSTGRES_DB: vaehor
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,18 +19,23 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: zee-redis-dev
+    container_name: vaehor-redis-dev
     restart: always
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  zee-index-dev:
+  vaehor-dev:
     image: node:26-alpine
-    container_name: zee-index-dev
+    container_name: vaehor-dev
     working_dir: /app
     restart: always
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       # Mount the current directory to /app in the container
       - .:/app
@@ -39,7 +44,7 @@ services:
       - next_bundle_vol:/app/.next
     environment:
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/zee_index?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/vaehor?schema=public
       - CI=true
     dns:
       - 8.8.8.8

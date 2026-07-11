@@ -2,6 +2,7 @@ GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3, 19 November 2007
 
 Copyright (C) 2025 Muhammad Ibnu Fauzi
+Copyright (C) 2026 dytsou
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -34,6 +35,11 @@ ADDITIONAL TERMS (permitted under Section 7 of AGPL v3):
 
 2. If you combine or distribute this software with other software, this
    attribution requirement still applies.
+
+3. Modifications copyright:
+   Copyright (C) 2026 dytsou applies to modifications in this fork
+   (https://github.com/dytsou/vaehor). The original attribution in
+   section 1 remains mandatory and unchanged.
 
 ---
 

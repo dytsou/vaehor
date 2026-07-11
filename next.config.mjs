@@ -122,6 +122,11 @@ const nextConfig = {
       "date-fns",
       "recharts",
     ],
+    // ponytail: Next 16.1+ enables Turbopack FS cache by default; restore can
+    // panic with "Read-only file system" / corrupt .next. Off unless opted in.
+    // Ceiling: slower repeat `next dev` cold starts. Upgrade: drop when Next
+    // hardens restore, or set TURBOPACK_FS_CACHE=1 on healthy machines.
+    turbopackFileSystemCacheForDev: process.env.TURBOPACK_FS_CACHE === "1",
   },
 
   compress: true,

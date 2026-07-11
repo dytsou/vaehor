@@ -41,7 +41,7 @@ export const GET = createPublicRoute(
       return missingFolderIdResponse(params.locale);
     }
 
-    const cacheKey = `zee-index:folder-path-v7:${params.folderId}:${params.locale}`;
+    const cacheKey = `vaehor:folder-path-v7:${params.folderId}:${params.locale}`;
     const staticOrCached = await tryCachedOrStaticPath(
       params.folderId,
       params.locale,

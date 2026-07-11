@@ -12,6 +12,7 @@ Thumbs.db
 /out/
 /build
 /dist
+/docs/api/website/
 *.tsbuildinfo
 next-env.d.ts
 

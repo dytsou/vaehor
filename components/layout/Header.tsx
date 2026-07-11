@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, FC } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut, signIn } from "next-auth/react";
+import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTheme } from "next-themes";
 import Image from "next/image";
 import AppIcon from "@/app/icon.png";
@@ -219,7 +220,7 @@ export default function Header() {
     },
     {
       id: "github",
-      href: "https://github.com/ifauzeee/Zee-Index",
+      href: "https://github.com/dytsou/vaehor",
       target: "_blank",
       rel: "noopener noreferrer",
       icon: Github,
@@ -252,7 +253,10 @@ export default function Header() {
       <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />
     ) : session?.user ? (
       <button
-        onClick={() => signOut({ callbackUrl: "/login" })}
+        onClick={() => {
+          notifyZeeMobileLogout();
+          signOut({ callbackUrl: "/login" }).catch(() => {});
+        }}
         title={t("logout")}
         className="p-2 rounded-lg hover:bg-accent"
       >
@@ -294,7 +298,7 @@ export default function Header() {
           className="w-8 h-8 mr-3 dark:invert"
         />
       )}
-      <span className="font-bold">{appName || "Zee Index"}</span>
+      <span className="font-bold">{appName || "vaehor"}</span>
     </>
   );
 

@@ -70,14 +70,24 @@ export async function getAppConfig(): Promise<AppConfig> {
     return cached;
   }
 
-  const configEntry = await db.adminConfig.findUnique({
-    where: { key: APP_CONFIG_KEY },
-  });
+  try {
+    const configEntry = await db.adminConfig.findUnique({
+      where: { key: APP_CONFIG_KEY },
+    });
 
-  const config = parseStoredConfigValue(configEntry?.value);
-  await kv.set(APP_CONFIG_KEY, config);
-
-  return config;
+    const config = parseStoredConfigValue(configEntry?.value);
+    await kv.set(APP_CONFIG_KEY, config);
+    return config;
+  } catch (error) {
+    // ponytail: DB may be down/misconfigured in local dev — serve defaults so
+    // public surfaces (login) stay usable. Ceiling: stale defaults until DB
+    // recovers; upgrade by fixing DATABASE_URL / running migrations.
+    console.warn(
+      "[app-config] Falling back to defaults; database unavailable:",
+      error instanceof Error ? error.message : error,
+    );
+    return DEFAULT_APP_CONFIG;
+  }
 }
 
 export async function getPublicAppConfig(): Promise<PublicAppConfig> {

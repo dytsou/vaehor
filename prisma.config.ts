@@ -1,5 +1,9 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import { applyDatabaseUrlFromPostgres } from "./lib/env-url";
+
+// Same POSTGRES_* → DATABASE_URL derivation as the Next app (lib/env.ts).
+applyDatabaseUrlFromPostgres();
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

@@ -1,8 +1,8 @@
-# Zee-Index API Documentation
+# vaehor API Documentation
 
 ## Overview
 
-This folder contains the maintained API reference for Zee-Index.
+This folder contains the maintained API reference for vaehor.
 
 - `spec/entry.tsp` is the **source of truth** (TypeSpec entrypoint).
 - TypeSpec is organized into:
@@ -23,8 +23,11 @@ This folder contains the maintained API reference for Zee-Index.
 2. Redoc
 
    ```bash
+   # Compiles TypeSpec → OpenAPI, builds static Redoc HTML, opens it in the browser
    pnpm api:docs:redoc
    ```
+
+   (`@redocly/cli` v2 removed `preview-docs`; this script uses `build-docs` instead.)
 
 3. Postman
 
@@ -49,6 +52,18 @@ pnpm compile:openapi
 | POST   | `/api/auth/2fa/verify`    | Verify a 2FA code                     |
 | POST   | `/api/auth/2fa/disable`   | Disable 2FA for the current user      |
 | `*`    | `/api/auth/[...nextauth]` | NextAuth handler route                |
+
+### Mobile (Capacitor)
+
+| Method | Endpoint                        | Description                                              |
+| ------ | ------------------------------- | -------------------------------------------------------- |
+| GET    | `/api/mobile/oauth-state`       | Create one-time OAuth state for native Google sign-in    |
+| GET    | `/api/mobile/oauth-complete`    | Finish browser OAuth → redirect `vaehor://auth/callback` |
+| POST   | `/api/mobile/oauth-complete`    | Redeem exchange token → bootstrap material               |
+| GET    | `/api/mobile/session-bootstrap` | Redeem bootstrap token via redirect + set session cookie |
+| POST   | `/api/mobile/session-bootstrap` | Mint bootstrap URL or redeem bootstrap token             |
+
+Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/openapi.yaml` (tag **Mobile**).
 
 ### Files and Search
 
@@ -150,7 +165,7 @@ Most endpoints use one of these mechanisms:
 
 ## Rate Limits
 
-The API layer is standardized through the route factory in [`lib/api-middleware.ts`](/C:/Users/Ifauze/Project/zee-index/lib/api-middleware.ts).
+The API layer is standardized through the route factory in [`lib/api-middleware.ts`](/C:/Users/Ifauze/Project/vaehor/lib/api-middleware.ts).
 
 | Scope       | Limit                   |
 | ----------- | ----------------------- |

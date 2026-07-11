@@ -7,8 +7,8 @@ import "./modules/index.tsp";
 
 using TypeSpec.Http;
 
-@service(#{ title: "Zee-Index API" })
+@service(#{ title: "vaehor API" })
 @server("http://localhost:3000", "Development server")
 @server("https://zee-index.duckdns.org", "Production server")
 @route("/api")
-namespace ZeeIndexApi;
+namespace VaehorApi;

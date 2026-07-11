@@ -36,6 +36,7 @@ const messageAlertClasses: Record<
 
 function CustomLoginPage() {
   const t = useTranslations("LoginPage");
+  const tFooter = useTranslations("Footer");
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<LoginMessage | null>(null);
   const [isGuestLoginDisabled, setIsGuestLoginDisabled] = useState(true);
@@ -130,7 +131,7 @@ function CustomLoginPage() {
         setIsLoadingConfig(false);
       }
     };
-    void fetchPublicConfig();
+    fetchPublicConfig().catch(() => {});
   }, []);
 
   const handleGoogleSignIn = () => {
@@ -353,18 +354,31 @@ function CustomLoginPage() {
           </div>
 
           <p
-            className="text-center text-xs text-muted-foreground pt-12"
+            className="text-center text-xs text-muted-foreground pt-12 space-y-1"
             suppressHydrationWarning
           >
-            © {new Date().getFullYear()} - {t("footer")}{" "}
-            <a
-              href="https://ifauzeee.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-foreground hover:text-primary"
-            >
-              Muhammad Ibnu Fauzi
-            </a>
+            <span className="block">
+              © 2025 {tFooter("rightsReserved")}{" "}
+              <a
+                href="https://ifauzeee.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                Muhammad Ibnu Fauzi
+              </a>
+            </span>
+            <span className="block">
+              © {new Date().getFullYear()} {tFooter("modificationsBy")}{" "}
+              <a
+                href="https://github.com/dytsou/vaehor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                dytsou
+              </a>
+            </span>
           </p>
         </div>
       </div>

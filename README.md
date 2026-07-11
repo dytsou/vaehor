@@ -1,23 +1,23 @@
 <div align="center">
-  <a href="https://github.com/ifauzeee/Zee-Index">
-    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="Zee-Index Logo" width="130" height="130">
+  <a href="https://github.com/dytsou/vaehor">
+    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
   </a>
 
-  <h1 align="center">⚡ Zee-Index</h1>
+  <h1 align="center">⚡ vaehor</h1>
 
   <p align="center">
-    <strong>Self-Hosted Google Drive Explorer, CMS & Streaming Platform</strong>
+    <strong>Self-Hosted Google Drive Explorer, Media Gallery & Streaming Server</strong>
   </p>
 
   <p align="center">
     Transform your Google Drive into a professional file manager, media gallery, and streaming server.<br>
-    <strong>Shared Drive</strong> management · <strong>Video Streaming</strong> · <strong>Password-Protected Folders</strong> · <strong>Share Links</strong>
+    <strong>Shared Drive</strong> management · <strong>Video Streaming</strong> · <strong>Mobile App</strong> · <strong>Share Links</strong>
   </p>
 
   <div align="center">
     <a href="https://zee-index.duckdns.org"><img src="https://img.shields.io/badge/🔴_Live_Demo-Visit-FF4444?style=for-the-badge" alt="Live Demo" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
-    <a href="https://github.com/ifauzeee/Zee-Index/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
+    <a href="https://github.com/dytsou/vaehor/issues"><img src="https://img.shields.io/badge/🐛_Report_Bug-Issues-FFA500?style=for-the-badge" alt="Report Bug" /></a>
+    <a href="https://github.com/dytsou/vaehor/pulls"><img src="https://img.shields.io/badge/✨_Feature_Request-PRs-28A745?style=for-the-badge" alt="Feature Request" /></a>
   </div>
 
   <br />
@@ -33,6 +33,10 @@
   </div>
 </div>
 
+<p align="center">
+  <strong>English</strong> · <a href="README-zh.md">繁體中文</a>
+</p>
+
 <br />
 
 ---
@@ -42,32 +46,56 @@
 <details>
 <summary>Click to expand</summary>
 
-- [Key Features](#-key-features)
-- [Tech Stack](#️-tech-stack)
-- [Architecture Overview](#-architecture-overview)
-- [Getting Started](#-getting-started)
+- [📑 Table of Contents](#-table-of-contents)
+- [🌟 Key Features](#-key-features)
+  - [⚡ Performance \& UI](#-performance--ui)
+  - [🎬 Media \& File Previews](#-media--file-previews)
+  - [🛡️ Security \& Access Control](#️-security--access-control)
+  - [🗂️ Drive Management](#️-drive-management)
+  - [🛠️ Admin Dashboard](#️-admin-dashboard)
+  - [📱 Mobile (Capacitor)](#-mobile-capacitor)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [🏗 Architecture Overview](#-architecture-overview)
+- [🚀 Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
-  - [Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
-  - [Local Development](#-local-development)
-- [Google Cloud Setup](#-google-cloud-setup)
-- [Environment Variables](#️-environment-variables)
-- [Deployment Guide](#-deployment-guide)
+  - [🐳 Quick Start with Docker (Recommended)](#-quick-start-with-docker-recommended)
+  - [💻 Local Development](#-local-development)
+- [Google Cloud Setup](#google-cloud-setup)
+  - [1. Create a Google Cloud Project](#1-create-a-google-cloud-project)
+  - [2. Enable Google Drive API](#2-enable-google-drive-api)
+  - [3. Configure OAuth Consent Screen](#3-configure-oauth-consent-screen)
+  - [4. Create OAuth 2.0 Credentials](#4-create-oauth-20-credentials)
+  - [5. Connect Google Drive (choose one)](#5-connect-google-drive-choose-one)
+    - [Option A — Service account (recommended)](#option-a--service-account-recommended)
+    - [Option B — OAuth refresh token (legacy)](#option-b--oauth-refresh-token-legacy)
+- [⚙️ Environment Variables](#️-environment-variables)
+  - [Required Variables](#required-variables)
+  - [Google Drive auth (pick one)](#google-drive-auth-pick-one)
+  - [Database \& Cache](#database--cache)
+  - [Optional Variables](#optional-variables)
+  - [Email Configuration (Optional)](#email-configuration-optional)
+- [📦 Deployment Guide](#-deployment-guide)
   - [VPS / DigitalOcean](#vps--digitalocean)
-  - [Auto HTTPS with DuckDNS + Caddy](#automatic-https-with-duckdns--caddy)
-  - [Railway / Render / Vercel](#other-platforms)
-- [Security](#-security)
-  - [Authentication & Authorization](#authentication--authorization)
+  - [Automatic HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
+  - [Mobile app (Capacitor)](#mobile-app-capacitor)
+  - [Other Platforms](#other-platforms)
+- [🔐 Security](#-security)
+  - [Authentication \& Authorization](#authentication--authorization)
+  - [Roles \& Permissions](#roles--permissions)
   - [Password Hashing (bcrypt)](#password-hashing-bcrypt)
-  - [Security Headers & CSP](#security-headers--csp)
-- [API Reference](#-api-reference)
-- [Keyboard Shortcuts](#️-keyboard-shortcuts)
-- [Internationalization (i18n)](#-internationalization-i18n)
-- [Project Structure](#-project-structure)
-- [Testing](#-testing)
-- [Troubleshooting](#️-troubleshooting)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Acknowledgments](#-acknowledgments)
+  - [Mobile OAuth (Capacitor)](#mobile-oauth-capacitor)
+  - [Security Headers \& CSP](#security-headers--csp)
+- [📖 API Reference](#-api-reference)
+- [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
+- [🌍 Internationalization (i18n)](#-internationalization-i18n)
+- [📂 Project Structure](#-project-structure)
+- [🧪 Testing](#-testing)
+  - [Unit Tests (Vitest)](#unit-tests-vitest)
+  - [End-to-End Tests (Playwright)](#end-to-end-tests-playwright)
+- [⚠️ Troubleshooting](#️-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📜 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
 
 </details>
 
@@ -77,14 +105,14 @@
 
 ### ⚡ Performance & UI
 
-| Feature                   | Description                                                               |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Virtualized Rendering** | Smooth scrolling through **10,000+ files** with `@tanstack/react-virtual` |
-| **Smart Prefetching**     | Preloads folder contents on hover for instant navigation                  |
-| **Multi-Layer Caching**   | Redis + in-memory cache for blazing-fast API responses                    |
-| **Turbopack**             | Next.js 16 Turbopack for ultra-fast development builds                    |
-| **PWA Support**           | Installable as a Progressive Web App with offline caching                 |
-| **Dark/Light Mode**       | Automatic theme detection with manual toggle                              |
+| Feature                   | Description                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| **Virtualized Rendering** | Smooth scrolling through **10,000+ files** with `@tanstack/react-virtual`          |
+| **Smart Prefetching**     | Preloads folder contents on hover for instant navigation                           |
+| **Multi-Layer Caching**   | Redis + in-memory cache for blazing-fast API responses                             |
+| **Turbopack**             | Next.js 16 Turbopack for ultra-fast development builds                             |
+| **PWA Support**           | Installable Progressive Web App (shell/asset caching; Drive content needs network) |
+| **Dark/Light Mode**       | Automatic theme detection with manual toggle                                       |
 
 ### 🎬 Media & File Previews
 
@@ -136,6 +164,18 @@
 | **System Health**   | Monitor database, Redis, API health               |
 | **File Request**    | Create public upload links                        |
 
+### 📱 Mobile (Capacitor)
+
+| Feature            | Description                                                                        |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| **iOS / Android**  | Installable hybrid shell in `apps/mobile/` (WebView UI on your self-hosted origin) |
+| **Native OAuth**   | Google sign-in via system browser + `vaehor://auth/callback`                       |
+| **Biometrics**     | Optional biometric unlock for stored sessions per server                           |
+| **Native Uploads** | File picker / camera bridge into the existing resumable upload API                 |
+| **Deep Links**     | Custom scheme + optional Universal / App Links                                     |
+
+See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/mobile/).
+
 ---
 
 ## 🛠️ Tech Stack
@@ -145,15 +185,16 @@
 <tr><td rowspan="3"><strong>Frontend</strong></td><td>Next.js 16 + React 19</td><td>App Router, Server Components, Streaming SSR</td></tr>
 <tr><td>Tailwind CSS + Framer Motion</td><td>Styling, glassmorphism, micro-animations</td></tr>
 <tr><td>Zustand + TanStack Query</td><td>Global state + server state management</td></tr>
-<tr><td rowspan="4"><strong>Backend</strong></td><td>Next.js API Routes</td><td>REST API with edge-compatible middleware</td></tr>
+<tr><td rowspan="4"><strong>Backend</strong></td><td>Next.js API Routes</td><td>REST API with Next.js 16 request proxy (`proxy.ts`)</td></tr>
 <tr><td>NextAuth.js v5 (Beta)</td><td>OAuth, credentials, JWT sessions</td></tr>
 <tr><td>Google Drive API v3</td><td>File storage, streaming, metadata</td></tr>
 <tr><td>Prisma + PostgreSQL 16</td><td>Database ORM with migration support</td></tr>
 <tr><td rowspan="2"><strong>Infrastructure</strong></td><td>Redis 7</td><td>Caching, rate limiting, session data</td></tr>
-<tr><td>Docker + Caddy</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
-<tr><td rowspan="3"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
+<tr><td>Docker + Traefik</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
+<tr><td rowspan="4"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
 <tr><td>Vitest + Playwright</td><td>Unit tests + end-to-end testing</td></tr>
 <tr><td>ESLint + Prettier + Husky</td><td>Linting, formatting, git hooks</td></tr>
+<tr><td>Capacitor 7</td><td>iOS/Android hybrid shell (`apps/mobile/`)</td></tr>
 </table>
 
 ---
@@ -162,17 +203,17 @@
 
 ```mermaid
 flowchart TB
-    subgraph CLIENT["🌐 Client Browser"]
-        A["React 19 + Next.js 16\nApp Router · Zustand · TanStack Query"]
+    subgraph CLIENT["🌐 Web Browser + Capacitor Mobile Shell"]
+        A["React 19 + Next.js 16 (WebView)\nApp Router · Zustand · TanStack Query"]
     end
 
-    subgraph CADDY["🔒 Caddy Reverse Proxy"]
+    subgraph TRAEFIK["🔒 Traefik Reverse Proxy"]
         B["Auto-HTTPS · Let's Encrypt\n:443 → :3000"]
     end
 
-    subgraph APP["⚡ Zee-Index Application"]
+    subgraph APP["⚡ vaehor Application"]
         C["API Routes"]
-        D["Middleware\nAuth · i18n · Rate Limit"]
+        D["proxy.ts\nAuth · i18n · Rate Limit"]
         E["Server Components\nStreaming SSR"]
     end
 
@@ -182,8 +223,8 @@ flowchart TB
         H["☁️ Google Drive API v3\nFiles · Streaming\nMetadata"]
     end
 
-    CLIENT <-->|HTTPS| CADDY
-    CADDY <--> APP
+    CLIENT <-->|HTTPS| TRAEFIK
+    TRAEFIK <--> APP
     C <--> F
     C <--> G
     C <--> H
@@ -191,7 +232,7 @@ flowchart TB
     E --- C
 
     style CLIENT fill:#1a1a2e,stroke:#e94560,color:#fff
-    style CADDY fill:#0f3460,stroke:#e94560,color:#fff
+    style TRAEFIK fill:#0f3460,stroke:#e94560,color:#fff
     style APP fill:#16213e,stroke:#0f3460,color:#fff
     style SERVICES fill:#1a1a2e,stroke:#533483,color:#fff
 ```
@@ -211,26 +252,14 @@ flowchart TB
 | [Node.js](https://nodejs.org/) + pnpm                          | 26.x / 11+ | 🔶 Only for local dev |
 | Google Cloud Project                                           | —          | ✅ Yes                |
 
----
-
-## 🔐 Roles & Permissions (ADMIN / EDITOR / USER)
-
-Zee-Index resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
-
-- **ADMIN**: manage via `POST/DELETE /api/admin/users`
-- **EDITOR**: manage via `POST/DELETE /api/admin/editors`
-- **USER**: default role when not in the above lists
-
-**Bootstrap**: on the very first start (when the admin list is empty), Zee-Index seeds initial admins from `ADMIN_EMAILS` once so you can access the admin UI, then ongoing changes should be done via the Admin API.
-
 ### 🐳 Quick Start with Docker (Recommended)
 
-The fastest way to get Zee-Index running with **PostgreSQL**, **Redis**, **auto-HTTPS**, all preconfigured:
+The fastest way to get vaehor running with **PostgreSQL**, **Redis**, **auto-HTTPS**, all preconfigured:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/ifauzeee/Zee-Index.git
-cd Zee-Index
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 
 # 2. Copy environment template
 cp .env.example .env
@@ -249,7 +278,7 @@ docker compose up -d --build
 
 ```bash
 # View logs
-docker compose logs -f zee-index
+docker compose logs -f vaehor
 
 # Restart after .env changes
 docker compose up -d
@@ -270,19 +299,19 @@ For contributors or those who prefer local development with hot reload:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/ifauzeee/Zee-Index.git
-cd Zee-Index
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 pnpm install
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env — set DATABASE_URL for a local PostgreSQL instance
+# Edit .env — secrets + Google credentials; POSTGRES_* / REDIS_URL defaults are fine for local
 
-# 3. Setup database
+# 3. Start Postgres + Redis (127.0.0.1:5432 / 127.0.0.1:6379)
+pnpm deps:up
+
+# 4. Setup database
 pnpm prisma migrate deploy   # or: pnpm prisma db push
-
-# 4. Start Redis (optional but recommended)
-docker run -d --name zee-redis -p 6379:6379 redis:7-alpine
 
 # 5. Start development server (with Turbopack)
 pnpm dev
@@ -290,11 +319,25 @@ pnpm dev
 # 6. Open http://localhost:3000
 ```
 
+If Turbopack panics with **Read-only file system** (or a wedged compile after a bad `.next`), clear the cache and/or use Webpack:
+
+```bash
+pnpm dev:clean        # rm -rf .next
+pnpm dev:fresh        # clean + Turbopack
+pnpm dev:webpack      # Webpack fallback (ROFS / Turbopack panic)
+```
+
+Turbopack’s on-disk FS cache is **off by default** here (avoids restore panics). Re-enable with `TURBOPACK_FS_CACHE=1` if you want faster repeat cold starts on a healthy machine.
+
 **Development commands:**
 
 ```bash
+pnpm deps:up          # Start local Postgres + Redis (Docker)
+pnpm deps:down        # Stop them
 pnpm dev              # Start with Turbopack (fast)
-pnpm dev:webpack      # Start with Webpack (fallback)
+pnpm dev:webpack      # Start with Webpack (ROFS / Turbopack fallback)
+pnpm dev:clean        # Delete .next cache
+pnpm dev:fresh        # Clean cache, then Turbopack
 pnpm build            # Production build
 pnpm typecheck        # TypeScript type checking
 pnpm lint             # ESLint
@@ -306,7 +349,7 @@ pnpm test:e2e         # E2E tests (Playwright)
 
 ---
 
-## ☁️ Google Cloud Setup
+## Google Cloud Setup
 
 <details>
 <summary><strong>Step-by-step Google Cloud configuration</strong></summary>
@@ -343,6 +386,7 @@ pnpm test:e2e         # E2E tests (Playwright)
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
    - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
+   - `vaehor://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md))
 5. Save the **Client ID** and **Client Secret**
 
 ### 5. Connect Google Drive (choose one)
@@ -375,20 +419,25 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 ### Required Variables
 
-| Variable                       | Description                                                                            | Example                                                       |
-| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `NEXTAUTH_URL`                 | Your application URL                                                                   | `https://yourdomain.com`                                      |
-| `NEXTAUTH_SECRET`              | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`                                     |
-| `GOOGLE_CLIENT_ID`             | Google OAuth Client ID (NextAuth + optional `/setup`)                                  | `xxx.apps.googleusercontent.com`                              |
-| `GOOGLE_CLIENT_SECRET`         | Google OAuth Client Secret                                                             | `GOCSPX-xxx`                                                  |
-| `GOOGLE_REFRESH_TOKEN`         | OAuth refresh token (Drive, legacy)                                                    | From `/setup` OAuth flow, or empty if using a service account |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service account email (`…@….iam.gserviceaccount.com`)                                  | Set for JWT Drive access                                      |
-| `GOOGLE_SERVICE_ACCOUNT_KEY`   | Service account `private_key` PEM (escape newlines in `.env`)                          | From JSON key                                                 |
-| `NEXT_PUBLIC_ROOT_FOLDER_ID`   | Root Google Drive folder ID (share this folder with the service account when using SA) | `1ABcDeFgHiJkLmNoPqRsT`                                       |
-| `GOOGLE_DRIVE_ROOT_FOLDER_ID`  | Optional alias for the same folder ID as `NEXT_PUBLIC_ROOT_FOLDER_ID`                  | Same as root folder ID                                        |
-| `ADMIN_EMAILS`                 | Comma-separated admin emails                                                           | `admin@example.com`                                           |
-| `ADMIN_PASSWORD`               | Admin fallback login password                                                          | Use a strong password                                         |
-| `SHARE_SECRET_KEY`             | JWT signing key (min 32 chars)                                                         | `openssl rand -base64 32`                                     |
+| Variable                     | Description                                                                            | Example                          |
+| ---------------------------- | -------------------------------------------------------------------------------------- | -------------------------------- |
+| `NEXTAUTH_URL`               | Your application URL                                                                   | `https://yourdomain.com`         |
+| `NEXTAUTH_SECRET`            | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`        |
+| `GOOGLE_CLIENT_ID`           | Google OAuth Client ID (NextAuth + optional `/setup`)                                  | `xxx.apps.googleusercontent.com` |
+| `GOOGLE_CLIENT_SECRET`       | Google OAuth Client Secret                                                             | `GOCSPX-xxx`                     |
+| `NEXT_PUBLIC_ROOT_FOLDER_ID` | Root Google Drive folder ID (share this folder with the service account when using SA) | `1ABcDeFgHiJkLmNoPqRsT`          |
+| `ADMIN_EMAILS`               | Comma-separated admin emails                                                           | `admin@example.com`              |
+| `ADMIN_PASSWORD_HASH`        | bcrypt hash of admin password (**required for production** credential login)           | `scripts/hash-password.sh`       |
+| `ADMIN_PASSWORD`             | Plaintext admin password — **dev only**; ignored for credential login when hash is set | Use a strong password            |
+| `SHARE_SECRET_KEY`           | JWT signing key (min 32 chars)                                                         | `openssl rand -base64 32`        |
+
+### Google Drive auth (pick one)
+
+| Mode                              | Variables                                                    | Notes                                                                 |
+| --------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| **Service account (recommended)** | `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` | Leave `GOOGLE_REFRESH_TOKEN` empty; share the root folder with the SA |
+| **OAuth refresh token (legacy)**  | `GOOGLE_REFRESH_TOKEN` (from `/setup`)                       | Still needs `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`               |
+| Optional alias                    | `GOOGLE_DRIVE_ROOT_FOLDER_ID`                                | Same folder ID as `NEXT_PUBLIC_ROOT_FOLDER_ID`                        |
 
 ### Database & Cache
 
@@ -396,91 +445,38 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 | ------------------- | ----------------------------------- | ----------------------------- |
 | `POSTGRES_USER`     | PostgreSQL username                 | `postgres`                    |
 | `POSTGRES_PASSWORD` | PostgreSQL password                 | `postgres`                    |
-| `POSTGRES_DB`       | Database name                       | `zee_index`                   |
+| `POSTGRES_DB`       | Database name                       | `vaehor`                      |
 | `DATABASE_URL`      | Full connection string (non-Docker) | Auto-generated in Docker      |
 | `REDIS_URL`         | Redis connection string             | `redis://redis:6379` (Docker) |
 
 ### Optional Variables
 
-| Variable                       | Description                                 | Default |
-| ------------------------------ | ------------------------------------------- | ------- |
-| `ADMIN_PASSWORD_HASH`          | bcrypt hash of admin password (recommended) | —       |
-| `NEXT_PUBLIC_ROOT_FOLDER_NAME` | Display name for root folder                | `Home`  |
-| `NEXT_PUBLIC_MANUAL_DRIVES`    | JSON array of additional drives             | `[]`    |
-| `PRIVATE_FOLDER_IDS`           | JSON array of private folder IDs            | `[]`    |
-| `STORAGE_LIMIT_GB`             | Storage warning limit                       | `15`    |
-| `STORAGE_WARNING_THRESHOLD`    | Warning threshold (0–1)                     | `0.90`  |
-| `CRON_SECRET`                  | Cron job authentication token               | —       |
-| `TMDB_API_KEY`                 | TMDB API key for movie metadata             | —       |
-| `DUCKDNS_DOMAIN`               | DuckDNS subdomain                           | —       |
-| `DUCKDNS_TOKEN`                | DuckDNS authentication token                | —       |
+| Variable                       | Description                                                                       | Default             |
+| ------------------------------ | --------------------------------------------------------------------------------- | ------------------- |
+| `NEXT_PUBLIC_ROOT_FOLDER_NAME` | Display name for root folder                                                      | `Home`              |
+| `NEXT_PUBLIC_MANUAL_DRIVES`    | JSON array of additional drives                                                   | `[]`                |
+| `PRIVATE_FOLDER_IDS`           | JSON array of private folder IDs                                                  | `[]`                |
+| `STORAGE_LIMIT_GB`             | Storage warning limit                                                             | `15`                |
+| `STORAGE_WARNING_THRESHOLD`    | Warning threshold (0–1)                                                           | `0.90`              |
+| `CRON_SECRET`                  | Cron job authentication token                                                     | —                   |
+| `TMDB_API_KEY`                 | TMDB API key for movie metadata                                                   | —                   |
+| `SETUP_SECRET`                 | Gate `POST /api/setup/*` via `X-Setup-Secret` (recommended for public first boot) | —                   |
+| `DOMAIN`                       | Public hostname for Traefik Host rule / TLS                                       | `files.example.com` |
+| `ACME_EMAIL`                   | Let's Encrypt registration email                                                  | `you@example.com`   |
+| `DUCKDNS_DOMAIN`               | DuckDNS subdomain                                                                 | —                   |
+| `DUCKDNS_TOKEN`                | DuckDNS authentication token                                                      | —                   |
 
 ### Email Configuration (Optional)
 
-| Variable     | Description                  | Default                            |
-| ------------ | ---------------------------- | ---------------------------------- |
-| `SMTP_HOST`  | SMTP server                  | `smtp.gmail.com`                   |
-| `SMTP_PORT`  | SMTP port                    | `465`                              |
-| `SMTP_USER`  | SMTP username                | —                                  |
-| `SMTP_PASS`  | SMTP password / app password | —                                  |
-| `EMAIL_FROM` | Sender email address         | `Zee Index <no-reply@example.com>` |
+| Variable     | Description                  | Default                         |
+| ------------ | ---------------------------- | ------------------------------- |
+| `SMTP_HOST`  | SMTP server                  | `smtp.gmail.com`                |
+| `SMTP_PORT`  | SMTP port                    | `465`                           |
+| `SMTP_USER`  | SMTP username                | —                               |
+| `SMTP_PASS`  | SMTP password / app password | —                               |
+| `EMAIL_FROM` | Sender email address         | `vaehor <no-reply@example.com>` |
 
-<details>
-<summary><strong>📋 Complete .env template</strong></summary>
-
-```bash
-# ==============================================================================
-# ZEE-INDEX CONFIGURATION
-# ==============================================================================
-
-# 1. CORE
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET=""          # openssl rand -base64 32
-SHARE_SECRET_KEY=""         # openssl rand -base64 32
-
-ADMIN_EMAILS="admin@example.com"
-ADMIN_PASSWORD="your-secure-password"
-# ADMIN_PASSWORD_HASH=""    # Generate: scripts/hash-password.sh "password"
-
-# 2. GOOGLE DRIVE
-# Service account (recommended for Drive API)
-# GOOGLE_SERVICE_ACCOUNT_EMAIL=""
-# GOOGLE_SERVICE_ACCOUNT_KEY=""
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-GOOGLE_REFRESH_TOKEN=""
-NEXT_PUBLIC_ROOT_FOLDER_ID=""
-NEXT_PUBLIC_ROOT_FOLDER_NAME="Home"
-
-# 3. DATABASE (Docker auto-configures DATABASE_URL)
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=zee_index
-
-# 4. LIMITS & MONITORING
-STORAGE_LIMIT_GB=15
-STORAGE_WARNING_THRESHOLD=0.90
-CRON_SECRET="random-string"
-
-# 5. BUILD
-SKIP_ENV_VALIDATION=false
-
-# 6. HTTPS (Optional)
-# DUCKDNS_DOMAIN="your-subdomain"
-# DUCKDNS_TOKEN="your-token"
-
-# 7. EMAIL (Optional)
-# SMTP_HOST="smtp.gmail.com"
-# SMTP_PORT="465"
-# SMTP_USER="your-email@gmail.com"
-# SMTP_PASS="your-app-password"
-# EMAIL_FROM="Zee Index <no-reply@example.com>"
-
-# 8. EXTERNAL SERVICES (Optional)
-# TMDB_API_KEY=""
-```
-
-</details>
+> **Full template:** copy [`.env.example`](.env.example) (`cp .env.example .env`). It is the source of truth for optional vars (`DOMAIN`, `ACME_EMAIL`, `SETUP_SECRET`, local storage, alerts, etc.).
 
 ---
 
@@ -488,7 +484,7 @@ SKIP_ENV_VALIDATION=false
 
 ### VPS / DigitalOcean
 
-Zee-Index is optimized for deployment on low-resource VPS instances (1 CPU / 1 GB RAM):
+vaehor is optimized for deployment on low-resource VPS instances (1 CPU / 1 GB RAM):
 
 ```bash
 # 1. SSH into your server
@@ -502,8 +498,8 @@ adduser zee && usermod -aG docker zee
 su - zee
 
 # 4. Clone and configure
-git clone https://github.com/ifauzeee/Zee-Index.git
-cd Zee-Index
+git clone https://github.com/dytsou/vaehor.git
+cd vaehor
 cp .env.example .env
 nano .env  # Configure all required variables
 
@@ -517,32 +513,50 @@ docker compose logs -f   # Watch startup logs
 
 **Resource usage (approximate):**
 
-| Container   | Memory Limit | Typical Usage |
-| ----------- | ------------ | ------------- |
-| `zee-index` | 512 MB       | ~300 MB       |
-| `postgres`  | 200 MB       | ~50 MB        |
-| `redis`     | 150 MB       | ~20 MB        |
-| `caddy`     | 50 MB        | ~10 MB        |
-| **Total**   | **~912 MB**  | **~380 MB**   |
+| Container  | Memory Limit | Typical Usage |
+| ---------- | ------------ | ------------- |
+| `vaehor`   | 512 MB       | ~300 MB       |
+| `postgres` | 200 MB       | ~50 MB        |
+| `redis`    | 150 MB       | ~20 MB        |
+| `traefik`  | 50 MB        | ~10 MB        |
+| **Total**  | **~912 MB**  | **~380 MB**   |
 
-### Automatic HTTPS with DuckDNS + Caddy
+### Automatic HTTPS with DuckDNS + Traefik
 
-The included `docker-compose.yml` has built-in support for **free HTTPS**:
+Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443. See [docs/deployment.md](docs/deployment.md) for full operator notes.
 
 1. **Get a DuckDNS domain** at [duckdns.org](https://www.duckdns.org/)
 2. **Add to `.env`:**
    ```bash
+   DOMAIN="your-subdomain.duckdns.org"
+   ACME_EMAIL="you@example.com"
    DUCKDNS_DOMAIN="your-subdomain"
    DUCKDNS_TOKEN="your-duckdns-token"
    NEXTAUTH_URL="https://your-subdomain.duckdns.org"
    ```
-3. **Create a `Caddyfile`:**
+3. **Deploy** — Traefik provisions Let's Encrypt certificates automatically:
+   ```bash
+   docker compose up -d --build
    ```
-   your-subdomain.duckdns.org {
-     reverse_proxy zee-index:3000
-   }
-   ```
-4. **Deploy** — Caddy automatically provisions SSL via Let's Encrypt
+
+### Mobile app (Capacitor)
+
+Installable iOS/Android client in `apps/mobile/` — WebView UI, native OAuth, biometrics, file upload, and deep links.
+
+**Operator checklist (self-hosted + mobile):**
+
+1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
+2. Register `vaehor://auth/callback` on the Google OAuth client (see [Google Cloud Setup](#google-cloud-setup)).
+3. Bookmark that origin in the app on first launch.
+4. For Universal / App Links, host `.well-known` files — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md).
+
+```bash
+pnpm mobile:dev          # Shell UI dev server
+pnpm mobile:build        # Production shell bundle
+pnpm mobile:sync         # Copy into android/ (and ios/ when added)
+```
+
+Device live reload and release builds: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
 
 ### Other Platforms
 
@@ -570,25 +584,16 @@ The included `docker-compose.yml` has built-in support for **free HTTPS**:
 
 ---
 
-## Prisma client troubleshooting
-
-If you see an error like **`Cannot find module '.prisma/client/default'`** during `next dev`/Turbopack startup, your Prisma Client was generated but the expected `node_modules/.prisma` path is missing (common with pnpm layouts).
-
-Fix it with:
-
-```bash
-node scripts/prisma-postinstall.mjs
-```
-
 ## 🔐 Security
 
 ### Authentication & Authorization
 
-| Method              | Description                       | Config                            |
-| ------------------- | --------------------------------- | --------------------------------- |
-| **Google OAuth**    | Login with Google account         | Set OAuth credentials             |
-| **Admin Password**  | Email + password login for admins | `ADMIN_EMAILS` + `ADMIN_PASSWORD` |
-| **Two-Factor Auth** | TOTP-based 2FA with QR code       | Admin dashboard setup             |
+| Method              | Description                                 | Config                                                                                |
+| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Google OAuth**    | Login with Google account                   | Set OAuth credentials                                                                 |
+| **Admin Password**  | Email + password login for admins           | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` (prod); plaintext `ADMIN_PASSWORD` is dev-only |
+| **Two-Factor Auth** | TOTP-based 2FA with QR code                 | Admin dashboard setup                                                                 |
+| **Mobile OAuth**    | System-browser Google sign-in for Capacitor | `vaehor://auth/callback` + mobile API routes (below)                                  |
 
 **Role Hierarchy:**
 
@@ -598,13 +603,23 @@ node scripts/prisma-postinstall.mjs
 | `EDITOR` | Can manage files but not system settings           |
 | `USER`   | Standard access to permitted folders               |
 
+### Roles & Permissions
+
+vaehor resolves roles server-side and **manages ADMIN/EDITOR via the Admin API** (Redis-backed lists).
+
+- **ADMIN**: manage via `POST/DELETE /api/admin/users`
+- **EDITOR**: manage via `POST/DELETE /api/admin/editors`
+- **USER**: default role when not in the above lists
+
+**`ADMIN_EMAILS` sync**: on auth, vaehor syncs Redis admins with `ADMIN_EMAILS` — new addresses are granted, addresses removed from the env list are revoked. Admins added only via the Admin API (never listed in `ADMIN_EMAILS`) are kept. You can still manage the live list with `POST/DELETE /api/admin/users`.
+
 ### Password Hashing (bcrypt)
 
 Admin passwords support **bcrypt hashing** for production security:
 
 ```bash
 # Generate a bcrypt hash for your password
-docker compose exec zee-index sh /app/scripts/hash-password.sh "your-password"
+docker compose exec vaehor sh /app/scripts/hash-password.sh "your-password"
 
 # Add the output to .env
 ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
@@ -612,11 +627,22 @@ ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
 # You can then remove the plaintext ADMIN_PASSWORD
 ```
 
-> **Migration path:** If `ADMIN_PASSWORD_HASH` is set, bcrypt is used. Otherwise, the system falls back to timing-safe comparison of `ADMIN_PASSWORD`.
+> **Production:** set `ADMIN_PASSWORD_HASH` (generate with `scripts/hash-password.sh`). Plaintext `ADMIN_PASSWORD` is for local/dev only — credential login in production requires the hash.
+
+### Mobile OAuth (Capacitor)
+
+Native Google sign-in does **not** use an embedded WebView login. The shell opens the system browser, then hands off via a custom scheme:
+
+1. Register `vaehor://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
+2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
+3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
+4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
+
+Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
 
 ### Security Headers & CSP
 
-Zee-Index includes comprehensive security headers:
+vaehor includes comprehensive security headers:
 
 - **Content-Security-Policy** — Prevents XSS by restricting script/style/media sources
 - **Strict-Transport-Security** — Forces HTTPS (63072000s / ~2 years)
@@ -629,39 +655,20 @@ Zee-Index includes comprehensive security headers:
 
 ## 📖 API Reference
 
-### Public Endpoints
+API contracts live in **OpenAPI** (generated from TypeSpec):
 
-| Method | Endpoint                     | Description                            |
-| ------ | ---------------------------- | -------------------------------------- |
-| `GET`  | `/api/health`                | Health check                           |
-| `GET`  | `/api/config/public`         | Public app configuration               |
-| `GET`  | `/api/files`                 | List files (with optional share token) |
-| `GET`  | `/api/download?fileId=…`     | Download / stream file                 |
-| `GET`  | `/api/folderpath?folderId=…` | Get folder breadcrumb path             |
-| `GET`  | `/api/metadata?fileId=…`     | Get file metadata                      |
+| Artifact       | Path                                             |
+| -------------- | ------------------------------------------------ |
+| Spec source    | [`docs/api/spec/`](docs/api/spec/)               |
+| OpenAPI 3      | [`docs/api/openapi.yaml`](docs/api/openapi.yaml) |
+| Operator notes | [`docs/api/README.md`](docs/api/README.md)       |
 
-### Authenticated Endpoints
+```bash
+pnpm compile:openapi     # regenerate openapi.yaml from TypeSpec
+pnpm api:docs:redoc      # preview with Redoc
+```
 
-| Method | Endpoint            | Description        |
-| ------ | ------------------- | ------------------ |
-| `GET`  | `/api/search?q=…`   | Search files       |
-| `GET`  | `/api/datausage`    | Storage usage info |
-| `POST` | `/api/favorites`    | Toggle favorites   |
-| `POST` | `/api/tags`         | Manage file tags   |
-| `POST` | `/api/share/create` | Create share link  |
-
-### Admin Endpoints
-
-| Method   | Endpoint                       | Description              |
-| -------- | ------------------------------ | ------------------------ |
-| `GET`    | `/api/admin/analytics`         | Analytics data           |
-| `GET`    | `/api/admin/activity`          | Activity logs            |
-| `GET`    | `/api/admin/cache-stats`       | Cache statistics         |
-| `POST`   | `/api/admin/config`            | Update app configuration |
-| `POST`   | `/api/admin/2fa/setup`         | Configure 2FA            |
-| `POST`   | `/api/admin/protected-folders` | Manage folder passwords  |
-| `POST`   | `/api/admin/manual-drives`     | Manage drives            |
-| `DELETE` | `/api/admin/clearcache`        | Clear all caches         |
+Import `docs/api/openapi.yaml` into Swagger UI / Postman. Mobile OAuth routes are under the **Mobile** tag.
 
 ---
 
@@ -683,7 +690,7 @@ Zee-Index includes comprehensive security headers:
 
 ## 🌍 Internationalization (i18n)
 
-Zee-Index supports multiple languages via `next-intl`:
+vaehor supports multiple languages via `next-intl`:
 
 | Language                 | Code    | Status      |
 | ------------------------ | ------- | ----------- |
@@ -715,7 +722,7 @@ Zee-Index supports multiple languages via `next-intl`:
 ## 📂 Project Structure
 
 ```
-zee-index/
+vaehor/
 ├── app/                          # Next.js App Router
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/               # Main layout (sidebar + content)
@@ -755,16 +762,20 @@ zee-index/
 │
 ├── hooks/                        # Custom React Hooks
 ├── types/                        # TypeScript definitions
-├── messages/                     # i18n translations (en, id)
+├── messages/                     # i18n translations (en, id, zh-TW)
 ├── prisma/                       # Database schema & migrations
 │   ├── schema.prisma
 │   └── migrations/               # Prisma migration history
 ├── scripts/                      # Utility scripts
 │   └── hash-password.sh          # bcrypt password hash generator
 │
+├── apps/
+│   └── mobile/                   # Capacitor iOS/Android shell
+├── deploy/
+│   └── traefik/                  # Traefik static + dynamic config
 ├── docker-compose.yml            # Production stack
 ├── Dockerfile                    # Multi-stage optimized build
-├── Caddyfile                     # Reverse proxy config
+├── Caddyfile                     # Legacy (deprecated; see docs/deployment.md)
 ├── proxy.ts                       # Auth, i18n, rate limiting (Next.js 16 proxy)
 └── next.config.mjs               # Next.js + security headers
 ```
@@ -799,7 +810,7 @@ npx playwright show-report # View HTML report
 
 ```bash
 # Check logs for errors
-docker compose logs zee-index --tail 50
+docker compose logs vaehor --tail 50
 
 # Common causes:
 # 1. Database not ready — increase start_period in healthcheck
@@ -816,16 +827,37 @@ docker compose logs zee-index --tail 50
 2. Check `ADMIN_PASSWORD` has no surrounding quotes in `.env`
 3. For bcrypt: ensure `ADMIN_PASSWORD_HASH` is a valid bcrypt hash
 4. Clear browser cookies and retry
-5. Check `docker compose logs zee-index` for `[Auth]` messages
+5. Check `docker compose logs vaehor` for `[Auth]` messages
 </details>
 
 <details>
 <summary><strong>🔴 Google Drive API errors (401/403)</strong></summary>
 
+**Service account (recommended):**
+
+1. Confirm `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_KEY` are set
+2. In Google Drive, share the root folder with the service account email (Editor)
+3. Prefer SA over refresh token when both are configured (the app uses the SA)
+
+**OAuth refresh token (legacy):**
+
 1. Verify `GOOGLE_REFRESH_TOKEN` is valid
-2. Re-run `/setup` flow to obtain a new token
-3. Check API quota at [Google Cloud Console](https://console.cloud.google.com/apis/dashboard)
-4. Ensure the Google account has access to the target folders
+2. Re-run `/setup` → **OAuth refresh token** to obtain a new token
+3. Ensure the Google account has access to the target folders
+
+Also check API quota at [Google Cloud Console](https://console.cloud.google.com/apis/dashboard).
+
+</details>
+
+<details>
+<summary><strong>🟡 Prisma client missing (`.prisma/client/default`)</strong></summary>
+
+If you see **`Cannot find module '.prisma/client/default'`** during `next dev` / Turbopack startup (common with pnpm layouts), regenerate the client:
+
+```bash
+pnpm exec prisma generate
+```
+
 </details>
 
 <details>
@@ -833,7 +865,7 @@ docker compose logs zee-index --tail 50
 
 1. Enable Redis (don't rely on in-memory fallback)
 2. Check Google Drive API quota (default: 12,000 requests/min)
-3. Monitor with `docker compose exec zee-index sh -c "cat /proc/1/status | grep VmRSS"`
+3. Monitor with `docker compose exec vaehor sh -c "cat /proc/1/status | grep VmRSS"`
 4. Increase memory limit if needed: `NODE_OPTIONS=--max-old-space-size=512`
 </details>
 
@@ -857,13 +889,13 @@ df -h
 
 ```bash
 # Check migration status
-docker compose exec zee-index npx prisma migrate status
+docker compose exec vaehor npx prisma migrate status
 
 # Force apply migration
-docker compose exec zee-index npx prisma migrate deploy
+docker compose exec vaehor npx prisma migrate deploy
 
 # Reset database (⚠️ destructive)
-docker compose exec zee-index npx prisma migrate reset
+docker compose exec vaehor npx prisma migrate reset
 ```
 
 </details>
@@ -876,8 +908,8 @@ Contributions are welcome! Here's how to get started:
 
 ```bash
 # 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/Zee-Index.git
-cd Zee-Index
+git clone https://github.com/YOUR_USERNAME/vaehor.git
+cd vaehor
 
 # 2. Create a feature branch
 git checkout -b feat/amazing-feature
@@ -911,13 +943,15 @@ git push origin feat/amazing-feature
 
 ## 📜 License
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with an attribution requirement.
+This fork is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)** with the upstream attribution requirement.
+
+- **Upstream:** [ifauzeee/Zee-Index](https://github.com/ifauzeee/Zee-Index) — Copyright (C) 2025 Muhammad Ibnu Fauzi
+- **This fork:** [dytsou/vaehor](https://github.com/dytsou/vaehor) — Copyright (C) 2026 dytsou
 
 - ✅ Free to use, modify, and distribute
 - ✅ Commercial use allowed
-- ⚠️ **Attribution required:** display `© 2025 Muhammad Ibnu Fauzi` in your deployment
-- ⚠️ Modified versions that are hosted must share source code
-- ⚠️ Changes must be documented
+- ⚠️ **Attribution required (cannot be removed):** display exactly `© 2025 All rights reserved - Muhammad Ibnu Fauzi` on user-facing pages
+- ⚠️ Modified versions that are hosted must share source code under AGPL-3.0
 
 See the [LICENSE](LICENSE) file for full details.
 
@@ -925,7 +959,7 @@ See the [LICENSE](LICENSE) file for full details.
 
 ## 🙏 Acknowledgments
 
-Built with these amazing open-source projects:
+**vaehor** is based on [Zee-Index](https://github.com/ifauzeee/Zee-Index) by [Muhammad Ibnu Fauzi](https://github.com/ifauzeee). Built with these open-source projects:
 
 - [Next.js](https://nextjs.org/) — The React framework
 - [VidStack](https://www.vidstack.io/) — Video player components
@@ -945,13 +979,14 @@ Built with these amazing open-source projects:
   </p>
   <br />
   <p>
-    Crafted with ❤️ by <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a>
+    Fork maintained by <a href="https://github.com/dytsou">dytsou</a>
+    · based on <a href="https://github.com/ifauzeee">Muhammad Ibnu Fauzi</a> / <a href="https://github.com/ifauzeee/Zee-Index">Zee-Index</a>
   </p>
   <p>
-    <a href="https://github.com/ifauzeee/Zee-Index">GitHub</a>
+    <a href="https://github.com/dytsou/vaehor">GitHub</a>
     ·
     <a href="https://zee-index.duckdns.org">Live Demo</a>
     ·
-    <a href="https://github.com/ifauzeee/Zee-Index/issues">Issues</a>
+    <a href="https://github.com/dytsou/vaehor/issues">Issues</a>
   </p>
 </div>

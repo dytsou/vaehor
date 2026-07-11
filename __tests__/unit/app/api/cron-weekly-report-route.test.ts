@@ -92,7 +92,7 @@ describe("app/api/cron/weekly-report route", () => {
     expect(mockSendMail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: ["admin@example.com"],
-        subject: "Laporan Aktivitas Mingguan Zee Index",
+        subject: "Laporan Aktivitas Mingguan vaehor",
       }),
     );
     expect(mockFormatBytes).toHaveBeenCalledWith(150);

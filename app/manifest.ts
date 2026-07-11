@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Zee Index - Google Drive Explorer",
-    short_name: "Zee Index",
+    name: "vaehor - Google Drive Explorer",
+    short_name: "vaehor",
     description: "A modern, fast, and feature-rich Google Drive indexer.",
     start_url: "/",
     display: "standalone",

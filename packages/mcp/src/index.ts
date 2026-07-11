@@ -12,21 +12,21 @@ const DEFAULT_BASE = "http://127.0.0.1:3000";
 const SESSION_COOKIE_NAME = "authjs.session-token";
 
 const msgs: McpMessages = loadMcpMessages(
-  resolveMcpLocale(process.env.ZEE_INDEX_LOCALE),
+  resolveMcpLocale(process.env.VAEHOR_LOCALE),
 );
 
 function getBaseUrl(): string {
-  const raw = process.env.ZEE_INDEX_BASE_URL?.trim();
+  const raw = process.env.VAEHOR_BASE_URL?.trim();
   if (!raw) return DEFAULT_BASE;
   return raw.replace(/\/$/, "");
 }
 
 /** Cookie header value for NextAuth session (never log this). */
 function getSessionCookieHeader(): string | null {
-  const full = process.env.ZEE_INDEX_SESSION_COOKIE?.trim();
+  const full = process.env.VAEHOR_SESSION_COOKIE?.trim();
   if (full) return full;
 
-  const tokenOnly = process.env.ZEE_INDEX_SESSION_TOKEN?.trim();
+  const tokenOnly = process.env.VAEHOR_SESSION_TOKEN?.trim();
   if (tokenOnly) return `${SESSION_COOKIE_NAME}=${tokenOnly}`;
 
   return null;
@@ -90,7 +90,7 @@ function textResult(data: unknown): {
 }
 
 const server = new McpServer({
-  name: "zee-index",
+  name: "vaehor",
   version: "0.1.0",
 });
 

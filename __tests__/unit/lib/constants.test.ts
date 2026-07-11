@@ -90,8 +90,8 @@ describe("lib/constants", () => {
     });
 
     it("keys have consistent prefix pattern", () => {
-      expect(REDIS_KEYS.CREDENTIALS).toContain("zee-index:");
-      expect(REDIS_KEYS.MANUAL_DRIVES).toContain("zee-index:");
+      expect(REDIS_KEYS.CREDENTIALS).toContain("vaehor:");
+      expect(REDIS_KEYS.MANUAL_DRIVES).toContain("vaehor:");
     });
   });
 

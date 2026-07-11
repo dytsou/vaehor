@@ -273,7 +273,7 @@
     "unknownUser": "Tidak diketahui"
   },
   "LoginPage": {
-    "title": "Zee Index",
+    "title": "vaehor",
     "subtitle": "Akses file Anda dengan aman dan cepat.",
     "emailLabel": "Email",
     "passwordLabel": "Kata Sandi",
@@ -406,7 +406,8 @@
   },
   "Footer": {
     "dataUsage": "Total Penggunaan Data:",
-    "rightsReserved": "Hak cipta dilindungi -"
+    "rightsReserved": "Hak cipta dilindungi -",
+    "modificationsBy": "Modifikasi oleh"
   },
   "RequestPage": {
     "invalidLink": "Link ini tidak valid atau sudah kadaluarsa.",
@@ -422,7 +423,7 @@
     "fileTypes": "Dokumen, Foto, Video, dll.",
     "startUpload": "Mulai Unggah",
     "uploadFailed": "Gagal mengunggah sebagian file. Silakan coba lagi.",
-    "poweredBy": "Powered by Zee-Index"
+    "poweredBy": "Powered by vaehor"
   },
   "TrashPage": {
     "accessDenied": "Akses Ditolak: Halaman ini khusus Admin",
@@ -661,7 +662,7 @@
     "skip": "Lewati",
     "steps": {
       "welcome": {
-        "title": "Selamat Datang di Zee-Index!",
+        "title": "Selamat Datang di vaehor!",
         "description": "Mari ikuti tur singkat untuk membantu Anda memulai dengan manajer file baru Anda."
       },
       "mobileMenu": {
@@ -781,7 +782,7 @@
     "add": "Tambah"
   },
   "BrandingConfig": {
-    "appNamePlaceholder": "Zee Index",
+    "appNamePlaceholder": "vaehor",
     "taglinePlaceholder": "Default (Kosong)",
     "logoUrlPlaceholder": "https://example.com/logo.png",
     "faviconUrlPlaceholder": "https://example.com/favicon.ico"
@@ -834,7 +835,7 @@
       "invalidExpire": "Format expiresIn tidak valid. Gunakan format: 1h, 7d, 30d",
       "tokenExpired": "Token tidak memiliki waktu kedaluwarsa.",
       "createFail": "Gagal membuat tautan berbagi.",
-      "emailSubject": "[Zee Index] Tautan {type} Baru Dibuat",
+      "emailSubject": "[vaehor] Tautan {type} Baru Dibuat",
       "emailHello": "Halo Admin",
       "emailBody": "Tautan {type} baru telah dibuat oleh <b>{email}</b>.",
       "collection": "Koleksi",

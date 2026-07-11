@@ -488,7 +488,7 @@ export function useFileBrowserController({
       onBreadcrumbDragLeave: dragAndDrop.handleBreadcrumbDragLeave,
       onBreadcrumbDrop: (event: React.DragEvent, folder: { id: string }) =>
         dragAndDrop.onDropOnBreadcrumb(event, folder),
-      onUploadClick: () => upload.setIsUploadModalOpen(true),
+      onUploadClick: () => upload.requestUpload(),
       onShareFolderClick: () =>
         fileActions.handleShare({
           id: currentFolderId!,

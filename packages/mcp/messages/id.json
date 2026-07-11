@@ -1,13 +1,13 @@
 {
-  "missingSession": "Perlu login: atur ZEE_INDEX_SESSION_COOKIE (string cookie lengkap, mis. authjs.session-token=…) atau ZEE_INDEX_SESSION_TOKEN (hanya nilai session). Setelah masuk ke Zee Index di browser, salin cookie dari alat pengembang.",
+  "missingSession": "Perlu login: atur VAEHOR_SESSION_COOKIE (string cookie lengkap, mis. authjs.session-token=…) atau VAEHOR_SESSION_TOKEN (hanya nilai session). Setelah masuk ke vaehor di browser, salin cookie dari alat pengembang.",
   "searchNeedOneCriterion": "Minimal salah satu dari q, mimeType, modifiedTime, atau minSize wajib diisi.",
   "tools": {
     "zee_health": {
-      "title": "Kesehatan Zee Index",
-      "description": "Memanggil GET /api/health (publik). Tanpa session. Atur ZEE_INDEX_BASE_URL (default http://127.0.0.1:3000)."
+      "title": "Kesehatan vaehor",
+      "description": "Memanggil GET /api/health (publik). Tanpa session. Atur VAEHOR_BASE_URL (default http://127.0.0.1:3000)."
     },
     "zee_public_config": {
-      "title": "Konfigurasi publik Zee Index",
+      "title": "Konfigurasi publik vaehor",
       "description": "Memanggil GET /api/config/public (publik). Tanpa session. Mengembalikan pengaturan aplikasi yang dipublikasikan (tanpa rahasia)."
     },
     "zee_metadata_lookup": {
@@ -15,8 +15,8 @@
       "description": "Memanggil GET /api/metadata?filename=… (publik). Menyaring judul media dari nama berkas dan mengquery TMDB. Tanpa session."
     },
     "zee_whoami": {
-      "title": "Pengguna Zee Index saat ini",
-      "description": "Memanggil GET /api/auth/me. Memerlukan session (ZEE_INDEX_SESSION_COOKIE atau ZEE_INDEX_SESSION_TOKEN). Mengembalikan pengguna dan peran saat ini, sama seperti aplikasi web."
+      "title": "Pengguna vaehor saat ini",
+      "description": "Memanggil GET /api/auth/me. Memerlukan session (VAEHOR_SESSION_COOKIE atau VAEHOR_SESSION_TOKEN). Mengembalikan pengguna dan peran saat ini, sama seperti aplikasi web."
     },
     "zee_files_list": {
       "title": "Daftar berkas di folder",

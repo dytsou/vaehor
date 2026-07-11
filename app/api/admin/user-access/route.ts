@@ -3,7 +3,7 @@ import { createAdminRoute } from "@/lib/api-middleware";
 import { kv } from "@/lib/kv";
 import { z } from "zod";
 
-const FOLDERS_WITH_ACCESS_KEY = "zee-index:user-access:folders";
+const FOLDERS_WITH_ACCESS_KEY = "vaehor:user-access:folders";
 const getFolderAccessKey = (folderId: string) => `folder:access:${folderId}`;
 
 const accessSchema = z.object({

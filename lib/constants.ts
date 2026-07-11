@@ -36,18 +36,21 @@ export const EXPORT_TYPE_MAP = {
 
 export const REDIS_KEYS = {
   ACCESS_TOKEN: "google:access-token",
-  CREDENTIALS: "zee-index:credentials",
-  SHARE_BLOCKED: "zee-index:blocked:",
-  SHARE_ITEMS: "zee-index:share-items:",
-  FILE_REQUESTS: "zee-index:file-requests",
-  ACCESS_REQUESTS: "zee-index:access-requests:v3",
-  MANUAL_DRIVES: "zee-index:manual-drives",
-  FOLDER_TREE: "zee-index:folder-tree-v2:",
-  FOLDER_CONTENT: "zee-index:folder-content-v3:",
+  CREDENTIALS: "vaehor:credentials",
+  SHARE_BLOCKED: "vaehor:blocked:",
+  SHARE_ITEMS: "vaehor:share-items:",
+  FILE_REQUESTS: "vaehor:file-requests",
+  ACCESS_REQUESTS: "vaehor:access-requests:v3",
+  MANUAL_DRIVES: "vaehor:manual-drives",
+  FOLDER_TREE: "vaehor:folder-tree-v2:",
+  FOLDER_CONTENT: "vaehor:folder-content-v3:",
   FILE_DETAILS: "gdrive:file-details-v2:",
-  FOLDER_PATH: "zee-index:folder-path-v7:",
-  ADMIN_USERS: "zee-index:admins",
-  ADMIN_EDITORS: "zee-index:editors",
+  FOLDER_PATH: "vaehor:folder-path-v7:",
+  ADMIN_USERS: "vaehor:admins",
+  /** JSON array of emails last synced from ADMIN_EMAILS (for add/remove on env change). */
+  ADMIN_USERS_ENV_SYNC: "vaehor:admins:env-sync",
+  ADMIN_EDITORS: "vaehor:editors",
+  MOBILE_OAUTH_JTI: "vaehor:mobile-oauth:jti:",
 } as const;
 
 export const REDIS_TTL = {

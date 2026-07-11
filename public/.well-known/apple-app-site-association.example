@@ -1,0 +1,42 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.vaehor.mobile"],
+        "components": [
+          {
+            "/": "/en/share/*",
+            "comment": "English share collections"
+          },
+          {
+            "/": "/id/share/*",
+            "comment": "Indonesian share collections"
+          },
+          {
+            "/": "/zh-TW/share/*",
+            "comment": "Traditional Chinese share collections"
+          },
+          {
+            "/": "/en/folder/*",
+            "comment": "English folder shares"
+          },
+          {
+            "/": "/id/folder/*",
+            "comment": "Indonesian folder shares"
+          },
+          {
+            "/": "/zh-TW/folder/*",
+            "comment": "Traditional Chinese folder shares"
+          },
+          {
+            "?": {
+              "share_token": "*"
+            },
+            "comment": "Token-based shares on any path"
+          }
+        ]
+      }
+    ]
+  }
+}

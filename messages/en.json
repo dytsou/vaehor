@@ -273,7 +273,7 @@
     "unknownUser": "Unknown"
   },
   "LoginPage": {
-    "title": "Zee Index",
+    "title": "vaehor",
     "subtitle": "Access your files securely and quickly.",
     "emailLabel": "Email",
     "passwordLabel": "Password",
@@ -406,7 +406,8 @@
   },
   "Footer": {
     "dataUsage": "Total Data Usage:",
-    "rightsReserved": "All rights reserved -"
+    "rightsReserved": "All rights reserved -",
+    "modificationsBy": "Modifications by"
   },
   "RequestPage": {
     "invalidLink": "This link is invalid or expired.",
@@ -422,7 +423,7 @@
     "fileTypes": "Documents, Photos, Videos, etc.",
     "startUpload": "Start Upload",
     "uploadFailed": "Failed to upload some files. Please try again.",
-    "poweredBy": "Powered by Zee-Index"
+    "poweredBy": "Powered by vaehor"
   },
   "TrashPage": {
     "accessDenied": "Access Denied: This page is for Admins only",
@@ -661,7 +662,7 @@
     "skip": "Skip",
     "steps": {
       "welcome": {
-        "title": "Welcome to Zee-Index!",
+        "title": "Welcome to vaehor!",
         "description": "Let's take a quick tour to help you get started with your new file manager."
       },
       "mobileMenu": {
@@ -781,7 +782,7 @@
     "add": "Add"
   },
   "BrandingConfig": {
-    "appNamePlaceholder": "Zee Index",
+    "appNamePlaceholder": "vaehor",
     "taglinePlaceholder": "Default (Empty)",
     "logoUrlPlaceholder": "https://example.com/logo.png",
     "faviconUrlPlaceholder": "https://example.com/favicon.ico"
@@ -834,7 +835,7 @@
       "invalidExpire": "Invalid expiresIn format. Use formats like: 1h, 7d, 30d",
       "tokenExpired": "Token missing expiration time.",
       "createFail": "Failed to create share link.",
-      "emailSubject": "[Zee Index] New {type} Link Created",
+      "emailSubject": "[vaehor] New {type} Link Created",
       "emailHello": "Hello Admin",
       "emailBody": "A new {type} link has been created by <b>{email}</b>.",
       "collection": "Collection",

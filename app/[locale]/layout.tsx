@@ -26,14 +26,15 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: {
-    default: "Zee Index - Google Drive Index",
-    template: "%s | Zee Index",
+    default: "vaehor - Google Drive Index",
+    template: "%s | vaehor",
   },
   description:
     "A modern, fast, and feature-rich Google Drive indexer built with Next.js. Stream, manage, and share your files effortlessly.",
-  applicationName: "Zee Index",
+  applicationName: "vaehor",
   authors: [
     { name: "Muhammad Ibnu Fauzi", url: "https://ifauzeee.vercel.app" },
+    { name: "dytsou", url: "https://github.com/dytsou/vaehor" },
   ],
   generator: "Next.js",
   keywords: ["Google Drive", "Index", "File Manager", "Streaming", "Next.js"],
@@ -41,14 +42,14 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Zee Index",
+    title: "vaehor",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "/",
-    siteName: "Zee Index",
-    title: "Zee Index - Ultimate Google Drive Manager",
+    siteName: "vaehor",
+    title: "vaehor - Ultimate Google Drive Manager",
     description:
       "Transform your Google Drive into a professional portfolio website, media gallery, or file repository.",
     images: [
@@ -56,13 +57,13 @@ export const metadata: Metadata = {
         url: "https://cdn-icons-png.freepik.com/512/2991/2991248.png",
         width: 512,
         height: 512,
-        alt: "Zee Index Logo",
+        alt: "vaehor Logo",
       },
     ],
   },
   twitter: {
     card: "summary",
-    title: "Zee Index",
+    title: "vaehor",
     description: "Your Google Drive, Supercharged.",
     images: ["https://cdn-icons-png.freepik.com/512/2991/2991248.png"],
   },

@@ -15,7 +15,7 @@ export const useAppStore = create<AppState>()(
       ...createAudioSlice(...a),
     }),
     {
-      name: "zee-index-storage",
+      name: "vaehor-storage",
       partialize: (state) => ({
         view: state.view,
         density: state.density,

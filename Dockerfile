@@ -15,7 +15,7 @@ RUN set -eux; \
   done
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@11
 WORKDIR /app
 
 # Stage 2: Dependencies
@@ -94,49 +94,11 @@ COPY --from=builder --chown=root:root --chmod=555 /app/.next/standalone ./
 COPY --from=builder --chown=root:root --chmod=555 /app/.next/static ./.next/static
 COPY --from=builder --chown=root:root --chmod=555 /app/prisma ./prisma
 COPY --from=builder --chown=root:root --chmod=444 /app/prisma.config.ts ./prisma.config.ts
-COPY --from=builder --chown=root:root --chmod=555 /app/scripts ./scripts
+COPY --chown=root:root --chmod=555 scripts ./scripts
+COPY --chown=root:root --chmod=755 scripts/entrypoint.sh /app/entrypoint.sh
 
 # Note: Standalone mode already includes necessary node_modules in .next/standalone/node_modules
 # We no longer need to copy the entire /app/node_modules from builder.
-
-# Script to run migrations and start
-RUN <<'SETUP_ENTRYPOINT'
-cat <<'ENTRY' > /app/entrypoint.sh
-#!/bin/sh
-set -e
-if [ -n "$DATABASE_URL" ]; then
-  echo "Checking database existence..."
-  DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\).*/\1/p' | cut -d/ -f1)
-  DB_USER=$(echo $DATABASE_URL | sed -n 's/.*\/\/\([^:]*\).*/\1/p')
-  DB_NAME=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p' | rev | cut -d/ -f1 | rev)
-  DB_PASS=$(echo $DATABASE_URL | sed -n 's/.*:\([^@]*\)@.*/\1/p')
-
-  echo "Waiting for postgres to be ready..."
-  until PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres -c '\q' 2>/dev/null; do sleep 1; done
-
-  echo "Ensuring database $DB_NAME exists..."
-  DB_EXISTS=$(PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres \
-    -tAc "SELECT 1 FROM pg_database WHERE datname = '$DB_NAME'" \
-    2>/dev/null || echo "0")
-  if [ "$DB_EXISTS" != "1" ]; then
-    echo "Creating database $DB_NAME..."
-    PGPASSWORD=$DB_PASS psql -h "$DB_HOST" -U "$DB_USER" -d postgres \
-      -c "CREATE DATABASE \"$DB_NAME\"" || echo "Database may already exist"
-  fi
-fi
-echo "Running database migrations..."
-# Use global prisma installed earlier
-if [ -d "prisma/migrations" ]; then \
-  prisma migrate deploy; \
-else \
-  prisma db push --accept-data-loss; \
-fi || echo "Prisma migration failed, continuing..."
-exec "$@"
-ENTRY
-tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.fixed
-mv /app/entrypoint.sh.fixed /app/entrypoint.sh
-chmod +x /app/entrypoint.sh
-SETUP_ENTRYPOINT
 
 USER nextjs
 

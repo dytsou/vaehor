@@ -43,6 +43,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/admin/analytics/track",
   "/api/health",
   "/api/metadata",
+  "/api/mobile",
 ];
 
 type IntlMiddleware = (request: NextRequest) => Response | Promise<Response>;

@@ -4,9 +4,9 @@ import { memoryCache } from "@/lib/memory-cache";
 export async function invalidateFolderCache(folderId: string) {
   try {
     const patterns = [
-      `zee-index:folder-content-v3:${folderId}:*`,
-      `zee-index:folder-path-v7:*`,
-      `zee-index:folder-tree*`,
+      `vaehor:folder-content-v3:${folderId}:*`,
+      `vaehor:folder-path-v7:*`,
+      `vaehor:folder-tree*`,
     ];
 
     for (const pattern of patterns) {

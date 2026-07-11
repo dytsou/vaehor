@@ -152,10 +152,17 @@ function reportConfigWarnings(warnings: string[]): void {
   console.warn("");
 }
 
+import { applyDatabaseUrlFromPostgres, applyLocalRedisUrl } from "./env-url";
+
+export { applyDatabaseUrlFromPostgres, applyLocalRedisUrl };
+
 export function validateOnStartup(): Env {
   if (shouldSkipEnvValidation()) {
     return process.env as unknown as Env;
   }
+
+  applyDatabaseUrlFromPostgres();
+  applyLocalRedisUrl();
 
   const result = envSchema.safeParse(process.env);
   const adminCredentialResult = result.success

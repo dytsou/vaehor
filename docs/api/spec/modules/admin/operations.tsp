@@ -9,7 +9,7 @@ import "../../models/requests.tsp";
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
 
-namespace ZeeIndexApi {
+namespace VaehorApi {
   @tag("Admin")
   @tag("Health")
   @get

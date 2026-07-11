@@ -33,19 +33,92 @@ function constantTimeEqual(a: string, b: string): boolean {
 
 export function normalizeAdminEmails(): string[] {
   const envAdminsRaw = process.env.ADMIN_EMAILS || "";
-  return envAdminsRaw.split(",").map((email) =>
-    email
-      .trim()
-      .toLowerCase()
-      .replace(/^["']|["']$/g, ""),
+  return envAdminsRaw
+    .split(",")
+    .map((email) =>
+      email
+        .trim()
+        .toLowerCase()
+        .replace(/^["']|["']$/g, ""),
+    )
+    .filter(Boolean);
+}
+
+/**
+ * Keep Redis ADMIN_USERS aligned with ADMIN_EMAILS across restarts/env edits.
+ * - First sync: add env emails and record the snapshot (does not wipe API-added admins).
+ * - Later env changes: add new env emails and remove emails that left ADMIN_EMAILS.
+ * Admins added only via Admin API (never in the env snapshot) are left alone.
+ */
+export async function syncAdminsFromEnv(): Promise<{
+  added: string[];
+  removed: string[];
+}> {
+  const current = normalizeAdminEmails();
+  const currentKey = JSON.stringify(
+    [...current].sort((a, b) => a.localeCompare(b)),
   );
+
+  let raw: string | null = null;
+  try {
+    raw = await kv.get<string>(REDIS_KEYS.ADMIN_USERS_ENV_SYNC);
+  } catch (error) {
+    logger.error(
+      { err: error },
+      "[Auth] Failed to read ADMIN_USERS env sync state",
+    );
+    return { added: [], removed: [] };
+  }
+
+  if (raw === currentKey) {
+    return { added: [], removed: [] };
+  }
+
+  const isFirstSync = raw == null;
+  let previous: string[] = [];
+  if (!isFirstSync && raw) {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        previous = parsed.filter((e): e is string => typeof e === "string");
+      }
+    } catch {
+      previous = [];
+    }
+  }
+
+  const prevSet = new Set(previous);
+  const toAdd = isFirstSync
+    ? current
+    : current.filter((email) => !prevSet.has(email));
+  const toRemove = isFirstSync
+    ? []
+    : previous.filter((email) => !current.includes(email));
+
+  try {
+    if (toAdd.length > 0) {
+      await kv.sadd(REDIS_KEYS.ADMIN_USERS, ...toAdd);
+    }
+    if (toRemove.length > 0) {
+      await kv.srem(REDIS_KEYS.ADMIN_USERS, ...toRemove);
+    }
+    await kv.set(REDIS_KEYS.ADMIN_USERS_ENV_SYNC, currentKey);
+    logger.warn(
+      { added: toAdd.length, removed: toRemove.length, initial: isFirstSync },
+      "[Auth] Synced ADMIN_USERS from ADMIN_EMAILS",
+    );
+    return { added: toAdd, removed: toRemove };
+  } catch (error) {
+    logger.error({ err: error }, "[Auth] Failed to sync ADMIN_USERS from env");
+    return { added: [], removed: [] };
+  }
 }
 
 function emitAuthActivity<T extends AuthAuditType>(
   type: T,
   details: ActivityDetails<T>,
 ): void {
-  void import("@/lib/activityLogger")
+  import("@/lib/activityLogger")
     .then(({ logActivity }) => logActivity(type, details))
     .catch((error) => {
       logger.error({ err: error, type }, "[Auth] Failed to record auth event");
@@ -84,52 +157,21 @@ async function enforceAuthRateLimit(
   throw new Error("Terlalu banyak percobaan login. Silakan tunggu sebentar.");
 }
 
-async function bootstrapAdminsFromEnv(
-  normalizedEnvAdmins: string[],
-  isAdminEnv: boolean,
-  adminCount: number,
-): Promise<boolean> {
-  if (adminCount !== 0 || !isAdminEnv) {
-    return false;
-  }
-
-  try {
-    await kv.sadd(REDIS_KEYS.ADMIN_USERS, ...normalizedEnvAdmins);
-    logger.warn(
-      { count: normalizedEnvAdmins.length },
-      "[Auth] Seeded ADMIN_USERS from ADMIN_EMAILS (bootstrap)",
-    );
-    return true;
-  } catch (error) {
-    logger.error({ err: error }, "[Auth] Failed to seed ADMIN_USERS from env");
-    return false;
-  }
-}
-
 async function resolveCredentialAdminStatus(
   normalizedInputEmail: string,
   dbUser: { role: string } | null,
 ): Promise<boolean> {
+  await syncAdminsFromEnv();
+
   const normalizedEnvAdmins = normalizeAdminEmails();
   const isAdminEnv = normalizedEnvAdmins.includes(normalizedInputEmail);
   const isAdminDb = dbUser?.role === "ADMIN";
-  const [adminCount, isRedisAdmin] = await Promise.all([
-    kv.scard(REDIS_KEYS.ADMIN_USERS),
-    kv.sismember(REDIS_KEYS.ADMIN_USERS, normalizedInputEmail),
-  ]);
-
-  let isAdmin = isAdminDb || isRedisAdmin === 1;
-  const bootstrapped = await bootstrapAdminsFromEnv(
-    normalizedEnvAdmins,
-    isAdminEnv,
-    adminCount,
+  const isRedisAdmin = await kv.sismember(
+    REDIS_KEYS.ADMIN_USERS,
+    normalizedInputEmail,
   );
 
-  if (bootstrapped) {
-    isAdmin = true;
-  }
-
-  return isAdmin;
+  return isAdminDb || isRedisAdmin === 1 || isAdminEnv;
 }
 
 async function verifyAdminPassword(

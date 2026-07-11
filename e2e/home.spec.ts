@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test("has title", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page).toHaveTitle(/Zee Index/);
+  await expect(page).toHaveTitle(/vaehor/);
 });
 
 test("redirects to setup or login when not configured", async ({ page }) => {

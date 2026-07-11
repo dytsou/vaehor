@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Visual helper for project checks
-# Zee-Index All-in-One Check
+# vaehor All-in-One Check
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
-echo -e "${BLUE}${BOLD}🚀 Starting Zee-Index Project Health Checks...${NC}\n"
+echo -e "${BLUE}${BOLD}🚀 Starting vaehor Project Health Checks...${NC}\n"
 
 FAIL=0
 

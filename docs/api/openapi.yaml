@@ -1,12 +1,13 @@
 openapi: 3.0.0
 info:
-  title: Zee-Index API
+  title: vaehor API
   version: 0.0.0
 tags:
   - name: Health
   - name: Admin
   - name: Files
   - name: Auth
+  - name: Mobile
   - name: Share
   - name: FileRequests
   - name: Setup
@@ -1683,6 +1684,126 @@ paths:
               schema: {}
       tags:
         - Files
+  /api/mobile/oauth-complete:
+    get:
+      operationId: completeMobileOAuthGet
+      description: 'Finish browser OAuth: validate state, mint exchange token, redirect to vaehor://auth/callback.'
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '302':
+          description: Redirection
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      security:
+        - ApiKeyAuth: []
+    post:
+      operationId: completeMobileOAuthPost
+      description: Redeem exchange token from the custom-scheme callback; returns bootstrap material for the shell.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileOAuthCompleteResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileOAuthCompleteBody'
+  /api/mobile/oauth-state:
+    get:
+      operationId: createMobileOAuthState
+      description: Create a one-time OAuth state for Capacitor native Google sign-in.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileOAuthStateResponse'
+      tags:
+        - Mobile
+  /api/mobile/session-bootstrap:
+    get:
+      operationId: bootstrapMobileSessionGet
+      description: Redeem bootstrap token via redirect and set the NextAuth session cookie in the WebView.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+        - name: redirect
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '302':
+          description: Redirection
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+    post:
+      operationId: bootstrapMobileSessionPost
+      description: Mint a bootstrap URL from a session token, or redeem a bootstrap token for a session token (native shell).
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/MobileSessionBootstrapMintResponse'
+                  - $ref: '#/components/schemas/MobileSessionBootstrapRedeemResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/MobileSessionBootstrapMintBody'
+                - $ref: '#/components/schemas/MobileSessionBootstrapRedeemBody'
   /api/og:
     get:
       operationId: getOpenGraphImage
@@ -2404,6 +2525,58 @@ components:
       enum:
         - ok
         - error
+    MobileOAuthCompleteBody:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+    MobileOAuthCompleteResponse:
+      type: object
+      required:
+        - cookieName
+        - bootstrapToken
+      properties:
+        cookieName:
+          type: string
+        bootstrapToken:
+          type: string
+    MobileOAuthStateResponse:
+      type: object
+      required:
+        - state
+      properties:
+        state:
+          type: string
+    MobileSessionBootstrapMintBody:
+      type: object
+      required:
+        - sessionToken
+      properties:
+        sessionToken:
+          type: string
+    MobileSessionBootstrapMintResponse:
+      type: object
+      required:
+        - bootstrapUrl
+      properties:
+        bootstrapUrl:
+          type: string
+    MobileSessionBootstrapRedeemBody:
+      type: object
+      required:
+        - bootstrapToken
+      properties:
+        bootstrapToken:
+          type: string
+    MobileSessionBootstrapRedeemResponse:
+      type: object
+      required:
+        - sessionToken
+      properties:
+        sessionToken:
+          type: string
     NotFoundResponse:
       type: object
     RenameFileRequest:

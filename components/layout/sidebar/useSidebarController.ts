@@ -308,7 +308,7 @@ export function useSidebarController() {
       setTree((prev) => mergeResyncResultsIntoTree(prev, results));
     };
 
-    void resyncLoadedFolderNodes();
+    resyncLoadedFolderNodes().catch(() => {});
 
     return () => {
       cancelled = true;
@@ -327,7 +327,7 @@ export function useSidebarController() {
       return;
     }
 
-    void runSidebarTreeExpandPath({
+    runSidebarTreeExpandPath({
       currentFolderId,
       rootFolderId,
       shareToken,
@@ -336,7 +336,7 @@ export function useSidebarController() {
       treeSnapshot: treeRef.current,
       fetchSubfolders,
       onExpand: setTree,
-    });
+    }).catch(() => {});
   }, [
     currentFolderId,
     mounted,

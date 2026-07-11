@@ -49,7 +49,7 @@ async function fetchValidatedImage(
   try {
     const response = await fetch(targetUrl, {
       headers: {
-        "User-Agent": "Zee-Index-Proxy/2.0",
+        "User-Agent": "vaehor-Proxy/2.0",
       },
       redirect: "manual",
       signal: controller.signal,

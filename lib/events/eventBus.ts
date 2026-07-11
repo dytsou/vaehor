@@ -7,7 +7,7 @@ import {
   type EventType,
 } from "@/lib/telemetry";
 
-const REDIS_CHANNEL = "zee-index:events";
+const REDIS_CHANNEL = "vaehor:events";
 
 interface RedisSubscriber {
   subscribe: (channel: string, callback: (error: Error | null) => void) => void;

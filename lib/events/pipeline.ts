@@ -7,8 +7,8 @@ import { appEventSchema, type AppEvent, type EventType } from "@/lib/telemetry";
 const EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 export const EVENT_PIPELINE_KEYS = {
-  activityLog: "zee-index:activity-log",
-  eventStream: "zee-index:event-stream",
+  activityLog: "vaehor:activity-log",
+  eventStream: "vaehor:event-stream",
 } as const;
 
 type EventCategory =

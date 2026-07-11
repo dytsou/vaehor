@@ -273,7 +273,7 @@
     "unknownUser": "未知"
   },
   "LoginPage": {
-    "title": "Zee Index",
+    "title": "vaehor",
     "subtitle": "安全且快速地存取你的檔案。",
     "emailLabel": "電子郵件",
     "passwordLabel": "密碼",
@@ -401,7 +401,8 @@
   },
   "Footer": {
     "dataUsage": "總資料使用量：",
-    "rightsReserved": "版權所有 -"
+    "rightsReserved": "版權所有 -",
+    "modificationsBy": "修改由"
   },
   "RequestPage": {
     "invalidLink": "此連結無效或已到期。",
@@ -417,7 +418,7 @@
     "fileTypes": "文件、照片、影片等。",
     "startUpload": "開始上傳",
     "uploadFailed": "部分檔案上傳失敗，請再試一次。",
-    "poweredBy": "Powered by Zee-Index"
+    "poweredBy": "Powered by vaehor"
   },
   "TrashPage": {
     "accessDenied": "存取被拒：此頁面僅限管理員",
@@ -656,7 +657,7 @@
     "skip": "略過",
     "steps": {
       "welcome": {
-        "title": "歡迎使用 Zee-Index！",
+        "title": "歡迎使用 vaehor！",
         "description": "讓我們快速導覽一下，幫助你開始使用這個新的檔案管理器。"
       },
       "mobileMenu": {
@@ -776,7 +777,7 @@
     "add": "新增"
   },
   "BrandingConfig": {
-    "appNamePlaceholder": "Zee Index",
+    "appNamePlaceholder": "vaehor",
     "taglinePlaceholder": "預設（空白）",
     "logoUrlPlaceholder": "https://example.com/logo.png",
     "faviconUrlPlaceholder": "https://example.com/favicon.ico"
@@ -829,7 +830,7 @@
       "invalidExpire": "expiresIn 格式無效。請使用例如：1h、7d、30d",
       "tokenExpired": "權杖缺少到期時間。",
       "createFail": "建立分享連結失敗。",
-      "emailSubject": "[Zee Index] 已建立新的 {type} 連結",
+      "emailSubject": "[vaehor] 已建立新的 {type} 連結",
       "emailHello": "管理員您好",
       "emailBody": "使用者 <b>{email}</b> 已建立新的 {type} 連結。",
       "collection": "集合",

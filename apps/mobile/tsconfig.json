@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@vaehor/sdk": ["../../packages/sdk/src/index.ts"],
+      "@vaehor/mobile-bridge-protocol": ["../../lib/mobile-bridge-protocol.ts"]
+    }
+  },
+  "include": ["src", "__tests__"]
+}

@@ -1,13 +1,13 @@
 {
-  "missingSession": "需要登入：請設定環境變數 ZEE_INDEX_SESSION_COOKIE（完整 Cookie 字串，例如 authjs.session-token=…）或 ZEE_INDEX_SESSION_TOKEN（僅 session 值）。在瀏覽器登入 Zee-Index 後從開發者工具複製。",
+  "missingSession": "需要登入：請設定環境變數 VAEHOR_SESSION_COOKIE（完整 Cookie 字串，例如 authjs.session-token=…）或 VAEHOR_SESSION_TOKEN（僅 session 值）。在瀏覽器登入 vaehor 後從開發者工具複製。",
   "searchNeedOneCriterion": "至少需要 q、mimeType、modifiedTime 或 minSize 其中之一",
   "tools": {
     "zee_health": {
-      "title": "Zee Index 健康檢查",
-      "description": "呼叫 GET /api/health（公開）。不需 session。需設定 ZEE_INDEX_BASE_URL（預設 http://127.0.0.1:3000）。"
+      "title": "vaehor 健康檢查",
+      "description": "呼叫 GET /api/health（公開）。不需 session。需設定 VAEHOR_BASE_URL（預設 http://127.0.0.1:3000）。"
     },
     "zee_public_config": {
-      "title": "Zee Index 公開設定",
+      "title": "vaehor 公開設定",
       "description": "呼叫 GET /api/config/public（公開）。不需 session。取得公開應用程式設定（不含機密）。"
     },
     "zee_metadata_lookup": {
@@ -15,8 +15,8 @@
       "description": "呼叫 GET /api/metadata?filename=…（公開）。依檔名解析媒體標題並查 TMDB。不需 session。"
     },
     "zee_whoami": {
-      "title": "目前 Zee Index 使用者",
-      "description": "呼叫 GET /api/auth/me。需 session（ZEE_INDEX_SESSION_COOKIE 或 ZEE_INDEX_SESSION_TOKEN）；回傳目前使用者與角色，與網頁登入狀態一致。"
+      "title": "目前 vaehor 使用者",
+      "description": "呼叫 GET /api/auth/me。需 session（VAEHOR_SESSION_COOKIE 或 VAEHOR_SESSION_TOKEN）；回傳目前使用者與角色，與網頁登入狀態一致。"
     },
     "zee_files_list": {
       "title": "列出資料夾檔案",

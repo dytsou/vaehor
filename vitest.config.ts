@@ -10,11 +10,17 @@ export default defineConfig({
     setupFiles: "./test/setup.ts",
     alias: {
       "@": path.resolve(__dirname, "./"),
+      "@vaehor/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
+      "@vaehor/mobile-bridge-protocol": path.resolve(
+        __dirname,
+        "./lib/mobile-bridge-protocol.ts",
+      ),
     },
     exclude: [
       "node_modules",
       ".next/**",
       "e2e/**",
+      "apps/mobile/node_modules/**",
       "packages/mcp/node_modules/**",
       "packages/sdk/node_modules/**",
     ],

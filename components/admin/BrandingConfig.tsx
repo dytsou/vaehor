@@ -40,7 +40,7 @@ export default function BrandingConfig() {
 
   useEffect(() => {
     setFormState({
-      appName: appName || "Zee Index",
+      appName: appName || "vaehor",
       logoUrl: logoUrl || "",
       faviconUrl: faviconUrl || "",
       primaryColor: primaryColor || "",
@@ -91,7 +91,7 @@ export default function BrandingConfig() {
               value={formState.appName}
               onChange={handleChange}
               className="w-full px-3 py-2 bg-background border rounded-md focus:ring-2 focus:ring-primary outline-none"
-              placeholder="Zee Index"
+              placeholder="vaehor"
             />
             <p className="text-xs text-muted-foreground">
               Muncul di tab browser dan header.

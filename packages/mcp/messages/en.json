@@ -1,13 +1,13 @@
 {
-  "missingSession": "Login required: set ZEE_INDEX_SESSION_COOKIE (full cookie string, e.g. authjs.session-token=…) or ZEE_INDEX_SESSION_TOKEN (session value only). After signing in to Zee Index in your browser, copy the cookie from developer tools.",
+  "missingSession": "Login required: set VAEHOR_SESSION_COOKIE (full cookie string, e.g. authjs.session-token=…) or VAEHOR_SESSION_TOKEN (session value only). After signing in to vaehor in your browser, copy the cookie from developer tools.",
   "searchNeedOneCriterion": "At least one of q, mimeType, modifiedTime, or minSize is required.",
   "tools": {
     "zee_health": {
-      "title": "Zee Index health",
-      "description": "Calls GET /api/health (public). No session. Set ZEE_INDEX_BASE_URL (default http://127.0.0.1:3000)."
+      "title": "vaehor health",
+      "description": "Calls GET /api/health (public). No session. Set VAEHOR_BASE_URL (default http://127.0.0.1:3000)."
     },
     "zee_public_config": {
-      "title": "Zee Index public config",
+      "title": "vaehor public config",
       "description": "Calls GET /api/config/public (public). No session. Returns public app settings (no secrets)."
     },
     "zee_metadata_lookup": {
@@ -15,8 +15,8 @@
       "description": "Calls GET /api/metadata?filename=… (public). Resolves media title from filename and queries TMDB. No session."
     },
     "zee_whoami": {
-      "title": "Current Zee Index user",
-      "description": "Calls GET /api/auth/me. Requires session (ZEE_INDEX_SESSION_COOKIE or ZEE_INDEX_SESSION_TOKEN). Returns current user and role, same as the web app."
+      "title": "Current vaehor user",
+      "description": "Calls GET /api/auth/me. Requires session (VAEHOR_SESSION_COOKIE or VAEHOR_SESSION_TOKEN). Returns current user and role, same as the web app."
     },
     "zee_files_list": {
       "title": "List files in folder",

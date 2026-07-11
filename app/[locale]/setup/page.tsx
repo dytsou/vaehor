@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useSetupPage } from "./_hooks/useSetupPage";
 import { SetupStepContent } from "./_components/SetupStepContent";
 import { SetupStepIndicator } from "./_components/SetupStepIndicator";
@@ -7,6 +8,7 @@ import { SetupTokenField } from "./_components/SetupTokenField";
 
 export default function SetupPage() {
   const setup = useSetupPage();
+  const tFooter = useTranslations("Footer");
 
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground flex flex-col">
@@ -28,16 +30,29 @@ export default function SetupPage() {
 
           <SetupStepContent {...setup} />
 
-          <p className="text-center text-xs text-muted-foreground pt-12">
-            © {new Date().getFullYear()} - Created by{" "}
-            <a
-              href="https://ifauzeee.vercel.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-foreground hover:text-primary"
-            >
-              Muhammad Ibnu Fauzi
-            </a>
+          <p className="text-center text-xs text-muted-foreground pt-12 space-y-1">
+            <span className="block">
+              © 2025 {tFooter("rightsReserved")}{" "}
+              <a
+                href="https://ifauzeee.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                Muhammad Ibnu Fauzi
+              </a>
+            </span>
+            <span className="block">
+              © {new Date().getFullYear()} {tFooter("modificationsBy")}{" "}
+              <a
+                href="https://github.com/dytsou/vaehor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary"
+              >
+                dytsou
+              </a>
+            </span>
           </p>
         </div>
       </main>
