@@ -327,198 +327,160 @@ function useAppNavigation() {
   };
 }
 
-type AppNavigation = ReturnType<typeof useAppNavigation>;
+type AppNavigation = Readonly<ReturnType<typeof useAppNavigation>>;
 
-function AppViews({
-  locale,
-  view,
-  online,
-  servers,
-  activeId,
-  saving,
-  addError,
-  upload,
-  webviewSession,
-  deepLinkPending,
-  deepLinkError,
-  prefillServerUrl,
-  authPrompt,
-  checkNetwork,
-  setView,
-  setUpload,
-  setSaving,
-  setWebviewSession,
-  setAuthPrompt,
-  setAddError,
-  setPrefillServerUrl,
-  setDeepLinkPending,
-  refreshServers,
-  openShareDeepLink,
-  openServer,
-  enableBiometricsForActive,
-}: AppNavigation) {
-  if (view === "offline" || !online) {
-    return (
-      <OfflineScreen
-        locale={locale}
-        onRetry={() => {
-          checkNetwork().catch(() => {});
-        }}
-      />
-    );
-  }
-
-  if (view === "upload" && upload) {
-    return (
-      <UploadProgressScreen
-        locale={locale}
-        upload={upload}
-        onDismiss={() => {
-          setUpload(null);
-          setView("servers");
-        }}
-      />
-    );
-  }
-
-  if (view === "auth" && authPrompt) {
-    return (
-      <div style={{ padding: "1rem", maxWidth: "480px", margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.35rem" }}>
-          {t(locale, "auth.enableBiometrics")}
-        </h1>
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-          <button
-            type="button"
-            onClick={() => {
-              enableBiometricsForActive(
+function AuthView({ nav }: Readonly<{ nav: AppNavigation }>) {
+  const { locale, authPrompt } = nav;
+  if (!authPrompt) return null;
+  return (
+    <div style={{ padding: "1rem", maxWidth: "480px", margin: "0 auto" }}>
+      <h1 style={{ fontSize: "1.35rem" }}>
+        {t(locale, "auth.enableBiometrics")}
+      </h1>
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+        <button
+          type="button"
+          onClick={() => {
+            nav
+              .enableBiometricsForActive(
                 authPrompt.origin,
                 authPrompt.sessionToken,
-              ).catch(() => {});
-            }}
-          >
-            {t(locale, "auth.enableBiometrics")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setWebviewSession({
-                origin: authPrompt.origin,
-                sessionToken: authPrompt.sessionToken,
-              });
-              setAuthPrompt(null);
-              setView("webview");
-            }}
-          >
-            {t(locale, "auth.skipBiometrics")}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === "webview" && webviewSession) {
-    return (
-      <>
-        <WebViewScreen
-          locale={locale}
-          origin={webviewSession.origin}
-          sessionToken={webviewSession.sessionToken}
-          bootstrapToken={webviewSession.bootstrapToken}
-          initialPath={webviewSession.initialPath}
-          onBack={() => {
-            setWebviewSession(null);
-            setUpload(null);
-            setView("servers");
+              )
+              .catch(() => {});
           }}
-          onLogout={() => {
-            clearSessionForServer(webviewSession.origin).catch(() => {});
-            setWebviewSession(null);
-            setUpload(null);
-            setView("servers");
-          }}
-          onUploadProgress={(progress) => {
-            setUpload({
-              fileName: progress.fileName,
-              percent: progress.percent,
-              status: progress.status,
-              errorMessage: progress.errorMessage,
+        >
+          {t(locale, "auth.enableBiometrics")}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            nav.setWebviewSession({
+              origin: authPrompt.origin,
+              sessionToken: authPrompt.sessionToken,
             });
+            nav.setAuthPrompt(null);
+            nav.setView("webview");
           }}
-        />
-        {upload ? (
-          <div
-            style={{
-              position: "fixed",
-              inset: "auto 0 0 0",
-              background: "rgba(255,255,255,0.96)",
-              borderTop: "1px solid #ccc",
-              padding: "0.75rem",
-              maxHeight: "40vh",
-              overflow: "auto",
-            }}
-          >
-            <UploadProgressScreen
-              locale={locale}
-              upload={upload}
-              onDismiss={
-                upload.status === "uploading"
-                  ? undefined
-                  : () => setUpload(null)
-              }
-            />
-          </div>
-        ) : null}
-      </>
-    );
-  }
+        >
+          {t(locale, "auth.skipBiometrics")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
-  if (view === "add") {
-    return (
-      <AddServerScreen
+function WebviewView({ nav }: Readonly<{ nav: AppNavigation }>) {
+  const {
+    locale,
+    upload,
+    webviewSession,
+    setUpload,
+    setView,
+    setWebviewSession,
+  } = nav;
+  if (!webviewSession) return null;
+
+  const resetToServers = () => {
+    setWebviewSession(null);
+    setUpload(null);
+    setView("servers");
+  };
+
+  return (
+    <>
+      <WebViewScreen
         locale={locale}
-        saving={saving}
-        errorKey={addError}
-        initialUrl={prefillServerUrl}
-        onCancel={() => {
-          setAddError(undefined);
-          setPrefillServerUrl(undefined);
-          setView("servers");
+        origin={webviewSession.origin}
+        sessionToken={webviewSession.sessionToken}
+        bootstrapToken={webviewSession.bootstrapToken}
+        initialPath={webviewSession.initialPath}
+        onBack={resetToServers}
+        onLogout={() => {
+          clearSessionForServer(webviewSession.origin).catch(() => {});
+          resetToServers();
         }}
-        onSave={async (url, label) => {
-          setSaving(true);
-          setAddError(undefined);
-          try {
-            const bookmark = await addServer(preferencesStore, { url, label });
-            await refreshServers();
-            setPrefillServerUrl(undefined);
-
-            if (deepLinkPending?.origin === bookmark.url) {
-              const target = deepLinkPending;
-              setDeepLinkPending(null);
-              await openShareDeepLink(target);
-              return;
-            }
-
-            setView("servers");
-          } catch (err) {
-            if (err instanceof ServerValidationError) {
-              setAddError(
-                err.code === "invalid_url"
-                  ? "add.errorInvalidUrl"
-                  : "add.errorUnreachable",
-              );
-            } else {
-              setAddError("add.errorUnreachable");
-            }
-          } finally {
-            setSaving(false);
-          }
+        onUploadProgress={(progress) => {
+          setUpload({
+            fileName: progress.fileName,
+            percent: progress.percent,
+            status: progress.status,
+            errorMessage: progress.errorMessage,
+          });
         }}
       />
-    );
-  }
+      {upload ? (
+        <div
+          style={{
+            position: "fixed",
+            inset: "auto 0 0 0",
+            background: "rgba(255,255,255,0.96)",
+            borderTop: "1px solid #ccc",
+            padding: "0.75rem",
+            maxHeight: "40vh",
+            overflow: "auto",
+          }}
+        >
+          <UploadProgressScreen
+            locale={locale}
+            upload={upload}
+            onDismiss={
+              upload.status === "uploading" ? undefined : () => setUpload(null)
+            }
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}
 
+function AddView({ nav }: Readonly<{ nav: AppNavigation }>) {
+  const handleSave = async (url: string, label: string) => {
+    nav.setSaving(true);
+    nav.setAddError(undefined);
+    try {
+      const bookmark = await addServer(preferencesStore, { url, label });
+      await nav.refreshServers();
+      nav.setPrefillServerUrl(undefined);
+
+      if (nav.deepLinkPending?.origin === bookmark.url) {
+        const target = nav.deepLinkPending;
+        nav.setDeepLinkPending(null);
+        await nav.openShareDeepLink(target);
+        return;
+      }
+      nav.setView("servers");
+    } catch (err) {
+      nav.setAddError(addServerErrorKey(err));
+    } finally {
+      nav.setSaving(false);
+    }
+  };
+
+  return (
+    <AddServerScreen
+      locale={nav.locale}
+      saving={nav.saving}
+      errorKey={nav.addError}
+      initialUrl={nav.prefillServerUrl}
+      onCancel={() => {
+        nav.setAddError(undefined);
+        nav.setPrefillServerUrl(undefined);
+        nav.setView("servers");
+      }}
+      onSave={handleSave}
+    />
+  );
+}
+
+function addServerErrorKey(err: unknown): MessageKey {
+  if (err instanceof ServerValidationError && err.code === "invalid_url") {
+    return "add.errorInvalidUrl";
+  }
+  return "add.errorUnreachable";
+}
+
+function ServersView({ nav }: Readonly<{ nav: AppNavigation }>) {
+  const { locale, servers, activeId, deepLinkPending, deepLinkError } = nav;
   return (
     <>
       {deepLinkError ? (
@@ -538,8 +500,8 @@ function AppViews({
           <button
             type="button"
             onClick={() => {
-              setPrefillServerUrl(deepLinkPending.origin);
-              setView("add");
+              nav.setPrefillServerUrl(deepLinkPending.origin);
+              nav.setView("add");
             }}
           >
             {t(locale, "deeplink.addServer")}
@@ -550,22 +512,55 @@ function AppViews({
         locale={locale}
         servers={servers}
         activeId={activeId}
-        onAdd={() => setView("add")}
+        onAdd={() => nav.setView("add")}
         onSwitch={async (id) => {
           const previous = servers.find((s) => s.id === activeId)?.url ?? null;
           await switchActiveServer(preferencesStore, id, previous);
-          await refreshServers();
+          await nav.refreshServers();
         }}
         onOpen={(id) => {
           const server = servers.find((s) => s.id === id);
-          if (server) openServer(server).catch(() => {});
+          if (server) nav.openServer(server).catch(() => {});
         }}
       />
     </>
   );
 }
 
+function AppViews({ nav }: Readonly<{ nav: AppNavigation }>) {
+  const { locale, view, online, upload } = nav;
+
+  if (view === "offline" || !online) {
+    return (
+      <OfflineScreen
+        locale={locale}
+        onRetry={() => {
+          nav.checkNetwork().catch(() => {});
+        }}
+      />
+    );
+  }
+
+  if (view === "upload" && upload) {
+    return (
+      <UploadProgressScreen
+        locale={locale}
+        upload={upload}
+        onDismiss={() => {
+          nav.setUpload(null);
+          nav.setView("servers");
+        }}
+      />
+    );
+  }
+
+  if (view === "auth") return <AuthView nav={nav} />;
+  if (view === "webview") return <WebviewView nav={nav} />;
+  if (view === "add") return <AddView nav={nav} />;
+  return <ServersView nav={nav} />;
+}
+
 export function App() {
-  const navigation = useAppNavigation();
-  return <AppViews {...navigation} />;
+  const nav = useAppNavigation();
+  return <AppViews nav={nav} />;
 }
