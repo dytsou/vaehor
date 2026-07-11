@@ -11,6 +11,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+export PATH="${ROOT}/node_modules/.bin:${PATH}"
 
 PGHOST="${PGHOST:-127.0.0.1}"
 PGPORT="${PGPORT:-5432}"
@@ -27,7 +28,7 @@ fail() {
 
 command -v psql >/dev/null 2>&1 || fail "psql not found — install postgresql-client"
 command -v prisma >/dev/null 2>&1 ||
-  fail "prisma not found — run: npm install -g prisma@7.7.0"
+  fail "prisma not found — run: pnpm install (or npm install -g prisma@7.7.0)"
 
 if ! psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c '\q' 2>/dev/null; then
   fail "Postgres not reachable at ${PGHOST}:${PGPORT} — run: pnpm deps:up"
