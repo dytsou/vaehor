@@ -43,7 +43,7 @@ COPY lib ./lib
 COPY types ./types
 COPY messages ./messages
 COPY public ./public
-COPY auth.ts i18n.ts proxy.ts next.config.mjs next-env.d.ts tsconfig.json ./
+COPY auth.ts i18n.ts proxy.ts next.config.mjs tsconfig.json ./
 COPY postcss.config.mjs tailwind.config.ts components.json prisma.config.ts ./
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
