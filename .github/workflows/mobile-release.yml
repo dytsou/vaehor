@@ -6,17 +6,27 @@ on:
     tags:
       - "mobile-v*"
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   build-shell:
     name: Build mobile shell
     runs-on: ubuntu-latest
+    outputs:
+      has_ios_secrets: ${{ steps.secret-check.outputs.has_ios_secrets }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-project
+
+      - name: Check iOS signing secrets
+        id: secret-check
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+        run: |
+          if [ -n "$IOS_CERTIFICATE_BASE64" ]; then
+            echo "has_ios_secrets=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_ios_secrets=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build shell and sync Android
         run: |
@@ -36,6 +46,8 @@ jobs:
     name: Android release APK
     needs: build-shell
     runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,11 +62,9 @@ jobs:
           java-version: "21"
 
       - name: Decode release keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
         working-directory: apps/mobile/android
         run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
 
       - name: Build release APK
         working-directory: apps/mobile/android
@@ -83,7 +93,7 @@ jobs:
     name: iOS archive
     needs: build-shell
     runs-on: macos-latest
-    if: ${{ secrets.IOS_CERTIFICATE_BASE64 != '' }}
+    if: ${{ needs.build-shell.outputs.has_ios_secrets == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
