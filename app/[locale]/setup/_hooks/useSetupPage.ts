@@ -39,7 +39,7 @@ export function useSetupPage() {
   const [setupToken, setSetupToken] = useState("");
 
   useEffect(() => {
-    void fetch("/api/setup/status")
+    fetch("/api/setup/status")
       .then((r) => r.json() as Promise<{ requiresSetupToken?: boolean }>)
       .then((d) => setRequiresSetupToken(Boolean(d.requiresSetupToken)))
       .catch(() => {});

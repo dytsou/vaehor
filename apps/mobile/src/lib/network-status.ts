@@ -12,6 +12,6 @@ export function onNetworkChange(
     listener(status.connected);
   });
   return () => {
-    void handle.then((h) => h.remove());
+    handle.then((h) => h.remove()).catch(() => {});
   };
 }

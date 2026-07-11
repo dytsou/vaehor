@@ -255,7 +255,7 @@ export default function Header() {
       <button
         onClick={() => {
           notifyZeeMobileLogout();
-          void signOut({ callbackUrl: "/login" });
+          signOut({ callbackUrl: "/login" }).catch(() => {});
         }}
         title={t("logout")}
         className="p-2 rounded-lg hover:bg-accent"

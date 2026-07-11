@@ -25,8 +25,9 @@ export type UploadBridgeHandlers = {
 function postToFrame(
   iframe: HTMLIFrameElement,
   message: ZeeMobileMessage,
+  targetOrigin: string,
 ): void {
-  iframe.contentWindow?.postMessage(message, "*");
+  iframe.contentWindow?.postMessage(message, targetOrigin);
 }
 
 async function pickNativeFiles(): Promise<NativeUploadFile[]> {
@@ -65,13 +66,17 @@ async function handlePickAndUpload(
             percent,
             status: "uploading",
           });
-          postToFrame(handlers.iframe, {
-            type: ZEE_MOBILE_MESSAGE,
-            action: "upload/progress",
-            requestId: request.requestId,
-            fileName: file.name,
-            percent,
-          });
+          postToFrame(
+            handlers.iframe,
+            {
+              type: ZEE_MOBILE_MESSAGE,
+              action: "upload/progress",
+              requestId: request.requestId,
+              fileName: file.name,
+              percent,
+            },
+            handlers.origin,
+          );
         },
       });
 
@@ -105,24 +110,30 @@ export function attachUploadBridge(handlers: UploadBridgeHandlers): () => void {
     if (!data || data.type !== ZEE_MOBILE_MESSAGE) return;
 
     if (data.action === "upload/pick") {
-      void runWithBackgroundUploadSupport(() =>
-        handlePickAndUpload(data, handlers),
-      )
+      runWithBackgroundUploadSupport(() => handlePickAndUpload(data, handlers))
         .then(() => {
-          postToFrame(handlers.iframe, {
-            type: ZEE_MOBILE_MESSAGE,
-            action: "upload/pick-done",
-            requestId: data.requestId,
-          });
+          postToFrame(
+            handlers.iframe,
+            {
+              type: ZEE_MOBILE_MESSAGE,
+              action: "upload/pick-done",
+              requestId: data.requestId,
+            },
+            handlers.origin,
+          );
         })
         .catch((error: unknown) => {
-          postToFrame(handlers.iframe, {
-            type: ZEE_MOBILE_MESSAGE,
-            action: "upload/pick-error",
-            requestId: data.requestId,
-            error:
-              error instanceof Error ? error.message : "Native upload failed",
-          });
+          postToFrame(
+            handlers.iframe,
+            {
+              type: ZEE_MOBILE_MESSAGE,
+              action: "upload/pick-error",
+              requestId: data.requestId,
+              error:
+                error instanceof Error ? error.message : "Native upload failed",
+            },
+            handlers.origin,
+          );
         });
       return;
     }

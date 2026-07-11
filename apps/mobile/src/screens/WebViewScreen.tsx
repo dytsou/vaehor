@@ -60,7 +60,7 @@ export function WebViewScreen({
       }
     }
 
-    void load();
+    load().catch(() => {});
     return () => {
       cancelled = true;
     };

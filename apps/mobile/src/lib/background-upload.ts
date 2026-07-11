@@ -12,13 +12,13 @@ export const defaultBackgroundUploadDeps: BackgroundUploadDeps = {
   finish: (options) => BackgroundTask.finish(options),
   onAppStateChange(handler) {
     let listener: { remove: () => void } | undefined;
-    void App.addListener("appStateChange", ({ isActive }) =>
-      handler(isActive),
-    ).then((handle) => {
-      listener = handle;
-    });
+    App.addListener("appStateChange", ({ isActive }) => handler(isActive))
+      .then((handle) => {
+        listener = handle;
+      })
+      .catch(() => {});
     return () => {
-      void listener?.remove();
+      listener?.remove();
     };
   },
 };
@@ -47,12 +47,12 @@ export function registerBackgroundUploadSupport(
   unregisterStateListener = deps.onAppStateChange((isActive) => {
     if (isActive || !activeScope) return;
 
-    void (async () => {
+    (async () => {
       const taskId = await deps.beforeExit(async () => {
         await activeScope;
       });
       deps.finish({ taskId });
-    })();
+    })().catch(() => {});
   });
 }
 

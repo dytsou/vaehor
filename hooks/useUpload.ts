@@ -35,7 +35,7 @@ export function useUpload({
 
   const requestUpload = useCallback(() => {
     if (nativeUpload.isAvailable) {
-      void nativeUpload.pickAndUpload();
+      nativeUpload.pickAndUpload().catch(() => {});
       return;
     }
     setIsUploadModalOpen(true);

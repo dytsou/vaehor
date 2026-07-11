@@ -131,7 +131,7 @@ function CustomLoginPage() {
         setIsLoadingConfig(false);
       }
     };
-    void fetchPublicConfig();
+    fetchPublicConfig().catch(() => {});
   }, []);
 
   const handleGoogleSignIn = () => {

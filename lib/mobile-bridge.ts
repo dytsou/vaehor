@@ -66,8 +66,28 @@ export function isZeeMobileBridgeAvailable(): boolean {
   return isEmbeddedInNativeShell();
 }
 
+/**
+ * Origin of the native shell that embeds this page, so messages aren't
+ * broadcast to arbitrary frames. ancestorOrigins is available on the mobile
+ * WebViews we target (Android Blink, iOS WebKit); referrer is the fallback.
+ * ponytail: last-resort "*" only when the embedder origin is undiscoverable
+ * (very old engines) — the shell still validates message source and type.
+ */
+function parentOrigin(): string {
+  const ancestor = window.location.ancestorOrigins?.[0];
+  if (ancestor) return ancestor;
+  if (document.referrer) {
+    try {
+      return new URL(document.referrer).origin;
+    } catch {
+      /* fall through */
+    }
+  }
+  return "*";
+}
+
 function postToParent(message: ZeeMobileMessage): void {
-  window.parent.postMessage(message, "*");
+  window.parent.postMessage(message, parentOrigin());
 }
 
 /** Notify the native shell to wipe stored session (WebView sign-out). */

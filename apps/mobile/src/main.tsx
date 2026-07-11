@@ -87,13 +87,13 @@ function App() {
   }, [refreshServers]);
 
   useEffect(() => {
-    void checkNetwork();
+    checkNetwork().catch(() => {});
     return onNetworkChange((connected) => {
       setOnline(connected);
       if (!connected) setView("offline");
       else {
         setView("servers");
-        void refreshServers();
+        refreshServers().catch(() => {});
       }
     });
   }, [checkNetwork, refreshServers]);
@@ -222,17 +222,19 @@ function App() {
   );
 
   useEffect(() => {
-    void CapApp.getLaunchUrl().then((result) => {
-      if (result?.url) void handleIncomingUrl(result.url);
-    });
+    CapApp.getLaunchUrl()
+      .then((result) => {
+        if (result?.url) handleIncomingUrl(result.url).catch(() => {});
+      })
+      .catch(() => {});
   }, [handleIncomingUrl]);
 
   useEffect(() => {
     const sub = CapApp.addListener("appUrlOpen", ({ url }) => {
-      void handleIncomingUrl(url);
+      handleIncomingUrl(url).catch(() => {});
     });
     return () => {
-      void sub.then((handle) => handle.remove());
+      sub.then((handle) => handle.remove()).catch(() => {});
     };
   }, [handleIncomingUrl]);
 
@@ -295,7 +297,12 @@ function App() {
 
   if (view === "offline" || !online) {
     return (
-      <OfflineScreen locale={locale} onRetry={() => void checkNetwork()} />
+      <OfflineScreen
+        locale={locale}
+        onRetry={() => {
+          checkNetwork().catch(() => {});
+        }}
+      />
     );
   }
 
@@ -321,12 +328,12 @@ function App() {
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
           <button
             type="button"
-            onClick={() =>
-              void enableBiometricsForActive(
+            onClick={() => {
+              enableBiometricsForActive(
                 authPrompt.origin,
                 authPrompt.sessionToken,
-              )
-            }
+              ).catch(() => {});
+            }}
           >
             {t(locale, "auth.enableBiometrics")}
           </button>
@@ -363,7 +370,7 @@ function App() {
             setView("servers");
           }}
           onLogout={() => {
-            void clearSessionForServer(webviewSession.origin);
+            clearSessionForServer(webviewSession.origin).catch(() => {});
             setWebviewSession(null);
             setUpload(null);
             setView("servers");
@@ -489,7 +496,7 @@ function App() {
         }}
         onOpen={(id) => {
           const server = servers.find((s) => s.id === id);
-          if (server) void openServer(server);
+          if (server) openServer(server).catch(() => {});
         }}
       />
     </>

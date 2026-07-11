@@ -55,7 +55,9 @@ export async function syncAdminsFromEnv(): Promise<{
   removed: string[];
 }> {
   const current = normalizeAdminEmails();
-  const currentKey = JSON.stringify([...current].sort());
+  const currentKey = JSON.stringify(
+    [...current].sort((a, b) => a.localeCompare(b)),
+  );
 
   let raw: string | null = null;
   try {
@@ -116,7 +118,7 @@ function emitAuthActivity<T extends AuthAuditType>(
   type: T,
   details: ActivityDetails<T>,
 ): void {
-  void import("@/lib/activityLogger")
+  import("@/lib/activityLogger")
     .then(({ logActivity }) => logActivity(type, details))
     .catch((error) => {
       logger.error({ err: error, type }, "[Auth] Failed to record auth event");

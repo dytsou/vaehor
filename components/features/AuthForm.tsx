@@ -94,7 +94,7 @@ export default function AuthForm({
     const interval = setInterval(() => {
       setRefreshCountdown((previous) => {
         if (previous <= 1) {
-          void checkAccess();
+          checkAccess().catch(() => {});
           return 5;
         }
 
