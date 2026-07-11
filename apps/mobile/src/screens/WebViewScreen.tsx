@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "../lib/i18n";
 import { t } from "../lib/i18n";
 import { appendBootstrapRedirect } from "../lib/deep-link";
@@ -16,7 +16,7 @@ export function WebViewScreen({
   onLogout,
   onBack,
   onUploadProgress,
-}: {
+}: Readonly<{
   locale: Locale;
   origin: string;
   sessionToken: string;
@@ -25,7 +25,7 @@ export function WebViewScreen({
   onLogout: () => void;
   onBack: () => void;
   onUploadProgress?: (progress: NativeUploadProgress) => void;
-}) {
+}>) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [frameSrc, setFrameSrc] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +79,35 @@ export function WebViewScreen({
     });
   }, [frameSrc, onLogout, onUploadProgress, origin, sessionToken]);
 
+  let body: ReactNode;
+  if (error) {
+    body = <p style={{ padding: "1rem", color: "#b00020" }}>{error}</p>;
+  } else if (frameSrc) {
+    body = (
+      <iframe
+        ref={iframeRef}
+        title={t(locale, "webview.title")}
+        src={frameSrc}
+        style={{ flex: 1, border: "none", width: "100%" }}
+        onLoad={(event) => {
+          const frame = event.currentTarget;
+          try {
+            const href = frame.contentWindow?.location.href;
+            if (!href) return;
+            const path = new URL(href).pathname;
+            if (path.endsWith("/login") || path.includes("/api/auth/signin")) {
+              onLogout();
+            }
+          } catch {
+            // same-origin dev only; production uses postMessage logout bridge
+          }
+        }}
+      />
+    );
+  } else {
+    body = <p style={{ padding: "1rem" }}>{t(locale, "webview.loading")}</p>;
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <div
@@ -96,34 +125,7 @@ export function WebViewScreen({
           {t(locale, "webview.signOut")}
         </button>
       </div>
-      {error ? (
-        <p style={{ padding: "1rem", color: "#b00020" }}>{error}</p>
-      ) : frameSrc ? (
-        <iframe
-          ref={iframeRef}
-          title={t(locale, "webview.title")}
-          src={frameSrc}
-          style={{ flex: 1, border: "none", width: "100%" }}
-          onLoad={(event) => {
-            const frame = event.currentTarget;
-            try {
-              const href = frame.contentWindow?.location.href;
-              if (!href) return;
-              const path = new URL(href).pathname;
-              if (
-                path.endsWith("/login") ||
-                path.includes("/api/auth/signin")
-              ) {
-                onLogout();
-              }
-            } catch {
-              // same-origin dev only; production uses postMessage logout bridge
-            }
-          }}
-        />
-      ) : (
-        <p style={{ padding: "1rem" }}>{t(locale, "webview.loading")}</p>
-      )}
+      {body}
     </div>
   );
 }
