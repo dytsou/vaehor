@@ -13,7 +13,9 @@ describe("deploy/docker entrypoint contract", () => {
   });
 
   it("installs global prisma matching the lockfile major version", () => {
-    expect(dockerfile).toContain("npm install -g prisma@7.7.0");
+    expect(dockerfile).toContain(
+      "npm install -g prisma@7.7.0 --ignore-scripts",
+    );
   });
 
   it("copies entrypoint.sh with execute permission", () => {

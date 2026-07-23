@@ -34,7 +34,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install Prisma CLI
-        run: npm install -g prisma@7.7.0
+        run: npm install -g prisma@7.7.0 --ignore-scripts
 
       - name: Run entrypoint integration test
         run: pnpm test:integration:entrypoint

@@ -15,7 +15,7 @@ RUN set -eux; \
   done
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g pnpm@11
+RUN npm install -g pnpm@11.17.0 --ignore-scripts
 WORKDIR /app
 
 # Stage 2: Dependencies
@@ -23,7 +23,9 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 COPY package.json ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+  pnpm install --offline --frozen-lockfile --ignore-scripts && \
+  pnpm rebuild $(node -e "const fs=require('fs');const m=fs.readFileSync('pnpm-workspace.yaml','utf8').match(/^allowBuilds:\n((?:  .+\n)*)/m);if(!m)process.exit(1);console.log([...m[1].matchAll(/^  \"?([^\":]+)\"?:/gm)].map(x=>x[1]).join(' '));")
 
 # Stage 3: Builder
 FROM base AS builder
@@ -83,9 +85,9 @@ RUN addgroup --system --gid 1001 nodejs && \
   done
 
 # Install prisma CLI for migrations; bcryptjs for hash-password.sh (omitted from standalone trace)
-RUN npm install -g prisma@7.7.0 && \
+RUN npm install -g prisma@7.7.0 --ignore-scripts && \
   mkdir -p /app/hash-tool && cd /app/hash-tool && \
-  npm install bcryptjs@3.0.2 --omit=dev --no-package-lock && \
+  npm install bcryptjs@3.0.2 --omit=dev --no-package-lock --ignore-scripts && \
   chmod -R a-w /app/hash-tool
 
 # Copy necessary files from builder (root-owned, no write bit — S6504)
