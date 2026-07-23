@@ -15,7 +15,7 @@ FAIL=0
 
 # 1. Formatting Check (Prettier)
 echo -ne "  Checking formatting (Prettier)... "
-if npx prettier --check . > /dev/null 2>&1; then
+if pnpm exec prettier --check . > /dev/null 2>&1; then
     echo -e "${GREEN}✅ PASSED${NC}"
 else
     echo -e "${RED}❌ FAILED${NC}"
@@ -24,7 +24,7 @@ fi
 
 # 2. Linting (ESLint)
 echo -ne "  Checking linting (ESLint)...     "
-if npx eslint . > /dev/null 2>&1; then
+if pnpm exec eslint . > /dev/null 2>&1; then
     echo -e "${GREEN}✅ PASSED${NC}"
 else
     echo -e "${RED}❌ FAILED${NC}"
@@ -33,7 +33,7 @@ fi
 
 # 3. Type Checking (TypeScript)
 echo -ne "  Checking types (TypeScript)...   "
-if npx tsc --noEmit > /dev/null 2>&1; then
+if pnpm exec tsc --noEmit > /dev/null 2>&1; then
     echo -e "${GREEN}✅ PASSED${NC}"
 else
     echo -e "${RED}❌ FAILED${NC}"
