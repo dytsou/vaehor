@@ -104,11 +104,8 @@ jobs:
           name: mobile-android-tree
           path: apps/mobile
 
-      - name: Add iOS platform and sync
-        run: |
-          cd apps/mobile
-          pnpm exec cap add ios
-          pnpm exec cap sync ios
+      - name: Sync iOS platform
+        run: pnpm --filter @vaehor/mobile run cap:sync:ios
 
       - name: Install CocoaPods
         run: pod install --project-directory=apps/mobile/ios/App
