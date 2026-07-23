@@ -28,7 +28,7 @@ fail() {
 
 command -v psql >/dev/null 2>&1 || fail "psql not found — install postgresql-client"
 command -v prisma >/dev/null 2>&1 ||
-  fail "prisma not found — run: pnpm install (or npm install -g prisma@7.7.0)"
+  fail "prisma not found — run: pnpm install (local prisma is on PATH via node_modules/.bin)"
 
 if ! psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c '\q' 2>/dev/null; then
   fail "Postgres not reachable at ${PGHOST}:${PGPORT} — run: pnpm deps:up"

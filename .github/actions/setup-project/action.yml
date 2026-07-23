@@ -23,14 +23,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: |
-        pnpm install --frozen-lockfile --ignore-scripts
-        pnpm rebuild $(node -e "
-        const fs=require('fs');
-        const m=fs.readFileSync('pnpm-workspace.yaml','utf8').match(/^allowBuilds:\n((?:  .+\n)*)/m);
-        if(!m) process.exit(1);
-        console.log([...m[1].matchAll(/^  \"?([^\":]+)\"?:/gm)].map(x=>x[1]).join(' '));
-        ")
+      run: pnpm run ci:install
 
     - name: Build MCP package
       shell: bash
