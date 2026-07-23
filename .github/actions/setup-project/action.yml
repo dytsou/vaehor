@@ -23,7 +23,7 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      run: pnpm run ci:install
+      run: pnpm run ci:deps
 
     - name: Build MCP package
       shell: bash
