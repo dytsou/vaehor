@@ -134,6 +134,7 @@ export function SecurityPolicies({
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
+          type="button"
           onClick={() => setLoginRequired(!loginRequired)}
           className={cn(
             "flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-200",
