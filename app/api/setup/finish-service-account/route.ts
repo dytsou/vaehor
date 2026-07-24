@@ -14,7 +14,7 @@ import { z } from "zod";
 
 function escapeForDoubleQuotedEnv(value: string): string {
   return value
-    .replace(/\\/g, "\\\\")
+    .replaceAll(/\\/g, "\\\\")
     .replace(/\n/g, "\\n")
     .replace(/"/g, '\\"');
 }
