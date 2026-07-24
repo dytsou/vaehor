@@ -20,7 +20,7 @@ interface SearchProps {
   onSearchClose?: () => void;
 }
 
-export default function Search({ onSearchClose }: SearchProps) {
+export default function Search({ onSearchClose }: Readonly<SearchProps>) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
