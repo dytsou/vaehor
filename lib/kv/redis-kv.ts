@@ -58,17 +58,15 @@ interface RedisClientLike {
   pipeline(): RedisPipelineClient;
 }
 
-interface RedisConstructor {
-  new (
-    url: string,
-    options: {
-      maxRetriesPerRequest: number;
-      retryStrategy: (times: number) => number | null;
-      lazyConnect: boolean;
-      enableReadyCheck: boolean;
-    },
-  ): RedisClientLike;
-}
+type RedisConstructor = new (
+  url: string,
+  options: {
+    maxRetriesPerRequest: number;
+    retryStrategy: (times: number) => number | null;
+    lazyConnect: boolean;
+    enableReadyCheck: boolean;
+  },
+) => RedisClientLike;
 
 function getRedisConstructor(): RedisConstructor {
   if (!RedisClient) {
@@ -78,7 +76,7 @@ function getRedisConstructor(): RedisConstructor {
 }
 
 export class RedisKV implements KVClient {
-  private client: RedisClientLike;
+  private readonly client: RedisClientLike;
 
   constructor(url: string) {
     const IORedis = getRedisConstructor();
