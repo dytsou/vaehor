@@ -22,7 +22,6 @@ export default function ListView({
   onPrefetchItem,
   selectedFiles,
   isBulkMode,
-  shareLinks,
   density,
   isFetchingNextPage,
   nextPageToken,
@@ -131,7 +130,6 @@ export default function ListView({
                   density={density}
                   uploadProgress={file.uploadProgress}
                   uploadStatus={file.uploadStatus}
-                  uploadError={file.uploadError}
                   isNavigating={navigatingId === file.id}
                 />
               </div>

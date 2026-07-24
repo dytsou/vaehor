@@ -24,7 +24,6 @@ export default function GalleryView({
   onPrefetchItem,
   selectedFiles,
   isBulkMode,
-  shareLinks,
   density,
   isFetchingNextPage,
   nextPageToken,
@@ -89,7 +88,6 @@ export default function GalleryView({
                   density={density}
                   uploadProgress={file.uploadProgress}
                   uploadStatus={file.uploadStatus}
-                  uploadError={file.uploadError}
                   isNavigating={navigatingId === file.id}
                 />
               </div>

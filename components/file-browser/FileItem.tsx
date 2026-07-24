@@ -45,7 +45,6 @@ interface FileItemProps {
   density?: "comfortable" | "compact";
   uploadProgress?: number;
   uploadStatus?: "uploading" | "error" | "success";
-  uploadError?: string;
   isNavigating?: boolean;
   onPrefetchItem?: (file: DriveFile) => void;
 }
