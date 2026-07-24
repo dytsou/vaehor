@@ -6,8 +6,8 @@ import { X, Keyboard, Command, Search, Delete, Edit2 } from "lucide-react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useTranslations } from "next-intl";
 
-function CloseHintBold({ children }: Readonly<{ children: ReactNode }>) {
-  return <kbd className="font-bold">{children}</kbd>;
+function CloseHintBold(chunks: ReactNode) {
+  return <kbd className="font-bold">{chunks}</kbd>;
 }
 
 export default function KeyboardShortcutsModal() {

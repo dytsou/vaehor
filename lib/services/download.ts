@@ -406,7 +406,7 @@ export function prepareResponseHeaders(
   const responseHeaders = new Headers();
   const encodedFileName = encodeURIComponent(filename).replace(
     /['()]/g,
-    (char) => "%" + char.codePointAt(0).toString(16).toUpperCase(),
+    (char) => "%" + (char.codePointAt(0) ?? 0).toString(16).toUpperCase(),
   );
 
   const isDirectDownload = !range && !secFetchDest;
