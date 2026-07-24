@@ -128,7 +128,7 @@ export function FormatErrorOverlay({
   getAbsoluteSrc,
   tPlayer,
   webViewLink,
-}: FormatErrorOverlayProps) {
+}: Readonly<FormatErrorOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
