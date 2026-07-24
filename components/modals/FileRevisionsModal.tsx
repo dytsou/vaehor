@@ -112,6 +112,7 @@ export default function FileRevisionsModal({
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDownload(rev.id)}
                     className="p-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full"
                     title={t("download")}
