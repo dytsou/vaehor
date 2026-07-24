@@ -367,6 +367,7 @@ export default function ManualDrivesManager(props: {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium">{t("autoDiscovery")}</h3>
             <button
+              type="button"
               onClick={handleScanDrives}
               disabled={isScanning}
               className="flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
