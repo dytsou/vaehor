@@ -27,7 +27,7 @@ export function parseShareLinkPath(path: string): ParsedSharePath | null {
       fileId: decodeURIComponent(fileMatch[2]),
     };
   }
-  const folderMatch = trimmed.match(/^\/folder\/([^/]+)\/?$/);
+  const folderMatch = /^\/folder\/([^/]+)\/?$/.exec(trimmed);
   if (folderMatch) {
     return {
       kind: "folder",
