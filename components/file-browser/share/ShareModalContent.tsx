@@ -296,7 +296,7 @@ export function DurationSettings({
             type="number"
             value={customDuration}
             onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
+              const val = Number.parseInt(e.target.value, 10);
               setCustomDuration(isNaN(val) ? "" : val);
             }}
             className="w-full px-4 py-2.5 rounded-xl border-2 border-transparent bg-background/50 focus:border-primary/50 focus:ring-0 transition-all outline-none"
