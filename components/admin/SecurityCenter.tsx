@@ -213,6 +213,7 @@ export default function SecurityCenter() {
               Acknowledge
             </button>
             <button
+              type="button"
               disabled={!canResolve || updatingIncidentId === incident.id}
               onClick={() => setIncidentStatus(incident.id, "resolved")}
               className="px-2.5 py-1.5 text-xs rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
