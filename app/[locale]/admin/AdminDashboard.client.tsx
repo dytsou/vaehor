@@ -272,6 +272,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                               </span>
 
                               <button
+                                type="button"
                                 onClick={() => handleDelete(req, "request")}
                                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
                               >
