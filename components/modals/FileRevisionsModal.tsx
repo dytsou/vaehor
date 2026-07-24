@@ -112,7 +112,9 @@ export default function FileRevisionsModal({
                         <User size={12} />{" "}
                         {rev.lastModifyingUser?.displayName || t("unknownUser")}
                       </span>
-                      <span>{formatBytes(parseInt(rev.size || "0"))}</span>
+                      <span>
+                        {formatBytes(Number.parseInt(rev.size || "0"))}
+                      </span>
                     </div>
                   </div>
                   <button
