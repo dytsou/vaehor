@@ -10,7 +10,9 @@ interface GlobalDropZoneProps {
   onDrop: (files: FileList) => void;
 }
 
-export default function GlobalDropZone({ onDrop }: GlobalDropZoneProps) {
+export default function GlobalDropZone({
+  onDrop,
+}: Readonly<GlobalDropZoneProps>) {
   const t = useTranslations("GlobalDropZone");
   const [isDragging, setIsDragging] = useState(false);
   const { user } = useAppStore();
