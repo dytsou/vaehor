@@ -66,6 +66,7 @@ export default function FileDetailModalView({
           )}
           {isDocPreviewable && !showDocPreview && (
             <button
+              type="button"
               onClick={onShowDocPreview}
               className="p-2 bg-black/40 rounded-full"
             >
