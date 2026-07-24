@@ -27,7 +27,7 @@ async function fetchStorageDetails() {
 
   const envLimitGB = process.env.STORAGE_LIMIT_GB;
   const limit = envLimitGB
-    ? parseInt(envLimitGB) * 1024 * 1024 * 1024
+    ? Number.parseInt(envLimitGB) * 1024 * 1024 * 1024
     : parseInt(aboutData.storageQuota.limit, 10);
 
   const largestFilesParams = new URLSearchParams({
