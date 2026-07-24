@@ -56,7 +56,7 @@ export default function VideoPlayer({
   subtitleTracks,
   onEnded,
   webViewLink,
-}: VideoAudioPreviewProps) {
+}: Readonly<VideoAudioPreviewProps>) {
   const {
     videoProgress,
     setVideoProgress,
