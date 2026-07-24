@@ -29,7 +29,7 @@ function resolveRootFolderIdFromEnv(): string {
 }
 
 function normalizeServiceAccountKey(raw: string): string {
-  return raw.replace(/\\n/g, "\n").trim();
+  return raw.replaceAll(/\\n/g, "\n").trim();
 }
 
 export async function getAppCredentials(): Promise<AppDriveCredentials | null> {
