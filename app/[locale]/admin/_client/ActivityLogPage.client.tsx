@@ -53,6 +53,7 @@ export default function ActivityLogPageClient(props: {
     >
       <div className="flex items-center gap-4 mb-8">
         <button
+          type="button"
           onClick={() => router.back()}
           className="p-2 rounded-full hover:bg-accent transition-colors"
         >
