@@ -15,7 +15,7 @@ export default function RenameModal({
   currentName,
   onClose,
   onRename,
-}: RenameModalProps) {
+}: Readonly<RenameModalProps>) {
   const [newName, setNewName] = useState(currentName);
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("RenameModal");
