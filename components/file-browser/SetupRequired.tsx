@@ -19,7 +19,7 @@ interface SetupRequiredProps {
 export default function SetupRequired({
   message,
   type = "expired",
-}: SetupRequiredProps) {
+}: Readonly<SetupRequiredProps>) {
   const isExpired = type === "expired";
 
   const containerVariants = {
