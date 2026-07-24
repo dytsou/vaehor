@@ -49,6 +49,7 @@ export default function MobileBottomNav() {
 
           return (
             <button
+              type="button"
               key={item.path}
               onClick={() => {
                 if ("vibrate" in navigator) {
