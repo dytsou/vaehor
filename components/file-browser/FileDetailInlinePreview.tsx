@@ -78,9 +78,11 @@ function FileDetailEditPreview({
   isFetchingEditableContent,
   editableContent,
   onEditableContentChange,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  "isFetchingEditableContent" | "editableContent" | "onEditableContentChange"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    "isFetchingEditableContent" | "editableContent" | "onEditableContentChange"
+  >
 >) {
   if (isFetchingEditableContent) {
     return <LoadingPreview />;
