@@ -84,7 +84,7 @@ export default function ShareButton({
     try {
       const durationValue =
         typeof customDuration === "string"
-          ? parseInt(customDuration, 10) || 1
+          ? Number.parseInt(customDuration, 10) || 1
           : customDuration;
       const finalDuration = Math.max(1, durationValue);
       const expiresIn =
