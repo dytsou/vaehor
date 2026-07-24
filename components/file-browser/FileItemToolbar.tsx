@@ -135,6 +135,7 @@ export default function FileItemToolbar({
 
       {!isUploading && !isBulkMode && (
         <button
+          type="button"
           onClick={(event) =>
             openFileItemMenuFromButton(event, file, onContextMenu)
           }
