@@ -78,6 +78,7 @@ function MenuItem({
   return (
     <li>
       <button
+        type="button"
         onClick={onClick}
         disabled={disabled}
         className={cn(
