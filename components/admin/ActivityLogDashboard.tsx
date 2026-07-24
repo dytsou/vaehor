@@ -248,7 +248,7 @@ export default function ActivityLogDashboard() {
           <option value={ALL_TYPES}>{t("allTypes")}</option>
           {logTypes.map((type) => (
             <option key={type} value={type}>
-              {type.replace(/_/g, " ")}
+              {type.replaceAll(/_/g, " ")}
             </option>
           ))}
         </select>
