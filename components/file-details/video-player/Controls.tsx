@@ -146,6 +146,7 @@ export function VideoControlsOverlay({
 
       {!isMobile && !preventDownload && (
         <button
+          type="button"
           onClick={onToggleTheater}
           className={cn(
             "p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all shadow-lg",
