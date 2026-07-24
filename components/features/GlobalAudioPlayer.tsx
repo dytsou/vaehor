@@ -227,6 +227,7 @@ export default function GlobalAudioPlayer() {
               </button>
 
               <button
+                type="button"
                 onClick={playNextTrack}
                 className="p-2 text-foreground hover:text-primary transition-colors"
                 disabled={audioQueue.length <= 1}
