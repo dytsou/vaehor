@@ -252,7 +252,7 @@ export default function SecurityCenter() {
         <AlertCircle className="text-red-500 mt-0.5 shrink-0" size={16} />
         <div>
           <p className="font-medium text-foreground">
-            {event.type.replaceAll(/_/g, " ")}
+            {event.type.replaceAll("_", " ")}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 break-all">
             User: {event.userEmail || event.ipAddress || "Unknown"}

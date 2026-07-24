@@ -120,7 +120,7 @@
   },
   "DeleteConfirm": {
     "title": "Delete Item",
-    "message": "Are you sure you want to delete {itemName}? This action cannot be undone.",
+    "message": "Are you sure you want to delete <bold>{itemName}</bold>? This action cannot be undone.",
     "delete": "Delete",
     "deleting": "Deleting...",
     "cancel": "Cancel"
@@ -164,7 +164,7 @@
     "accessDenied": "Access denied: You are not an Admin."
   },
   "MoveModal": {
-    "title": "Move {itemName}",
+    "title": "Move <bold>{itemName}</bold>",
     "selectDest": "Select destination folder:",
     "noSubfolders": "No subfolders",
     "cancel": "Cancel",

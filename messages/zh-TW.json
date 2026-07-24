@@ -120,7 +120,7 @@
   },
   "DeleteConfirm": {
     "title": "刪除項目",
-    "message": "確定要刪除 {itemName} 嗎？此動作無法復原。",
+    "message": "確定要刪除 <bold>{itemName}</bold> 嗎？此動作無法復原。",
     "delete": "刪除",
     "deleting": "刪除中...",
     "cancel": "取消"
@@ -164,7 +164,7 @@
     "accessDenied": "存取被拒：你不是管理員。"
   },
   "MoveModal": {
-    "title": "移動 {itemName}",
+    "title": "移動 <bold>{itemName}</bold>",
     "selectDest": "選取目的資料夾：",
     "noSubfolders": "沒有子資料夾",
     "cancel": "取消",

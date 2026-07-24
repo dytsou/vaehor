@@ -13,6 +13,7 @@ import { useAppStore } from "@/lib/store";
 import type { DriveFile } from "@/lib/drive";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 interface MoveModalProps {
   fileToMove?: DriveFile;
@@ -22,8 +23,8 @@ interface MoveModalProps {
   initialFolderId?: string;
 }
 
-function BoldItemName({ name }: Readonly<{ name: string }>) {
-  return <span className="font-bold">{name}</span>;
+function RichBold(chunks: ReactNode) {
+  return <span className="font-bold">{chunks}</span>;
 }
 
 export default function MoveModal({
@@ -166,7 +167,8 @@ export default function MoveModal({
           </button>
           <h3 className="text-lg font-semibold mb-2">
             {t.rich("title", {
-              itemName: () => <BoldItemName name={itemName} />,
+              bold: RichBold,
+              itemName,
             })}
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
