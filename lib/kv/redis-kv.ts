@@ -337,7 +337,7 @@ export class RedisKV implements KVClient {
 
   async zscore(key: string, member: string): Promise<number | null> {
     const score = await this.client.zscore(key, member);
-    return score !== null ? parseFloat(score) : null;
+    return score !== null ? Number.parseFloat(score) : null;
   }
 
   async lpush(key: string, ...values: unknown[]): Promise<number> {

@@ -44,10 +44,12 @@ interface AccessRequest {
   timestamp: number;
 }
 
-export default function UserFolderAccessManager(props: {
-  initialPermissions?: Record<string, string[]>;
-  initialRequests?: AccessRequest[];
-}) {
+export default function UserFolderAccessManager(
+  props: Readonly<{
+    initialPermissions?: Record<string, string[]>;
+    initialRequests?: AccessRequest[];
+  }>,
+) {
   const { addToast } = useAppStore();
   const t = useTranslations("UserFolderAccessManager");
   const { confirm } = useConfirm();

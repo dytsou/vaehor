@@ -33,14 +33,16 @@ const LivePerformanceChart = dynamic(
   { ssr: false },
 );
 
-export function AdminSummaryTab(props: {
-  shareLinksCount: number;
-  activeRequestsCount: number;
-  expiredLinksCount: number;
-  adminEmailsCount: number;
-  stats: AdminStats | null;
-  isLoadingStats: boolean;
-}) {
+export function AdminSummaryTab(
+  props: Readonly<{
+    shareLinksCount: number;
+    activeRequestsCount: number;
+    expiredLinksCount: number;
+    adminEmailsCount: number;
+    stats: AdminStats | null;
+    isLoadingStats: boolean;
+  }>,
+) {
   const t = useTranslations("AdminPage");
   const stats = props.stats;
 

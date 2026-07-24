@@ -18,7 +18,7 @@ export async function measure<T>(
       logger.info(
         {
           ...metadata,
-          durationMs: parseFloat(duration.toFixed(2)),
+          durationMs: Number.parseFloat(duration.toFixed(2)),
           perfName: name,
         },
         `[Performance] ${name} took ${duration.toFixed(2)}ms`,
@@ -31,7 +31,7 @@ export async function measure<T>(
     logger.error(
       {
         ...metadata,
-        durationMs: parseFloat(duration.toFixed(2)),
+        durationMs: Number.parseFloat(duration.toFixed(2)),
         perfName: name,
         err: error,
       },

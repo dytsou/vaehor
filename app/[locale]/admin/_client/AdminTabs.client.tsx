@@ -14,11 +14,13 @@ const scrollbarHideStyles = {
   scrollbarWidth: "none" as const,
 };
 
-export function AdminTabs(props: {
-  defaultValue: string;
-  items: AdminTabItem[];
-  children: React.ReactNode;
-}) {
+export function AdminTabs(
+  props: Readonly<{
+    defaultValue: string;
+    items: AdminTabItem[];
+    children: React.ReactNode;
+  }>,
+) {
   return (
     <Tabs defaultValue={props.defaultValue} className="w-full">
       <div

@@ -46,7 +46,7 @@ export function formatBytes(bytes: number, decimals = 2): string {
   const dm = Math.max(0, decimals);
   const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  return `${Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
 
 export function getIcon(mimeType: string): LucideIcon {
@@ -78,7 +78,7 @@ export function getIcon(mimeType: string): LucideIcon {
 
 export const formatDuration = (seconds: number | string): string => {
   const numericSeconds = Number(seconds);
-  if (isNaN(numericSeconds) || numericSeconds < 0) return "00:00";
+  if (Number.isNaN(numericSeconds) || numericSeconds < 0) return "00:00";
 
   const hours = Math.floor(numericSeconds / 3600);
   const minutes = Math.floor((numericSeconds % 3600) / 60);
@@ -292,8 +292,8 @@ export function cleanMediaTitle(filename: string): {
 } {
   const name = filename.replace(/\.[^/.]+$/, "");
 
-  const yearMatch = name.match(
-    /(?:\.|\(|\[| |^)(19\d{2}|20\d{2})(?:\.|\)|\]| |$)/,
+  const yearMatch = /(?:\.|\(|\[| |^)(19\d{2}|20\d{2})(?:\.|\)|\]| |$)/.exec(
+    name,
   );
   const year = yearMatch ? yearMatch[1] : undefined;
 

@@ -204,10 +204,12 @@ async function loadFilePageData(
   }
 }
 
-export default async function FilePage(props: {
-  params: Promise<{ folderId: string; fileId: string; locale: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+export default async function FilePage(
+  props: Readonly<{
+    params: Promise<{ folderId: string; fileId: string; locale: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  }>,
+) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const t = await getTranslations("FilePage");

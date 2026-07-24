@@ -1,5 +1,5 @@
 import { kv } from "@/lib/kv";
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import {
   pageViewEventSchema,
   type DeviceStatsPayload,

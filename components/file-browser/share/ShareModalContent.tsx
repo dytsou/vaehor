@@ -259,7 +259,7 @@ export function SecurityPolicies({
               autoFocus
               onChange={(e) => {
                 const val = Number.parseInt(e.target.value, 10);
-                setMaxUses(isNaN(val) ? "" : val);
+                setMaxUses(Number.isNaN(val) ? "" : val);
               }}
               className="w-full mt-1.5 px-3 py-1.5 rounded-lg border-2 border-primary/20 bg-background text-sm outline-none focus:border-primary/50"
               min="1"
@@ -302,7 +302,7 @@ export function DurationSettings({
             value={customDuration}
             onChange={(e) => {
               const val = Number.parseInt(e.target.value, 10);
-              setCustomDuration(isNaN(val) ? "" : val);
+              setCustomDuration(Number.isNaN(val) ? "" : val);
             }}
             className="w-full px-4 py-2.5 rounded-xl border-2 border-transparent bg-background/50 focus:border-primary/50 focus:ring-0 transition-all outline-none"
             min="1"

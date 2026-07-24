@@ -242,7 +242,7 @@ export const config = {
     ? Number.parseInt(env.STORAGE_LIMIT_GB, 10)
     : null,
   storageWarningThreshold: env.STORAGE_WARNING_THRESHOLD
-    ? parseFloat(env.STORAGE_WARNING_THRESHOLD)
+    ? Number.parseFloat(env.STORAGE_WARNING_THRESHOLD)
     : 0.9,
 
   isEmailEnabled: !!(env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS),

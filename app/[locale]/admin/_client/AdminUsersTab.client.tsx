@@ -14,7 +14,7 @@ import React, { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
-export function AdminUsersTab(props: { sessionEmail: string }) {
+export function AdminUsersTab(props: Readonly<{ sessionEmail: string }>) {
   const { adminEmails, editorEmails, addToast } = useAppStore();
   const { confirm } = useConfirm();
   const router = useRouter();

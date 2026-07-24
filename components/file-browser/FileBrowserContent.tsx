@@ -58,7 +58,9 @@ interface FileBrowserContentProps {
 
 import { useTranslations } from "next-intl";
 
-export default function FileBrowserContent(props: FileBrowserContentProps) {
+export default function FileBrowserContent(
+  props: Readonly<FileBrowserContentProps>,
+) {
   const {
     isLoading,
     sessionStatus,

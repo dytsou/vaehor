@@ -56,9 +56,11 @@ function driveIconClass(drive: ManualDrive) {
   return "bg-blue-100 text-blue-600";
 }
 
-export default function ManualDrivesManager(props: {
-  initialDbDrives?: ManualDrive[];
-}) {
+export default function ManualDrivesManager(
+  props: Readonly<{
+    initialDbDrives?: ManualDrive[];
+  }>,
+) {
   const { addToast } = useAppStore();
   const t = useTranslations("ManualDrivesManager");
   const { confirm } = useConfirm();

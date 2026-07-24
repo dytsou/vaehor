@@ -65,7 +65,7 @@ export default function InfoPanel({
   onAddSubtitle,
   onRemoveSubtitle,
   tmdbGenres = [],
-}: InfoPanelProps) {
+}: Readonly<InfoPanelProps>) {
   const [newTag, setNewTag] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [isShowingSubtitleSelector, setIsShowingSubtitleSelector] =
