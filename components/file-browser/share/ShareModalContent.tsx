@@ -190,6 +190,7 @@ export function SecurityPolicies({
           )}
         >
           <button
+            type="button"
             onClick={() => setHasWatermark(!hasWatermark)}
             className="flex items-center gap-3 text-left w-full"
           >
