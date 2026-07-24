@@ -55,6 +55,7 @@ function FileDetailEditorToolbar({
     <div className="mb-2 flex justify-end gap-2">
       {isEditing && (
         <button
+          type="button"
           onClick={onSave}
           disabled={isSaving}
           className="px-3 py-1 bg-primary text-primary-foreground rounded flex items-center gap-2"
