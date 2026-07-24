@@ -28,7 +28,7 @@ async function fetchStorageDetails() {
   const envLimitGB = process.env.STORAGE_LIMIT_GB;
   const limit = envLimitGB
     ? Number.parseInt(envLimitGB) * 1024 * 1024 * 1024
-    : parseInt(aboutData.storageQuota.limit, 10);
+    : Number.parseInt(aboutData.storageQuota.limit, 10);
 
   const largestFilesParams = new URLSearchParams({
     q: "trashed=false and mimeType != 'application/vnd.google-apps.folder'",
