@@ -25,7 +25,7 @@ export default function SubtitleSelectorModal({
   onSelect,
   onClose,
   existingTracks,
-}: SubtitleSelectorModalProps) {
+}: Readonly<SubtitleSelectorModalProps>) {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations("SubtitleSelector");
