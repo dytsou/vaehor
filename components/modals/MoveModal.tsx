@@ -22,6 +22,10 @@ interface MoveModalProps {
   initialFolderId?: string;
 }
 
+function BoldItemName({ name }: Readonly<{ name: string }>) {
+  return <span className="font-bold">{name}</span>;
+}
+
 export default function MoveModal({
   fileToMove,
   filesToMove,
@@ -162,7 +166,7 @@ export default function MoveModal({
           </button>
           <h3 className="text-lg font-semibold mb-2">
             {t.rich("title", {
-              itemName: () => <span className="font-bold">{itemName}</span>,
+              itemName: () => <BoldItemName name={itemName} />,
             })}
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
