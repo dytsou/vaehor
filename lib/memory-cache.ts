@@ -19,8 +19,13 @@ const MAX_ENTRIES = 1000;
 const CLEANUP_INTERVAL = 60_000;
 
 class MemoryCache {
-  private cache: Map<string, CacheEntry<unknown>> = new Map();
-  private stats: CacheStats = { hits: 0, misses: 0, sets: 0, evictions: 0 };
+  private readonly cache: Map<string, CacheEntry<unknown>> = new Map();
+  private readonly stats: CacheStats = {
+    hits: 0,
+    misses: 0,
+    sets: 0,
+    evictions: 0,
+  };
   private cleanupTimer: NodeJS.Timer | null = null;
 
   constructor() {
