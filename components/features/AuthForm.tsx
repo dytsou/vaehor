@@ -36,7 +36,7 @@ export default function AuthForm({
   folderName,
   isLoading,
   onSubmit,
-}: AuthFormProps) {
+}: Readonly<AuthFormProps>) {
   const [password, setPassword] = useState("");
   const { user, addToast } = useAppStore();
   const [isRequesting, setIsRequesting] = useState(false);
