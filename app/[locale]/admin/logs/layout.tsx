@@ -7,8 +7,8 @@ export const metadata = {
 
 export default function LogsLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return <MainLayout>{children}</MainLayout>;
 }
