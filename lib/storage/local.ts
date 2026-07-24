@@ -78,7 +78,7 @@ export async function listLocalFiles(
       const stats = await fs.stat(filePath);
       const relativePath = path
         .relative(LOCAL_ROOT, filePath)
-        .replace(/\\/g, "/");
+        .replaceAll(/\\/g, "/");
       const entryMimeType =
         getMimeType(entry.name) || "application/octet-stream";
       const isFolder = entry.isDirectory();
