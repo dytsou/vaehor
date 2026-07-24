@@ -270,6 +270,7 @@ export default function ActivityLogDashboard() {
         {totalPages > 1 && !isLoading && (
           <div className="p-4 border-t border-border flex justify-between items-center bg-muted/20">
             <button
+              type="button"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-3 py-1 text-sm font-medium rounded-md hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors"
