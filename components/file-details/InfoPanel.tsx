@@ -352,6 +352,7 @@ export default function InfoPanel({
 
       <div className="grid grid-cols-2 gap-3 mt-8">
         <button
+          type="button"
           onClick={onCopyLink}
           className="flex items-center justify-center px-4 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-semibold transition-colors"
         >
