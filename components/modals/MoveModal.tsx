@@ -185,32 +185,40 @@ export default function MoveModal({
           </div>
 
           <div className="h-64 overflow-y-auto border rounded-md">
-            {isLoading || isInitializing ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="animate-spin" />
-              </div>
-            ) : subfolders.length > 0 ? (
-              <ul>
-                {subfolders.map((folder) => (
-                  <li key={folder.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleFolderClick(folder)}
-                      className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-accent"
-                    >
-                      <span className="flex items-center gap-2">
-                        <FolderIcon size={16} /> {folder.name}
-                      </span>
-                      <ChevronRight size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                <p>{t("noSubfolders")}</p>
-              </div>
-            )}
+            {(() => {
+              if (isLoading || isInitializing) {
+                return (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="animate-spin" />
+                  </div>
+                );
+              }
+              if (subfolders.length > 0) {
+                return (
+                  <ul>
+                    {subfolders.map((folder) => (
+                      <li key={folder.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleFolderClick(folder)}
+                          className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-accent"
+                        >
+                          <span className="flex items-center gap-2">
+                            <FolderIcon size={16} /> {folder.name}
+                          </span>
+                          <ChevronRight size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              return (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                  <p>{t("noSubfolders")}</p>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="flex justify-end gap-2 mt-6">
