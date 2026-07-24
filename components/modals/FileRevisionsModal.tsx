@@ -57,6 +57,54 @@ export default function FileRevisionsModal({
     );
   };
 
+  let revisionsContent;
+  if (isLoading) {
+    revisionsContent = (
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  } else if (revisions.length === 0) {
+    revisionsContent = (
+      <div className="text-center text-muted-foreground p-8">
+        {t("noRevisions")}
+      </div>
+    );
+  } else {
+    revisionsContent = (
+      <div className="space-y-3">
+        {revisions.map((rev) => (
+          <div
+            key={rev.id}
+            className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border hover:bg-muted/60 transition-colors"
+          >
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Clock size={14} className="text-muted-foreground" />
+                {new Date(rev.modifiedTime).toLocaleString("id-ID")}
+              </div>
+              <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <User size={12} />{" "}
+                  {rev.lastModifyingUser?.displayName || t("unknownUser")}
+                </span>
+                <span>{formatBytes(Number.parseInt(rev.size || "0"))}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleDownload(rev.id)}
+              className="p-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full"
+              title={t("download")}
+            >
+              <Download size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -86,50 +134,7 @@ export default function FileRevisionsModal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          {isLoading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : revisions.length === 0 ? (
-            <div className="text-center text-muted-foreground p-8">
-              {t("noRevisions")}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {revisions.map((rev) => (
-                <div
-                  key={rev.id}
-                  className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border hover:bg-muted/60 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <Clock size={14} className="text-muted-foreground" />
-                      {new Date(rev.modifiedTime).toLocaleString("id-ID")}
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <User size={12} />{" "}
-                        {rev.lastModifyingUser?.displayName || t("unknownUser")}
-                      </span>
-                      <span>
-                        {formatBytes(Number.parseInt(rev.size || "0"))}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(rev.id)}
-                    className="p-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full"
-                    title={t("download")}
-                  >
-                    <Download size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="flex-1 overflow-y-auto p-4">{revisionsContent}</div>
       </motion.div>
     </motion.div>
   );
