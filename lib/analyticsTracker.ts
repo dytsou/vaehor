@@ -49,7 +49,7 @@ export interface AnalyticsData {
 }
 
 function generateId(): string {
-  return `${Date.now()}-${randomUUID().replace(/-/g, "").substring(0, 12)}`;
+  return `${Date.now()}-${randomUUID().replaceAll(/-/g, "").substring(0, 12)}`;
 }
 
 export async function trackPageView(params: {
