@@ -319,6 +319,7 @@ export default function Header() {
           <div className="flex items-center gap-3 shrink-0">
             {!isSharePage && !shareToken && (
               <button
+                type="button"
                 id="header-sidebar-toggle"
                 onClick={toggleSidebar}
                 className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
