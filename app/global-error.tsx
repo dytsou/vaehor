@@ -7,10 +7,10 @@ import { AlertTriangle } from "lucide-react";
 export default function GlobalError({
   error,
   reset,
-}: {
+}: Readonly<{
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}>) {
   useEffect(() => {
     console.error("[GlobalError]", error);
   }, [error]);
