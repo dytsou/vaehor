@@ -20,7 +20,7 @@ interface ExternalPlayerMenuProps {
 export function ExternalPlayerMenu({
   getAbsoluteSrc,
   onCopyUrl,
-}: ExternalPlayerMenuProps) {
+}: Readonly<ExternalPlayerMenuProps>) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
