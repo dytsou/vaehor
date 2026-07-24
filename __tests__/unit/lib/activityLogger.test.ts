@@ -140,7 +140,7 @@ describe("activityLogger", () => {
       vi.mocked(db.activityLog.findMany).mockResolvedValueOnce(mockLogs as any);
 
       const logs = await getActivityLogs();
-      expect(logs.length).toBe(1);
+      expect(logs).toHaveLength(1);
       expect(logs[0].type).toBe("UPLOAD");
       expect(logs[0].metadata).toEqual({
         operation: "file_upload",
