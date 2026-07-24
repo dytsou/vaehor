@@ -32,6 +32,7 @@ export default function DriveList({ drives, t }: Readonly<DriveListProps>) {
   return (
     <div className="mb-4 space-y-1 border-t border-border pt-4 mt-2">
       <button
+        type="button"
         onClick={() => setIsDrivesExpanded(!isDrivesExpanded)}
         className="flex items-center justify-between w-full px-3 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
       >
