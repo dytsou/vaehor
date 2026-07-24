@@ -166,6 +166,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
     >
       <div className="flex items-center gap-4 mb-8">
         <button
+          type="button"
           onClick={() => router.back()}
           className="p-2.5 rounded-full bg-card border hover:bg-accent transition-colors shadow-sm"
           aria-label="Kembali"
