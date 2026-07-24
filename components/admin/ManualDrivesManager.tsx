@@ -273,6 +273,7 @@ export default function ManualDrivesManager(props: {
               )}
               {drive.source === "db" ? (
                 <button
+                  type="button"
                   onClick={() => handleDelete(drive.id)}
                   className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                   title={t("deleteFromDb")}
