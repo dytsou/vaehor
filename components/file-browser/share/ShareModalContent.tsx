@@ -38,6 +38,7 @@ export function ShareSidebar({
 
       <div className="space-y-2 flex-grow">
         <button
+          type="button"
           onClick={() => setActiveTab("timed")}
           className={cn(
             "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 group text-left",
