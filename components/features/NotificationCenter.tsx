@@ -116,6 +116,7 @@ export default function NotificationCenter() {
                   <Check size={16} /> {t("markRead")}
                 </button>
                 <button
+                  type="button"
                   onClick={clearNotifications}
                   className="flex-1 py-2 px-4 rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/10 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
