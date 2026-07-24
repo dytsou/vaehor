@@ -35,6 +35,7 @@ export default function NavSection({ t }: Readonly<NavSectionProps>) {
   return (
     <div className="mb-4 space-y-0.5">
       <button
+        type="button"
         onClick={() => handleNav("home", "/")}
         id="sidebar-nav-home"
         className={cn(
