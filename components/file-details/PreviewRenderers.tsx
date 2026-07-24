@@ -53,6 +53,7 @@ export const FileIconPlaceholder: React.FC<{
       </div>
       {isPreviewable ? (
         <button
+          type="button"
           onClick={onPreview}
           className="group relative inline-flex items-center gap-3 px-8 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all active:scale-95"
         >
