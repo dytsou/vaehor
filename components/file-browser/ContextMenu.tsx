@@ -334,6 +334,7 @@ export default function ContextMenu({
 
           <div className="p-4 pt-2 mt-2 md:hidden bg-background">
             <button
+              type="button"
               onClick={onClose}
               className="w-full py-3.5 bg-muted/50 text-foreground rounded-2xl font-semibold active:scale-95 transition-transform"
             >
