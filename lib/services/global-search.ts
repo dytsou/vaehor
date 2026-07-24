@@ -116,7 +116,7 @@ export function parseGlobalSearchParams(
   return {
     ok: true,
     params: {
-      searchTerm: sanitizedSearchTerm.replace(/'/g, "''"),
+      searchTerm: sanitizedSearchTerm.replaceAll(/'/g, "''"),
       searchType: searchParams.get("searchType") || "name",
       mimeType: searchParams.get("mimeType"),
       modifiedTime: searchParams.get("modifiedTime"),
