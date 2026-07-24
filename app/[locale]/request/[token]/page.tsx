@@ -213,6 +213,7 @@ export default function PublicUploadPage() {
                 )}
 
                 <button
+                  type="button"
                   onClick={() => {
                     setUploadStatus("idle");
                     setUploadProgress({});
