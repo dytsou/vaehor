@@ -280,6 +280,7 @@ export default function FileBrowserHeader({
             <>
               <div className="w-px h-6 bg-border"></div>
               <button
+                type="button"
                 onClick={() => onSetView("gallery")}
                 className={cn(
                   "p-1.5 rounded-md transition-all border border-border",
