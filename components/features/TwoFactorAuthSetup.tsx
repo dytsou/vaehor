@@ -128,6 +128,7 @@ export default function TwoFactorAuthSetup() {
             </div>
           </div>
           <button
+            type="button"
             onClick={handleDisable}
             disabled={isLoading}
             className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 text-sm font-semibold disabled:opacity-50"
