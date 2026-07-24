@@ -28,7 +28,7 @@ export default function UploadModal({
   handleDragLeave,
   handleDropUpload,
   isDragging,
-}: UploadModalProps) {
+}: Readonly<UploadModalProps>) {
   const { currentFolderId, triggerRefresh, addToast } = useAppStore();
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
