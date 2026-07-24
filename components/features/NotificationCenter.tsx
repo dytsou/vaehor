@@ -64,6 +64,7 @@ export default function NotificationCenter() {
                 </span>
               </div>
               <button
+                type="button"
                 onClick={toggleNotificationCenter}
                 className="p-2 hover:bg-accent rounded-full transition-colors"
               >
