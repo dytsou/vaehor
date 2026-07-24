@@ -97,13 +97,19 @@ export default function GalleryView({
       </Masonry>
 
       <div className="flex justify-center items-center p-8 mb-16">
-        {isFetchingNextPage ? (
-          <Loader2 className="animate-spin text-primary" />
-        ) : !nextPageToken && files.length > 0 ? (
-          <span className="text-sm text-muted-foreground">
-            {t("endOfList")}
-          </span>
-        ) : null}
+        {(() => {
+          if (isFetchingNextPage) {
+            return <Loader2 className="animate-spin text-primary" />;
+          }
+          if (!nextPageToken && files.length > 0) {
+            return (
+              <span className="text-sm text-muted-foreground">
+                {t("endOfList")}
+              </span>
+            );
+          }
+          return null;
+        })()}
       </div>
     </motion.div>
   );
