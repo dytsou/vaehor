@@ -78,7 +78,7 @@ export default function InfoPanel({
   const mediaWidth = metadata?.width;
   const mediaHeight = metadata?.height;
   const durationMillis = file.videoMediaMetadata?.durationMillis
-    ? parseInt(file.videoMediaMetadata.durationMillis, 10)
+    ? Number.parseInt(file.videoMediaMetadata.durationMillis, 10)
     : undefined;
 
   const handleSubmitTag = async (e: React.FormEvent) => {
