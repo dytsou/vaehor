@@ -194,6 +194,7 @@ export default function MoveModal({
                 {subfolders.map((folder) => (
                   <li key={folder.id}>
                     <button
+                      type="button"
                       onClick={() => handleFolderClick(folder)}
                       className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-accent"
                     >
