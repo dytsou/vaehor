@@ -66,7 +66,7 @@ function MenuItem({
   disabled = false,
   className = "",
   isDesktop,
-}: {
+}: Readonly<{
   onClick?: () => void;
   icon: React.ElementType;
   label: string | React.ReactNode;
@@ -74,7 +74,7 @@ function MenuItem({
   disabled?: boolean;
   className?: string;
   isDesktop: boolean;
-}) {
+}>) {
   return (
     <li>
       <button
