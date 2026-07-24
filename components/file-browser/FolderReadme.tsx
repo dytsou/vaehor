@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
@@ -14,6 +19,28 @@ const CodeViewer = dynamic(
 
 interface FolderReadmeProps {
   fileId: string;
+}
+
+function ReadmeCode({
+  className,
+  children,
+  ...props
+}: Readonly<HTMLAttributes<HTMLElement> & { children?: ReactNode }>) {
+  const match = /language-(\w+)/.exec(className || "");
+  if (match) {
+    return (
+      <CodeViewer
+        language={match[1]}
+        content={String(children).replace(/\n$/, "")}
+        className="my-4"
+      />
+    );
+  }
+  return (
+    <code className={className} {...props}>
+      {children}
+    </code>
+  );
 }
 
 export default function FolderReadme({ fileId }: Readonly<FolderReadmeProps>) {
@@ -78,20 +105,7 @@ export default function FolderReadme({ fileId }: Readonly<FolderReadmeProps>) {
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeSanitize]}
                 components={{
-                  code({ className, children, ...props }) {
-                    const match = /language-(\w+)/.exec(className || "");
-                    return match ? (
-                      <CodeViewer
-                        language={match[1]}
-                        content={String(children).replace(/\n$/, "")}
-                        className="my-4"
-                      />
-                    ) : (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
+                  code: ReadmeCode,
                 }}
               >
                 {content}
