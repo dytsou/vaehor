@@ -94,6 +94,7 @@ export default function SubtitleSelectorModal({
                 );
                 return (
                   <button
+                    type="button"
                     key={file.id}
                     onClick={() => !isSelected && handleSelect(file)}
                     disabled={isSelected}
