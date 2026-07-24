@@ -23,9 +23,12 @@ FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 COPY package.json ./
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-  pnpm install --offline --frozen-lockfile --ignore-scripts && \
-  ALLOWED_BUILDS="$(node <<'EOF'
+# Dockerfile shell heredocs inside backslash-continued RUN are parsed as instructions;
+# use a BuildKit RUN heredoc (syntax 1.4+) instead.
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store <<'EOT'
+set -eux
+pnpm install --offline --frozen-lockfile --ignore-scripts
+ALLOWED_BUILDS="$(node <<'EOF'
 const fs = require("fs");
 const yaml = fs.readFileSync("pnpm-workspace.yaml", "utf8");
 const m = yaml.match(/^allowBuilds:\n((?:  .+\n)*)/m);
@@ -34,8 +37,9 @@ console.log(
   [...m[1].matchAll(/^  "?([^":]+)"?:/gm)].map((x) => x[1]).join(" "),
 );
 EOF
-)" && \
-  pnpm rebuild $ALLOWED_BUILDS
+)"
+pnpm rebuild $ALLOWED_BUILDS
+EOT
 
 # Stage 3: Builder
 FROM base AS builder
