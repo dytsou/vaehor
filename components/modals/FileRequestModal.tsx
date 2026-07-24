@@ -166,6 +166,7 @@ export default function FileRequestModal({
                 </button>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 className="w-full py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80"
               >
