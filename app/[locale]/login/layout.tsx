@@ -4,8 +4,8 @@ export const metadata = {
 };
 export default function LoginLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return <>{children}</>;
 }
