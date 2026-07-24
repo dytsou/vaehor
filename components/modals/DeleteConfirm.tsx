@@ -15,7 +15,7 @@ export default function DeleteConfirm({
   itemName,
   onClose,
   onConfirm,
-}: DeleteConfirmProps) {
+}: Readonly<DeleteConfirmProps>) {
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("DeleteConfirm");
 
