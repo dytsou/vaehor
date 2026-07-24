@@ -80,7 +80,6 @@ interface FileBrowserModalsProps {
   setPreviewFile: (file: DriveFile | null) => void;
   archivePreview: DriveFile | null;
   setArchivePreview: (file: DriveFile | null) => void;
-  detailsFile: DriveFile | null;
   setDetailsFile: (file: DriveFile | null) => void;
   isUploadModalOpen: boolean;
   setIsUploadModalOpen: (open: boolean) => void;
