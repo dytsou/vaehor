@@ -81,7 +81,7 @@ async function getCroppedImg(
 export default function ImageEditorModal({
   file,
   onClose,
-}: ImageEditorModalProps) {
+}: Readonly<ImageEditorModalProps>) {
   const { addToast, triggerRefresh } = useAppStore();
   const t = useTranslations("ImageEditorModal");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
