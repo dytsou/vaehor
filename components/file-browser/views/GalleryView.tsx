@@ -30,7 +30,7 @@ export default function GalleryView({
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
 
   if (files.length === 0 && !isFetchingNextPage) {
