@@ -16,7 +16,7 @@ interface FolderReadmeProps {
   fileId: string;
 }
 
-export default function FolderReadme({ fileId }: FolderReadmeProps) {
+export default function FolderReadme({ fileId }: Readonly<FolderReadmeProps>) {
   const { shareToken, addToast } = useAppStore();
   const [content, setContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
