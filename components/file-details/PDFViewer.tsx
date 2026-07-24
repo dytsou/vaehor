@@ -119,6 +119,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-white/5 rounded-lg border border-white/5 p-1">
             <button
+              type="button"
               onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
               className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 transition-colors"
             >
