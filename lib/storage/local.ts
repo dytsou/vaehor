@@ -214,7 +214,7 @@ export async function saveLocalChunk(
       file: {
         id: `local-storage:${path
           .relative(LOCAL_ROOT, finalFilePath)
-          .replace(/\\/g, "/")}`,
+          .replaceAll(/\\/g, "/")}`,
         name: fileName,
         size: String(stats.size),
         mimeType: getMimeType(fileName) || "application/octet-stream",
