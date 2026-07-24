@@ -64,6 +64,7 @@ function FileDetailEditorToolbar({
         </button>
       )}
       <button
+        type="button"
         onClick={onToggleEditing}
         className="px-3 py-1 bg-secondary rounded"
       >
