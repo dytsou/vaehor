@@ -218,6 +218,7 @@ export default function ShareButton({
                   Confirm all settings before generating the public link.
                 </div>
                 <button
+                  type="button"
                   onClick={() => generateLink(activeTab)}
                   className="w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                 >
