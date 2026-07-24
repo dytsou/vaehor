@@ -14,7 +14,7 @@ export function SetupSummaryStep({
   onGoHome,
   onCopy,
   t,
-}: SetupSummaryStepProps) {
+}: Readonly<SetupSummaryStepProps>) {
   const entries = orderedManualEntries(manualConfig, t);
 
   return (
