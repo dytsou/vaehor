@@ -326,6 +326,7 @@ export default function InfoPanel({
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => onRemoveSubtitle?.(track.src)}
                   className="p-1 hover:text-destructive transition-colors"
                 >
