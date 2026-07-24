@@ -282,6 +282,7 @@ export default function ActivityLogDashboard() {
               {t("pageInfo", { current: currentPage, total: totalPages })}
             </span>
             <button
+              type="button"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-3 py-1 text-sm font-medium rounded-md hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors"
