@@ -8,6 +8,9 @@ on:
 env:
   NODE_VERSION: "26"
 
+permissions:
+  contents: read
+
 jobs:
   entrypoint-integration:
     name: Entrypoint Integration

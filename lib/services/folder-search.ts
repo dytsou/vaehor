@@ -10,6 +10,7 @@ import {
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { kv } from "@/lib/kv";
 import { db } from "@/lib/db";
+import { stripHtmlTags } from "@/lib/utils";
 
 const CACHE_TTL = 3600;
 const FILE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -27,7 +28,7 @@ export type FolderSearchParamsResult =
   | { ok: true; params: FolderSearchParams }
   | { ok: false; error: NextResponse };
 
-const sanitizeString = (str: string) => str.replaceAll(/<[^>]*>?/gm, "");
+const sanitizeString = stripHtmlTags;
 
 function getMimeQuery(mimeType?: string | null) {
   switch (mimeType) {

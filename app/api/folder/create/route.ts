@@ -7,14 +7,13 @@ import { z } from "zod";
 import { logActivity } from "@/lib/activityLogger";
 import { kv } from "@/lib/kv";
 import { invalidateFolderCache } from "@/lib/cache";
-
-const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
+import { stripHtmlTags } from "@/lib/utils";
 
 const createFolderSchema = z.object({
   folderName: z
     .string()
     .min(1, { message: "Nama folder tidak boleh kosong." })
-    .transform((val) => sanitizeString(val)),
+    .transform((val) => stripHtmlTags(val)),
   parentId: z.string().min(1, { message: "Folder induk diperlukan." }),
 });
 
