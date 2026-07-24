@@ -14,7 +14,7 @@ export default function TreeNodeIcon({
   node,
   isActuallyActive,
   navigatingId,
-}: TreeNodeIconProps) {
+}: Readonly<TreeNodeIconProps>) {
   if (navigatingId === node.id) {
     return (
       <div className="relative shrink-0 flex items-center justify-center w-3.5 h-3.5">
