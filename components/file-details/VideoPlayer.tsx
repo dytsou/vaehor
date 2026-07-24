@@ -157,7 +157,7 @@ export default function VideoPlayer({
     };
   }, [subtitleTracks]);
 
-  const fileIdMatch = src.match(/fileId=([^&]+)/);
+  const fileIdMatch = /fileId=([^&]+)/.exec(src);
   const fileId = fileIdMatch ? fileIdMatch[1] : null;
 
   useEffect(() => {
