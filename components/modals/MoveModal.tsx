@@ -172,6 +172,7 @@ export default function MoveModal({
           <div className="border rounded-md p-2 flex items-center mb-4">
             {folderStack.length > 1 && (
               <button
+                type="button"
                 onClick={handleBackClick}
                 className="p-2 rounded-md hover:bg-accent"
               >
