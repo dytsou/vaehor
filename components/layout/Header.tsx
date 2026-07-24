@@ -444,6 +444,7 @@ export default function Header() {
 
             <div className="flex items-center gap-2 sm:hidden">
               <button
+                type="button"
                 id="header-mobile-notifications"
                 onClick={toggleNotificationCenter}
                 className="p-2 rounded-lg hover:bg-accent relative z-50"
