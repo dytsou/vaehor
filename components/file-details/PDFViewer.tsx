@@ -94,7 +94,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
                 type="number"
                 value={pageNumber}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                  const val = Number.parseInt(e.target.value);
                   if (val >= 1 && val <= (numPages || 1)) setPageNumber(val);
                 }}
                 className="w-10 bg-transparent text-center text-sm font-medium focus:outline-none text-white py-1"
