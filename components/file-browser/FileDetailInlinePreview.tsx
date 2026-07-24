@@ -109,16 +109,18 @@ function FileDetailViewPreview({
   isPreviewable,
   subtitleTracks,
   onVideoEnded,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  | "file"
-  | "fileType"
-  | "directLink"
-  | "internalPreviewOpen"
-  | "onOpenPreview"
-  | "isPreviewable"
-  | "subtitleTracks"
-  | "onVideoEnded"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    | "file"
+    | "fileType"
+    | "directLink"
+    | "internalPreviewOpen"
+    | "onOpenPreview"
+    | "isPreviewable"
+    | "subtitleTracks"
+    | "onVideoEnded"
+  >
 >) {
   if (fileType === "video") {
     return (
