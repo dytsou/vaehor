@@ -15,7 +15,7 @@ export type ParsedSharePath =
 
 export function parseShareLinkPath(path: string): ParsedSharePath | null {
   const trimmed = path.trim();
-  const collectionMatch = trimmed.match(/^\/share\/([^/]+)\/?$/);
+  const collectionMatch = /^\/share\/([^/]+)\/?$/.exec(trimmed);
   if (collectionMatch) {
     return { kind: "collection", shareId: collectionMatch[1] };
   }
