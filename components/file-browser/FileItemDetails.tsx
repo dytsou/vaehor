@@ -40,7 +40,7 @@ function FileItemUploadProgress({
 function FileItemListMetadata({
   file,
   formatDate,
-}: Pick<FileItemDetailsProps, "file" | "formatDate">) {
+}: Readonly<Pick<FileItemDetailsProps, "file" | "formatDate">>) {
   return (
     <p className="text-xs text-muted-foreground mt-1 text-left truncate select-none">
       {file.size ? formatBytes(Number.parseInt(file.size)) : "-"} •{" "}
