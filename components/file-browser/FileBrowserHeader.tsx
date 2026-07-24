@@ -194,6 +194,7 @@ export default function FileBrowserHeader({
             </button>
 
             <button
+              type="button"
               onClick={onShareFolderClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-blue-500 transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("shareFolder")}
