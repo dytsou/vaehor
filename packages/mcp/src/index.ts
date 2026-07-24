@@ -54,7 +54,8 @@ async function fetchJson(
     };
   }
 
-  const url = `${getBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${getBaseUrl()}${normalizedPath}`;
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), 30_000);
   const cookie = getSessionCookieHeader();
@@ -315,12 +316,10 @@ server.registerTool(
   },
 );
 
-async function main(): Promise<void> {
+try {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-}
-
-main().catch((err: unknown) => {
+} catch (err: unknown) {
   console.error(err);
   process.exit(1);
-});
+}
