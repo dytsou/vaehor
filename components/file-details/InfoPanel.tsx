@@ -290,6 +290,7 @@ export default function InfoPanel({
                 onChange={handleLocalSubtitleUpload}
               />
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="px-2 py-1 bg-secondary/80 hover:bg-secondary text-xs font-semibold rounded-md flex items-center gap-1 transition-colors"
                 title={t("addLocalSubtitle")}
