@@ -148,7 +148,7 @@ export function parseFolderSearchParams(
   return {
     ok: true,
     params: {
-      searchTerm: sanitizedSearchTerm.replace(/'/g, "''"),
+      searchTerm: sanitizedSearchTerm.replaceAll(/'/g, "''"),
       folderId: searchParams.get("folderId"),
       searchType: searchParams.get("searchType") || "name",
       mimeType,
