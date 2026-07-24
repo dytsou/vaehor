@@ -299,6 +299,7 @@ export default function InfoPanel({
                 <Upload size={14} />
               </button>
               <button
+                type="button"
                 onClick={() => setIsShowingSubtitleSelector(true)}
                 className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-md flex items-center gap-1 transition-colors"
                 title={t("addSubtitle")}
