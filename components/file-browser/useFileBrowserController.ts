@@ -569,7 +569,6 @@ export function useFileBrowserController({
       setPreviewFile: fileActions.setPreviewFile,
       archivePreview: fileActions.archivePreview,
       setArchivePreview: fileActions.setArchivePreview,
-      detailsFile,
       setDetailsFile,
       isUploadModalOpen: upload.isUploadModalOpen,
       setIsUploadModalOpen: upload.setIsUploadModalOpen,
