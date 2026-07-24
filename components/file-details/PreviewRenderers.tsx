@@ -209,7 +209,7 @@ export const DefaultPreview: React.FC<{
           iframe.src = downloadUrl;
           document.body.appendChild(iframe);
           setTimeout(() => {
-            document.body.removeChild(iframe);
+            document.iframe.remove();
           }, 5000);
         }}
         className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-colors shadow-lg"
