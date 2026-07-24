@@ -83,7 +83,7 @@ export default function FileCard({
     isBulkMode,
     selectedFiles,
     toggleSelection,
-    setBulkMode,
+    enableBulkMode,
     sharePolicy,
   } = useAppStore();
   const isSelected = selectedFiles.some((f) => f.id === file.id);
@@ -119,7 +119,7 @@ export default function FileCard({
       onNavigate,
       onClick,
       toggleSelection,
-      setBulkMode,
+      enableBulkMode,
     });
   };
 
@@ -152,7 +152,7 @@ export default function FileCard({
   const onCheckboxChange = () => {
     toggleSelection(file);
     if (!isBulkMode) {
-      setBulkMode(true);
+      enableBulkMode();
     }
   };
 

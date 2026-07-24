@@ -20,7 +20,7 @@ export function handleFileCardClick(
     onNavigate?: (folderId: string) => void;
     onClick?: (file: BrowserFile) => void;
     toggleSelection: (file: BrowserFile) => void;
-    setBulkMode: (value: boolean) => void;
+    enableBulkMode: () => void;
   },
 ) {
   const target = e.target as HTMLElement;
@@ -33,7 +33,7 @@ export function handleFileCardClick(
     e.stopPropagation();
     options.toggleSelection(options.file);
     if (!options.isBulkMode) {
-      options.setBulkMode(true);
+      options.enableBulkMode();
     }
     return;
   }

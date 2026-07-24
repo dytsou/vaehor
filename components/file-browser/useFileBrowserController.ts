@@ -61,7 +61,8 @@ export function useFileBrowserController({
   const sort = useAppStore((state) => state.sort);
   const setSort = useAppStore((state) => state.setSort);
   const isBulkMode = useAppStore((state) => state.isBulkMode);
-  const setBulkMode = useAppStore((state) => state.setBulkMode);
+  const enableBulkMode = useAppStore((state) => state.enableBulkMode);
+  const disableBulkMode = useAppStore((state) => state.disableBulkMode);
   const toggleSelection = useAppStore((state) => state.toggleSelection);
   const view = useAppStore((state) => state.view);
   const setView = useAppStore((state) => state.setView);
@@ -504,7 +505,8 @@ export function useFileBrowserController({
             : "google-drive",
         }),
       onRequestFileClick: () => setIsFileRequestModalOpen(true),
-      onToggleBulkMode: () => setBulkMode(!isBulkMode),
+      onToggleBulkMode: () =>
+        isBulkMode ? disableBulkMode() : enableBulkMode(),
       onSetView: setView,
       sort,
       onSortChange: setSort,
