@@ -206,6 +206,7 @@ export default function GlobalAudioPlayer() {
 
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={playPrevTrack}
                 className="p-2 text-foreground hover:text-primary transition-colors"
                 disabled={audioQueue.length <= 1}
