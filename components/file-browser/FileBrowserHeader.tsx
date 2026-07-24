@@ -185,6 +185,7 @@ export default function FileBrowserHeader({
             </button>
 
             <button
+              type="button"
               onClick={onRequestFileClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-purple-500 transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("requestFiles")}
