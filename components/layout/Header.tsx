@@ -468,6 +468,7 @@ export default function Header() {
                 )}
               </button>
               <button
+                type="button"
                 id="header-mobile-menu"
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="p-2 rounded-lg hover:bg-accent z-50"
