@@ -66,13 +66,11 @@ async function restIncrWithExpire(
     );
   }
 
-  const data = (await response.json()) as Array<RestPipelineResult | unknown>;
-  const rawCount =
-    (Array.isArray(data) && isRestPipelineResult(data[0])
-      ? data[0].result
-      : Array.isArray(data)
-        ? data[0]
-        : null) ?? null;
+  const data: unknown = await response.json();
+  let rawCount: unknown = null;
+  if (Array.isArray(data)) {
+    rawCount = isRestPipelineResult(data[0]) ? data[0].result : data[0];
+  }
 
   const count = Number(rawCount);
   if (!Number.isFinite(count)) return null;
