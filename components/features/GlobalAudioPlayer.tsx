@@ -173,7 +173,9 @@ export default function GlobalAudioPlayer() {
                 .getState()
                 .addToast({ message: "Gagal memuat audio", type: "error" });
             }}
-          />
+          >
+            <track kind="captions" />
+          </audio>
 
           <div className="relative h-1 w-full bg-muted cursor-pointer group">
             <div
