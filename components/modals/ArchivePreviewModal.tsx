@@ -72,6 +72,7 @@ export default function ArchivePreviewModal({
           onClick={(e) => e.stopPropagation()}
         >
           <button
+            type="button"
             onClick={onClose}
             className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
           >
