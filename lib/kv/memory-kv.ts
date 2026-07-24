@@ -20,11 +20,14 @@ export class InMemoryKV implements KVClient {
     };
     return pipeline;
   }
-  private store = new Map<string, unknown>();
-  private expirations = new Map<string, ReturnType<typeof setTimeout>>();
-  private hashStore = new Map<string, Map<string, unknown>>();
-  private setStore = new Map<string, Set<unknown>>();
-  private sortedSets = new Map<string, Map<string, number>>();
+  private readonly store = new Map<string, unknown>();
+  private readonly expirations = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
+  private readonly hashStore = new Map<string, Map<string, unknown>>();
+  private readonly setStore = new Map<string, Set<unknown>>();
+  private readonly sortedSets = new Map<string, Map<string, number>>();
 
   async get<T>(key: string): Promise<T | null> {
     const cached = memoryCache.get<T>(`kv:${key}`);
