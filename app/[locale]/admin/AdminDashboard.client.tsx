@@ -360,6 +360,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 )}
                               </p>
                               <button
+                                type="button"
                                 onClick={() => handleDelete(link, "share")}
                                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1.5"
                               >
