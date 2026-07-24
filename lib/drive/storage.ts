@@ -110,7 +110,7 @@ async function fetchStorageDetails() {
       breakdownMap[type] = { size: 0, count: 0 };
     }
 
-    const fileSize = parseInt(file.size || "0", 10);
+    const fileSize = Number.parseInt(file.size || "0", 10);
     breakdownMap[type].size += fileSize;
     breakdownMap[type].count += 1;
   });
