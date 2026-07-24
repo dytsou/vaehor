@@ -8,12 +8,14 @@ on:
 
 permissions:
   contents: read
-  actions: write
 
 jobs:
   build-shell:
     name: Build mobile shell
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     outputs:
       has_ios_secrets: ${{ steps.secret-check.outputs.has_ios_secrets }}
     steps:
@@ -50,6 +52,9 @@ jobs:
     name: Android release APK
     needs: build-shell
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
     steps:
@@ -98,6 +103,9 @@ jobs:
     needs: build-shell
     runs-on: macos-latest
     if: ${{ needs.build-shell.outputs.has_ios_secrets == 'true' }}
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
 
