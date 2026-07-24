@@ -22,7 +22,7 @@ export function BreadcrumbDropdown({
   parentId,
   nextId,
   onFolderClick,
-}: BreadcrumbDropdownProps) {
+}: Readonly<BreadcrumbDropdownProps>) {
   const [isOpen, setIsOpen] = useState(false);
   const { shareToken, folderTokens } = useAppStore();
 
