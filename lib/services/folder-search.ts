@@ -27,7 +27,7 @@ export type FolderSearchParamsResult =
   | { ok: true; params: FolderSearchParams }
   | { ok: false; error: NextResponse };
 
-const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
+const sanitizeString = (str: string) => str.replaceAll(/<[^>]*>?/gm, "");
 
 function getMimeQuery(mimeType?: string | null) {
   switch (mimeType) {
