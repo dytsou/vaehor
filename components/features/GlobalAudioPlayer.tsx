@@ -257,6 +257,7 @@ export default function GlobalAudioPlayer() {
               </button>
             </div>
             <button
+              type="button"
               onClick={closeAudio}
               className="text-muted-foreground hover:text-destructive"
             >
