@@ -25,6 +25,7 @@ export function ExternalPlayerMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           className="p-2 bg-black/40 hover:bg-black/80 text-white rounded-xl backdrop-blur-md border border-white/10 transition-all shadow-lg focus:outline-none"
           title="Stream Eksternal"
         >
