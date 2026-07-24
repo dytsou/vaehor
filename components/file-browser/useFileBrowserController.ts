@@ -441,7 +441,7 @@ export function useFileBrowserController({
     iframe.src = url;
     document.body.appendChild(iframe);
     setTimeout(() => {
-      document.body.removeChild(iframe);
+      document.iframe.remove();
     }, 5000);
   };
 
