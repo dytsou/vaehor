@@ -285,7 +285,7 @@ export function DurationSettings({
   customUnit,
   setCustomUnit,
   t,
-}: DurationSettingsProps) {
+}: Readonly<DurationSettingsProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
