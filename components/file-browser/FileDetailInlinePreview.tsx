@@ -47,9 +47,11 @@ function FileDetailEditorToolbar({
   onSave,
   onToggleEditing,
   labels,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  "isEditing" | "isSaving" | "onSave" | "onToggleEditing" | "labels"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    "isEditing" | "isSaving" | "onSave" | "onToggleEditing" | "labels"
+  >
 >) {
   return (
     <div className="mb-2 flex justify-end gap-2">
