@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 export default function MainError({
   error,
   reset,
-}: {
+}: Readonly<{
   error: Error & { digest?: string };
   reset: () => void;
-}) {
+}>) {
   useEffect(() => {
     console.error(error);
   }, [error]);
