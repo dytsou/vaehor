@@ -24,7 +24,7 @@ export default function SidebarPanel({
   drives,
   rootFolderId,
   treeContextValue,
-}: SidebarPanelProps) {
+}: Readonly<SidebarPanelProps>) {
   const t = useTranslations("Sidebar");
 
   return (
