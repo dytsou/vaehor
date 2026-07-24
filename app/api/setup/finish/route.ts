@@ -36,7 +36,7 @@ export function hasPersistedSetupConfig(envContent: string): boolean {
     const match = envContent.match(new RegExp(`^${key}=(.*)$`, "m"));
     if (!match) return false;
 
-    const value = match[1].trim().replace(/^["']|["']$/g, "");
+    const value = match[1].trim().replaceAll(/^["']|["']$/g, "");
     return value.length > 0;
   });
 }
