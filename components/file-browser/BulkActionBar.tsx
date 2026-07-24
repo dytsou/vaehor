@@ -219,6 +219,7 @@ export function BulkActionBar() {
               {t("selected", { count: selectedFiles.length })}
             </span>
             <button
+              type="button"
               onClick={clearSelection}
               className="p-1 hover:bg-background/20 rounded-full transition-colors"
             >
