@@ -92,7 +92,7 @@ export class InMemoryKV implements KVClient {
 
   async keys(pattern: string): Promise<string[]> {
     const regex = new RegExp(
-      "^" + pattern.replace(/\*/g, ".*").replace(/\?/g, ".") + "$",
+      "^" + pattern.replaceAll(/\*/g, ".*").replace(/\?/g, ".") + "$",
     );
     const allKeys = new Set([
       ...this.store.keys(),
