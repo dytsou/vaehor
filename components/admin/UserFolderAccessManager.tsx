@@ -353,6 +353,7 @@ export default function UserFolderAccessManager(props: {
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleRemoveAccess(folderId, email)}
                       className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                       title={t("revoke")}
