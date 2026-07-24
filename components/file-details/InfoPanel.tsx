@@ -242,6 +242,7 @@ export default function InfoPanel({
               {tag}
               {isAdmin && (
                 <button
+                  type="button"
                   onClick={() => onRemoveTag(tag)}
                   className="hover:text-destructive transition-colors"
                 >
