@@ -178,6 +178,7 @@ export default function ShareButton({
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={handleClose}
                     className="p-2 hover:bg-accent rounded-full transition-colors"
                   >
