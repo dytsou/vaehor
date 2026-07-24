@@ -28,7 +28,7 @@ export default function UploadModal({
   handleDragLeave,
   handleDropUpload,
   isDragging,
-}: UploadModalProps) {
+}: Readonly<UploadModalProps>) {
   const { currentFolderId, triggerRefresh, addToast } = useAppStore();
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -86,6 +86,7 @@ export default function UploadModal({
             onClick={(e) => e.stopPropagation()}
           >
             <button
+              type="button"
               onClick={onClose}
               className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
             >
@@ -140,12 +141,14 @@ export default function UploadModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium transition-colors"
                 >
                   <FilePlus size={16} /> {t("selectFile")}
                 </button>
                 <button
+                  type="button"
                   onClick={() => folderInputRef.current?.click()}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium transition-colors"
                 >

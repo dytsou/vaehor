@@ -15,7 +15,7 @@ interface RichMediaMetadataProps {
 export default function RichMediaMetadata({
   filename,
   onMetadataLoaded,
-}: RichMediaMetadataProps) {
+}: Readonly<RichMediaMetadataProps>) {
   const [metadata, setMetadata] = useState<TMDBMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const t = useTranslations("InfoPanel");

@@ -70,7 +70,7 @@ export function fileItemFlexClassName(view: ViewMode) {
 
 export function fileItemThumbnailWrapperClassName(isGallery: boolean) {
   return cn(
-    "relative shrink-0 pointer-events-auto",
+    "relative shrink-0 pointer-events-none",
     isGallery && "w-full min-h-[150px]",
   );
 }

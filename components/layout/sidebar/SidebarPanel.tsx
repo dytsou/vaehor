@@ -24,7 +24,7 @@ export default function SidebarPanel({
   drives,
   rootFolderId,
   treeContextValue,
-}: SidebarPanelProps) {
+}: Readonly<SidebarPanelProps>) {
   const t = useTranslations("Sidebar");
 
   return (
@@ -38,6 +38,7 @@ export default function SidebarPanel({
           {t("navigation")}
         </h2>
         <button
+          type="button"
           onClick={onClose}
           className="lg:hidden p-1 hover:bg-accent rounded-md"
         >

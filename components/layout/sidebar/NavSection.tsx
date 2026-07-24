@@ -18,7 +18,7 @@ interface NavSectionProps {
   t: (key: string) => string;
 }
 
-export default function NavSection({ t }: NavSectionProps) {
+export default function NavSection({ t }: Readonly<NavSectionProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAppStore((state) => state.user);
@@ -35,6 +35,7 @@ export default function NavSection({ t }: NavSectionProps) {
   return (
     <div className="mb-4 space-y-0.5">
       <button
+        type="button"
         onClick={() => handleNav("home", "/")}
         id="sidebar-nav-home"
         className={cn(
@@ -54,6 +55,7 @@ export default function NavSection({ t }: NavSectionProps) {
       {/* Local Storage Folder */}
       {process.env.NEXT_PUBLIC_ENABLE_LOCAL_STORAGE === "true" && (
         <button
+          type="button"
           onClick={() => handleNav("local", "/folder/local-storage%3A")}
           id="sidebar-nav-local"
           className={cn(
@@ -70,6 +72,7 @@ export default function NavSection({ t }: NavSectionProps) {
         </button>
       )}
       <button
+        type="button"
         onClick={() => handleNav("favorites", "/favorites")}
         id="sidebar-nav-favorites"
         className={cn(
@@ -86,6 +89,7 @@ export default function NavSection({ t }: NavSectionProps) {
         {t("favorites")}
       </button>
       <button
+        type="button"
         onClick={() => handleNav("storage", "/storage")}
         id="sidebar-nav-storage"
         className={cn(
@@ -103,6 +107,7 @@ export default function NavSection({ t }: NavSectionProps) {
       {user?.role === "ADMIN" && (
         <>
           <button
+            type="button"
             onClick={() => {
               router.push("/trash");
               if (window.innerWidth < 1024) setSidebarOpen(false);
@@ -116,6 +121,7 @@ export default function NavSection({ t }: NavSectionProps) {
             <Trash2 size={16} /> {t("trash")}
           </button>
           <button
+            type="button"
             onClick={() => {
               router.push("/admin");
               if (window.innerWidth < 1024) setSidebarOpen(false);

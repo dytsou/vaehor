@@ -190,16 +190,13 @@ async function checkDriveParentRestriction(
     return false;
   }
 
-  return isAccessRestricted(
-    parentId,
-    state.allowedTokens,
-    state.userEmail,
-    state.depth + 1,
-    state.maxDepth,
-    state.allRestrictedIds,
-    state.visited,
-    state.accessCache,
-  );
+  return isAccessRestricted(parentId, state.allowedTokens, state.userEmail, {
+    depth: state.depth + 1,
+    maxDepth: state.maxDepth,
+    preFetchedRestrictedIds: state.allRestrictedIds,
+    visited: state.visited,
+    accessCache: state.accessCache,
+  });
 }
 
 async function checkDriveFileRestriction(
@@ -241,12 +238,20 @@ export async function isAccessRestricted(
   fileId: string,
   allowedTokens: string[] = [],
   userEmail: string | null | undefined = null,
-  depth: number = 0,
-  maxDepth: number = 20,
-  preFetchedRestrictedIds: string[] | null = null,
-  visited: Set<string> = new Set(),
-  accessCache: Map<string, boolean> = new Map(),
+  options: {
+    depth?: number;
+    maxDepth?: number;
+    preFetchedRestrictedIds?: string[] | null;
+    visited?: Set<string>;
+    accessCache?: Map<string, boolean>;
+  } = {},
 ): Promise<boolean> {
+  const depth = options.depth ?? 0;
+  const maxDepth = options.maxDepth ?? 20;
+  const preFetchedRestrictedIds = options.preFetchedRestrictedIds ?? null;
+  const visited = options.visited ?? new Set<string>();
+  const accessCache = options.accessCache ?? new Map<string, boolean>();
+
   if (markTraversalVisited(fileId, depth, maxDepth, visited)) {
     return true;
   }

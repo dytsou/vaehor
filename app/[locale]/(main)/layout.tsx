@@ -82,7 +82,9 @@ const AppFooter = () => {
   );
 };
 
-function MainLayoutContent({ children }: { children: React.ReactNode }) {
+function MainLayoutContent({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   const refreshKey = useAppStore((state) => state.refreshKey);
   const toasts = useAppStore((state) => state.toasts);
   const removeToast = useAppStore((state) => state.removeToast);

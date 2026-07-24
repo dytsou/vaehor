@@ -22,7 +22,7 @@ export function ServiceAccountSetupStep({
   onSubmit,
   loading,
   t,
-}: ServiceAccountSetupStepProps) {
+}: Readonly<ServiceAccountSetupStepProps>) {
   return (
     <div className="space-y-8">
       <div>
@@ -116,6 +116,7 @@ export function ServiceAccountSetupStep({
       </div>
 
       <button
+        type="button"
         onClick={onSubmit}
         disabled={loading}
         className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3.5 rounded-xl font-medium transition-all shadow-lg shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

@@ -27,7 +27,7 @@ export default function FileBrowserErrorState({
   lockedFolderLabel,
   errorTitle,
   errorMessage,
-}: FileBrowserErrorStateProps) {
+}: Readonly<FileBrowserErrorStateProps>) {
   if (isCriticalAuthError(error.message)) {
     return (
       <SetupRequired

@@ -24,7 +24,7 @@ interface FileItemDetailsProps {
 function FileItemUploadProgress({
   isError,
   uploadProgress = 0,
-}: Pick<FileItemDetailsProps, "isError" | "uploadProgress">) {
+}: Readonly<Pick<FileItemDetailsProps, "isError" | "uploadProgress">>) {
   return (
     <div className="w-full mt-2">
       <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
@@ -40,7 +40,7 @@ function FileItemUploadProgress({
 function FileItemListMetadata({
   file,
   formatDate,
-}: Pick<FileItemDetailsProps, "file" | "formatDate">) {
+}: Readonly<Pick<FileItemDetailsProps, "file" | "formatDate">>) {
   return (
     <p className="text-xs text-muted-foreground mt-1 text-left truncate select-none">
       {file.size ? formatBytes(Number.parseInt(file.size)) : "-"} •{" "}
@@ -59,7 +59,7 @@ export default function FileItemDetails({
   isError,
   uploadProgress,
   formatDate,
-}: FileItemDetailsProps) {
+}: Readonly<FileItemDetailsProps>) {
   const showListMetadata =
     view === "list" && !file.isFolder && !compactClass && !isUploading;
 

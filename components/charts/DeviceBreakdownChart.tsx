@@ -12,7 +12,6 @@ import {
 
 interface DeviceBreakdownChartProps {
   data: { name: string; count: number }[];
-  title: string;
 }
 
 interface DeviceTooltipPayload {

@@ -59,7 +59,7 @@ function StatCard({
   comparisonLabel,
   color,
   delay = 0,
-}: {
+}: Readonly<{
   icon: React.ElementType;
   label: string;
   value: number;
@@ -67,7 +67,7 @@ function StatCard({
   comparisonLabel?: string;
   color: string;
   delay?: number;
-}) {
+}>) {
   const diff =
     comparison !== undefined && comparison > 0
       ? Math.round(((value - comparison) / comparison) * 100)
@@ -176,6 +176,7 @@ export default function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <button
+          type="button"
           onClick={() => fetchAnalytics(true)}
           disabled={isRefreshing}
           className="p-2 hover:bg-accent rounded-full transition-colors"
@@ -366,28 +367,19 @@ export default function AnalyticsDashboard() {
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("browser")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.browsers}
-              title={t("browser")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.browsers} />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("operatingSystem")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.os}
-              title={t("operatingSystem")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.os} />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("deviceType")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.devices}
-              title={t("deviceType")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.devices} />
           </div>
         </div>
       </motion.div>

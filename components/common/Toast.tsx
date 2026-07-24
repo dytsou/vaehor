@@ -47,6 +47,7 @@ const ToastComponent = ({ toast, onRemove }: ToastProps) => {
       <div className="flex-shrink-0 mr-3">{icons[type]}</div>
       <div className="flex-1">{message}</div>
       <button
+        type="button"
         onClick={() => onRemove(id)}
         className="ml-4 flex-shrink-0 text-gray-500 hover:text-gray-800 dark:hover:text-white"
       >

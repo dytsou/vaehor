@@ -94,7 +94,7 @@ export function useFileDetailController({
   const handleAddSubtitle = (track: SubtitleTrack) => {
     setActiveSubtitleTracks((prev) => {
       if (
-        prev.find(
+        prev.some(
           (item) => item.src === track.src || item.label === track.label,
         )
       ) {
@@ -174,7 +174,7 @@ export function useFileDetailController({
   const archivePreviewLimit = 100 * 1024 * 1024;
   const isArchivePreviewable =
     fileType === "archive" &&
-    parseInt(file.size || "0", 10) <= archivePreviewLimit;
+    Number.parseInt(file.size || "0", 10) <= archivePreviewLimit;
   const isEditable =
     isAdmin &&
     (fileType === "code" || fileType === "markdown" || fileType === "text");

@@ -18,7 +18,7 @@ export function CodeViewer({
   language,
   className,
   fileName,
-}: CodeViewerProps) {
+}: Readonly<CodeViewerProps>) {
   const { addToast } = useAppStore();
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState(14);
@@ -61,6 +61,7 @@ export function CodeViewer({
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white/5 rounded-md p-1 mr-2 invisible md:visible">
             <button
+              type="button"
               onClick={() => setFontSize(Math.max(10, fontSize - 1))}
               className="px-2 text-zinc-500 hover:text-white transition-colors"
             >
@@ -70,6 +71,7 @@ export function CodeViewer({
               {fontSize}
             </span>
             <button
+              type="button"
               onClick={() => setFontSize(Math.min(24, fontSize + 1))}
               className="px-2 text-zinc-500 hover:text-white transition-colors"
             >
@@ -78,6 +80,7 @@ export function CodeViewer({
           </div>
 
           <button
+            type="button"
             onClick={handleCopy}
             className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all border border-white/5 flex items-center gap-2 group"
           >

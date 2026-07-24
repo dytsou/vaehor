@@ -141,6 +141,7 @@ export default function ProtectedFoldersManager(props: {
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => setFolderToDelete(folderId)}
                   className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                   title={t("removeProtection")}
@@ -306,12 +307,14 @@ export default function ProtectedFoldersManager(props: {
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => setFolderToDelete(null)}
                   className="px-4 py-2 text-sm font-medium rounded-lg border bg-background hover:bg-accent transition-colors"
                 >
                   {t("cancel")}
                 </button>
                 <button
+                  type="button"
                   onClick={confirmDelete}
                   className="px-4 py-2 text-sm font-medium rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm"
                 >

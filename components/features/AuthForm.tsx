@@ -36,7 +36,7 @@ export default function AuthForm({
   folderName,
   isLoading,
   onSubmit,
-}: AuthFormProps) {
+}: Readonly<AuthFormProps>) {
   const [password, setPassword] = useState("");
   const { user, addToast } = useAppStore();
   const [isRequesting, setIsRequesting] = useState(false);
@@ -112,6 +112,7 @@ export default function AuthForm({
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs text-muted-foreground">{t("wantAccess")}</span>
         <button
+          type="button"
           onClick={() => signIn("google")}
           className="text-sm font-medium text-primary hover:underline flex items-center gap-1.5"
         >
@@ -137,6 +138,7 @@ export default function AuthForm({
   } else {
     accessRequestContent = (
       <button
+        type="button"
         onClick={handleRequestAccess}
         disabled={isRequesting}
         className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto disabled:opacity-50"

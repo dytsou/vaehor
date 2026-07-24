@@ -28,7 +28,7 @@ export interface FileBrowserProps {
 }
 
 function createSlug(name: string) {
-  return encodeURIComponent(name.replace(/\s+/g, "-").toLowerCase());
+  return encodeURIComponent(name.replaceAll(/\s+/g, "-").toLowerCase());
 }
 
 export function useFileBrowserController({
@@ -61,7 +61,8 @@ export function useFileBrowserController({
   const sort = useAppStore((state) => state.sort);
   const setSort = useAppStore((state) => state.setSort);
   const isBulkMode = useAppStore((state) => state.isBulkMode);
-  const setBulkMode = useAppStore((state) => state.setBulkMode);
+  const enableBulkMode = useAppStore((state) => state.enableBulkMode);
+  const disableBulkMode = useAppStore((state) => state.disableBulkMode);
   const toggleSelection = useAppStore((state) => state.toggleSelection);
   const view = useAppStore((state) => state.view);
   const setView = useAppStore((state) => state.setView);
@@ -75,7 +76,6 @@ export function useFileBrowserController({
   const setShareToken = useAppStore((state) => state.setShareToken);
   const favorites = useAppStore((state) => state.favorites);
   const fetchFavorites = useAppStore((state) => state.fetchFavorites);
-  const detailsFile = useAppStore((state) => state.detailsFile);
   const setDetailsFile = useAppStore((state) => state.setDetailsFile);
   const setCurrentFolderId = useAppStore((state) => state.setCurrentFolderId);
   const playAudio = useAppStore((state) => state.playAudio);
@@ -194,12 +194,14 @@ export function useFileBrowserController({
       const [, payloadBase64] = shareToken.split(".");
       if (!payloadBase64) return;
 
-      const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+      const base64 = payloadBase64.replaceAll("-", "+").replaceAll("_", "/");
       const jsonPayload = decodeURIComponent(
         atob(base64)
           .split("")
           .map((char) => {
-            return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+            return (
+              "%" + ("00" + (char.codePointAt(0) ?? 0).toString(16)).slice(-2)
+            );
           })
           .join(""),
       );
@@ -441,7 +443,7 @@ export function useFileBrowserController({
     iframe.src = url;
     document.body.appendChild(iframe);
     setTimeout(() => {
-      document.body.removeChild(iframe);
+      iframe.remove();
     }, 5000);
   };
 
@@ -505,7 +507,8 @@ export function useFileBrowserController({
             : "google-drive",
         }),
       onRequestFileClick: () => setIsFileRequestModalOpen(true),
-      onToggleBulkMode: () => setBulkMode(!isBulkMode),
+      onToggleBulkMode: () =>
+        isBulkMode ? disableBulkMode() : enableBulkMode(),
       onSetView: setView,
       sort,
       onSortChange: setSort,
@@ -547,9 +550,6 @@ export function useFileBrowserController({
     },
     modalsProps: {
       authModal: { isOpen: false, folderId: "", folderName: "" },
-      isAuthLoading,
-      onCloseAuth: () => {},
-      onAuthSubmit: () => {},
       isFileRequestModalOpen,
       setIsFileRequestModalOpen,
       currentFolderId,
@@ -572,7 +572,6 @@ export function useFileBrowserController({
       setPreviewFile: fileActions.setPreviewFile,
       archivePreview: fileActions.archivePreview,
       setArchivePreview: fileActions.setArchivePreview,
-      detailsFile,
       setDetailsFile,
       isUploadModalOpen: upload.isUploadModalOpen,
       setIsUploadModalOpen: upload.setIsUploadModalOpen,

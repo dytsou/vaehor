@@ -64,7 +64,7 @@ export default function FileBrowserHeader({
   sort,
   onSortChange,
   onPrefetchFolder,
-}: FileBrowserHeaderProps) {
+}: Readonly<FileBrowserHeaderProps>) {
   const navRef = useRef<HTMLElement>(null);
   const { density, setDensity } = useAppStore();
   const t = useTranslations("FileBrowser");
@@ -126,6 +126,7 @@ export default function FileBrowserHeader({
                 </h1>
               ) : (
                 <button
+                  type="button"
                   onClick={() => {
                     if (isClickable) {
                       onBreadcrumbClick(folder.id);
@@ -175,6 +176,7 @@ export default function FileBrowserHeader({
         {showAdminActions && (
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-1 pr-4 -ml-1 w-full md:w-auto">
             <button
+              type="button"
               onClick={onUploadClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-primary transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("upload")}
@@ -183,6 +185,7 @@ export default function FileBrowserHeader({
             </button>
 
             <button
+              type="button"
               onClick={onRequestFileClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-purple-500 transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("requestFiles")}
@@ -191,6 +194,7 @@ export default function FileBrowserHeader({
             </button>
 
             <button
+              type="button"
               onClick={onShareFolderClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-blue-500 transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("shareFolder")}
@@ -201,6 +205,7 @@ export default function FileBrowserHeader({
             <div className="w-px h-6 bg-border mx-1 hidden sm:block shrink-0"></div>
 
             <button
+              type="button"
               onClick={onToggleBulkMode}
               className={cn(
                 "p-2 rounded-lg border transition-colors shadow-sm flex items-center justify-center shrink-0",
@@ -218,6 +223,7 @@ export default function FileBrowserHeader({
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {view === "list" && (
             <button
+              type="button"
               onClick={() =>
                 setDensity(density === "compact" ? "comfortable" : "compact")
               }
@@ -240,6 +246,7 @@ export default function FileBrowserHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
+                type="button"
                 className="p-1.5 rounded-md transition-all text-muted-foreground hover:text-foreground hover:bg-background border border-border flex items-center justify-center shrink-0 gap-2 px-2"
                 title={t("sortFiles")}
               >
@@ -273,6 +280,7 @@ export default function FileBrowserHeader({
             <>
               <div className="w-px h-6 bg-border"></div>
               <button
+                type="button"
                 onClick={() => onSetView("gallery")}
                 className={cn(
                   "p-1.5 rounded-md transition-all border border-border",

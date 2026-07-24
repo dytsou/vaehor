@@ -135,7 +135,8 @@ export interface FileSlice {
   selectedFiles: DriveFile[];
   toggleSelection: (file: DriveFile) => void;
   setSelectedFiles: (files: DriveFile[]) => void;
-  setBulkMode: (isActive: boolean) => void;
+  enableBulkMode: () => void;
+  disableBulkMode: () => void;
   clearSelection: () => void;
   shareToken: string | null;
   sharePolicy: SharePolicy | null;

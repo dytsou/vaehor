@@ -20,15 +20,13 @@ export default function ListView({
   onDragStart,
   onFileDrop,
   onPrefetchItem,
-  onToggleFavorite,
   selectedFiles,
   isBulkMode,
-  shareLinks,
   density,
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
   const listRef = useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = React.useState(0);
@@ -88,12 +86,6 @@ export default function ListView({
           const file = files[virtualRow.index];
           if (!file) return null;
 
-          const isShared =
-            !file.uploadStatus &&
-            shareLinks.some(
-              (link) => !link.isCollection && link.path.includes(file.id),
-            );
-
           const isFocused = virtualRow.index === focusedIndex;
 
           return (
@@ -127,7 +119,6 @@ export default function ListView({
                   onShare={(e) => onShareClick(e, file)}
                   onShowDetails={(e) => onDetailsClick(e, file)}
                   onDownload={(e) => onDownloadClick(e, file)}
-                  onToggleFavorite={(e) => onToggleFavorite?.(e, file)}
                   isAdmin={isAdmin}
                   onDragStart={(e) => onDragStart(e, file)}
                   onFileDrop={onFileDrop}
@@ -137,10 +128,8 @@ export default function ListView({
                     }
                   }}
                   density={density}
-                  isShared={isShared}
                   uploadProgress={file.uploadProgress}
                   uploadStatus={file.uploadStatus}
-                  uploadError={file.uploadError}
                   isNavigating={navigatingId === file.id}
                 />
               </div>
@@ -150,13 +139,19 @@ export default function ListView({
       </div>
 
       <div className="flex justify-center items-center p-8 mt-4 mb-16">
-        {isFetchingNextPage ? (
-          <Loader2 className="animate-spin text-primary" />
-        ) : !nextPageToken && files.length > 0 ? (
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {t("endOfList")}
-          </span>
-        ) : null}
+        {(() => {
+          if (isFetchingNextPage) {
+            return <Loader2 className="animate-spin text-primary" />;
+          }
+          if (!nextPageToken && files.length > 0) {
+            return (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {t("endOfList")}
+              </span>
+            );
+          }
+          return null;
+        })()}
       </div>
     </div>
   );

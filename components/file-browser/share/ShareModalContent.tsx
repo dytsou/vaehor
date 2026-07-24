@@ -21,7 +21,7 @@ export function ShareSidebar({
   itemName,
   itemCount,
   t,
-}: ShareSidebarProps) {
+}: Readonly<ShareSidebarProps>) {
   return (
     <div className="w-full md:w-80 bg-accent/30 border-b md:border-b-0 md:border-r border-border/50 p-6 flex flex-col">
       <div className="flex items-center gap-3 mb-8">
@@ -38,6 +38,7 @@ export function ShareSidebar({
 
       <div className="space-y-2 flex-grow">
         <button
+          type="button"
           onClick={() => setActiveTab("timed")}
           className={cn(
             "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 group text-left",
@@ -62,6 +63,7 @@ export function ShareSidebar({
         </button>
 
         <button
+          type="button"
           onClick={() => setActiveTab("session")}
           className={cn(
             "w-full flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 group text-left",
@@ -124,7 +126,7 @@ export function SecurityPolicies({
   maxUses,
   setMaxUses,
   t,
-}: SecurityPoliciesProps) {
+}: Readonly<SecurityPoliciesProps>) {
   return (
     <div className="space-y-4">
       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 px-1">
@@ -132,6 +134,7 @@ export function SecurityPolicies({
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
+          type="button"
           onClick={() => setLoginRequired(!loginRequired)}
           className={cn(
             "flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-200",
@@ -155,6 +158,7 @@ export function SecurityPolicies({
         </button>
 
         <button
+          type="button"
           onClick={() => setPreventDownload(!preventDownload)}
           className={cn(
             "flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-200",
@@ -186,6 +190,7 @@ export function SecurityPolicies({
           )}
         >
           <button
+            type="button"
             onClick={() => setHasWatermark(!hasWatermark)}
             className="flex items-center gap-3 text-left w-full"
           >
@@ -253,7 +258,7 @@ export function SecurityPolicies({
               value={maxUses}
               autoFocus
               onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
+                const val = Number.parseInt(e.target.value, 10);
                 setMaxUses(isNaN(val) ? "" : val);
               }}
               className="w-full mt-1.5 px-3 py-1.5 rounded-lg border-2 border-primary/20 bg-background text-sm outline-none focus:border-primary/50"
@@ -280,7 +285,7 @@ export function DurationSettings({
   customUnit,
   setCustomUnit,
   t,
-}: DurationSettingsProps) {
+}: Readonly<DurationSettingsProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -296,7 +301,7 @@ export function DurationSettings({
             type="number"
             value={customDuration}
             onChange={(e) => {
-              const val = parseInt(e.target.value, 10);
+              const val = Number.parseInt(e.target.value, 10);
               setCustomDuration(isNaN(val) ? "" : val);
             }}
             className="w-full px-4 py-2.5 rounded-xl border-2 border-transparent bg-background/50 focus:border-primary/50 focus:ring-0 transition-all outline-none"

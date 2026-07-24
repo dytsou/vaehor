@@ -1,11 +1,6 @@
 import { kv } from "@/lib/kv";
 import { logger } from "@/lib/logger";
-import {
-  appEventSchema,
-  type AppEvent,
-  type AppEventPayloadByType,
-  type EventType,
-} from "@/lib/telemetry";
+import { appEventSchema, type AppEvent, type EventType } from "@/lib/telemetry";
 
 const REDIS_CHANNEL = "vaehor:events";
 
@@ -21,19 +16,20 @@ interface RedisPublisher {
   publish: (channel: string, message: string) => Promise<number>;
 }
 
-interface RedisConstructor {
-  new (url: string): RedisSubscriber & RedisPublisher;
-}
+type RedisConstructor = new (url: string) => RedisSubscriber & RedisPublisher;
 
 class EventBus {
-  private listeners = new Map<string, Set<(event: AppEvent) => void>>();
+  private readonly listeners = new Map<
+    string,
+    Set<(event: AppEvent) => void>
+  >();
   private subscriber: RedisSubscriber | null = null;
   private publisher: RedisPublisher | null = null;
   private isConnected = false;
-  private globalWithEdgeRuntime = globalThis as typeof globalThis & {
+  private readonly globalWithEdgeRuntime = globalThis as typeof globalThis & {
     EdgeRuntime?: unknown;
   };
-  private isEdge =
+  private readonly isEdge =
     typeof globalThis !== "undefined" &&
     this.globalWithEdgeRuntime.EdgeRuntime !== undefined;
 
@@ -155,4 +151,5 @@ if (process.env.NODE_ENV !== "production") {
   globalForEventBus.eventBus = eventBus;
 }
 
-export type { AppEventPayloadByType, EventType, AppEvent };
+export type { AppEvent, EventType };
+export type { AppEventPayloadByType } from "@/lib/telemetry";

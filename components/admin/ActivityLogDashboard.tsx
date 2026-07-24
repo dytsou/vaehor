@@ -198,7 +198,7 @@ export default function ActivityLogDashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm sm:text-base break-words">
-                      {log.type.replace(/_/g, " ")}
+                      {log.type.replaceAll("_", " ")}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono shrink-0">
                       {format(
@@ -226,6 +226,7 @@ export default function ActivityLogDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <button
+          type="button"
           onClick={() => fetchLogs(currentPage)}
           className="p-2 hover:bg-accent rounded-full transition-colors"
           title={t("refresh")}
@@ -248,7 +249,7 @@ export default function ActivityLogDashboard() {
           <option value={ALL_TYPES}>{t("allTypes")}</option>
           {logTypes.map((type) => (
             <option key={type} value={type}>
-              {type.replace(/_/g, " ")}
+              {type.replaceAll("_", " ")}
             </option>
           ))}
         </select>
@@ -269,6 +270,7 @@ export default function ActivityLogDashboard() {
         {totalPages > 1 && !isLoading && (
           <div className="p-4 border-t border-border flex justify-between items-center bg-muted/20">
             <button
+              type="button"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="px-3 py-1 text-sm font-medium rounded-md hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors"
@@ -280,6 +282,7 @@ export default function ActivityLogDashboard() {
               {t("pageInfo", { current: currentPage, total: totalPages })}
             </span>
             <button
+              type="button"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="px-3 py-1 text-sm font-medium rounded-md hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors"

@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 import path from "path";
 import { getMimeType } from "./mime";
 import { ZeeFile, ListFilesResponse } from "@/types/storage";
@@ -78,7 +78,7 @@ export async function listLocalFiles(
       const stats = await fs.stat(filePath);
       const relativePath = path
         .relative(LOCAL_ROOT, filePath)
-        .replace(/\\/g, "/");
+        .replaceAll("\\", "/");
       const entryMimeType =
         getMimeType(entry.name) || "application/octet-stream";
       const isFolder = entry.isDirectory();
@@ -128,7 +128,7 @@ export async function getLocalFileDetails(
     const isFolder = stats.isDirectory();
     const relativePath = path
       .relative(LOCAL_ROOT, absolutePath)
-      .replace(/\\/g, "/");
+      .replaceAll("\\", "/");
     const mimeType = getMimeType(absolutePath) || "application/octet-stream";
     const isImage = mimeType.startsWith("image/");
 
@@ -187,12 +187,12 @@ export async function saveLocalChunk(
   );
   const finalFilePath = path.join(finalFolderPath, fileName);
 
-  const rangeMatch = contentRange.match(/bytes (\d+)-(\d+)\/(\d+)/);
+  const rangeMatch = /bytes (\d+)-(\d+)\/(\d+)/.exec(contentRange);
   if (!rangeMatch) throw new Error("Content-Range tidak valid");
 
-  const start = parseInt(rangeMatch[1]);
-  const end = parseInt(rangeMatch[2]);
-  const total = parseInt(rangeMatch[3]);
+  const start = Number.parseInt(rangeMatch[1]);
+  const end = Number.parseInt(rangeMatch[2]);
+  const total = Number.parseInt(rangeMatch[3]);
 
   const buffer = Buffer.from(chunk);
   const handle = await fs.open(tempFilePath, start === 0 ? "w" : "r+");
@@ -214,7 +214,7 @@ export async function saveLocalChunk(
       file: {
         id: `local-storage:${path
           .relative(LOCAL_ROOT, finalFilePath)
-          .replace(/\\/g, "/")}`,
+          .replaceAll("\\", "/")}`,
         name: fileName,
         size: String(stats.size),
         mimeType: getMimeType(fileName) || "application/octet-stream",

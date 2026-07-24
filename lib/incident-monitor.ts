@@ -276,8 +276,8 @@ async function createOrUpdateIncident(
         triggerCount: existing.triggerCount + 1,
         sourceEventIds: mergedEventIds,
         metadata: {
-          ...(existing.metadata || {}),
-          ...(candidate.metadata || {}),
+          ...existing.metadata,
+          ...candidate.metadata,
         },
       };
 

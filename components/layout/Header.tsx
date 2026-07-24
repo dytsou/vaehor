@@ -141,6 +141,7 @@ const MobileNav: FC<MobileNavProps> = ({
                     "onClick" in item &&
                     typeof item.onClick === "function" && (
                       <button
+                        type="button"
                         onClick={() => {
                           item.onClick!();
                           onClose();
@@ -248,22 +249,28 @@ export default function Header() {
     }
   }, [isMobileMenuOpen]);
 
-  const authButton =
-    status === "loading" ? (
-      <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />
-    ) : session?.user ? (
+  const authButton = (() => {
+    if (status === "loading") {
+      return <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />;
+    }
+    if (session?.user) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            notifyZeeMobileLogout();
+            signOut({ callbackUrl: "/login" }).catch(() => {});
+          }}
+          title={t("logout")}
+          className="p-2 rounded-lg hover:bg-accent"
+        >
+          <LogOut size={20} />
+        </button>
+      );
+    }
+    return (
       <button
-        onClick={() => {
-          notifyZeeMobileLogout();
-          signOut({ callbackUrl: "/login" }).catch(() => {});
-        }}
-        title={t("logout")}
-        className="p-2 rounded-lg hover:bg-accent"
-      >
-        <LogOut size={20} />
-      </button>
-    ) : (
-      <button
+        type="button"
         onClick={handleLoginClick}
         title={t("login")}
         className="flex items-center gap-2 sm:gap-4 hover:text-primary transition-colors w-full py-2"
@@ -272,6 +279,7 @@ export default function Header() {
         <span>{t("login")}</span>
       </button>
     );
+  })();
 
   const createLink = (baseHref: string) => {
     if (shareToken) {
@@ -315,6 +323,7 @@ export default function Header() {
           <div className="flex items-center gap-3 shrink-0">
             {!isSharePage && !shareToken && (
               <button
+                type="button"
                 id="header-sidebar-toggle"
                 onClick={toggleSidebar}
                 className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground"
@@ -376,6 +385,7 @@ export default function Header() {
                         "onClick" in item &&
                           typeof item.onClick === "function" && (
                             <button
+                              type="button"
                               key={item.id}
                               onClick={item.onClick}
                               title={item.label}
@@ -391,6 +401,7 @@ export default function Header() {
               ) : (
                 <>
                   <button
+                    type="button"
                     onClick={toggleNotificationCenter}
                     className="p-2 rounded-lg hover:bg-accent relative"
                     title={t("notifications")}
@@ -419,6 +430,7 @@ export default function Header() {
                       "onClick" in item &&
                         typeof item.onClick === "function" && (
                           <button
+                            type="button"
                             key={item.id}
                             id={`header-btn-${item.id}`}
                             onClick={item.onClick}
@@ -438,6 +450,7 @@ export default function Header() {
 
             <div className="flex items-center gap-2 sm:hidden">
               <button
+                type="button"
                 id="header-mobile-notifications"
                 onClick={toggleNotificationCenter}
                 className="p-2 rounded-lg hover:bg-accent relative z-50"
@@ -448,6 +461,7 @@ export default function Header() {
                 )}
               </button>
               <button
+                type="button"
                 id="header-mobile-search"
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
                 title={t("search")}
@@ -460,6 +474,7 @@ export default function Header() {
                 )}
               </button>
               <button
+                type="button"
                 id="header-mobile-menu"
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="p-2 rounded-lg hover:bg-accent z-50"

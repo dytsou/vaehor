@@ -43,11 +43,12 @@ export default function FileDetailModalView({
   onShowMobileInfo,
   onHideMobileInfo,
   mobileInfoPanel,
-}: FileDetailModalViewProps) {
+}: Readonly<FileDetailModalViewProps>) {
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black text-white h-full w-full animate-in fade-in">
       <div className="absolute top-0 left-0 right-0 z-20 flex justify-between p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <button
+          type="button"
           onClick={onClose}
           className="pointer-events-auto p-2 bg-black/40 rounded-full hover:bg-white/20"
         >
@@ -56,6 +57,7 @@ export default function FileDetailModalView({
         <div className="flex gap-3 pointer-events-auto">
           {isTextPreviewable && !showTextPreview && (
             <button
+              type="button"
               onClick={onShowTextPreview}
               className="p-2 bg-black/40 rounded-full"
             >
@@ -64,6 +66,7 @@ export default function FileDetailModalView({
           )}
           {isDocPreviewable && !showDocPreview && (
             <button
+              type="button"
               onClick={onShowDocPreview}
               className="p-2 bg-black/40 rounded-full"
             >
@@ -71,6 +74,7 @@ export default function FileDetailModalView({
             </button>
           )}
           <button
+            type="button"
             onClick={onShowMobileInfo}
             className="p-2 bg-black/40 rounded-full hover:bg-white/20"
           >

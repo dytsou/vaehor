@@ -23,7 +23,7 @@ export default function FileRequestModal({
   folderId,
   folderName,
   onClose,
-}: FileRequestModalProps) {
+}: Readonly<FileRequestModalProps>) {
   const { addToast } = useAppStore();
   const t = useTranslations("FileRequestModal");
   const [title, setTitle] = useState(t("uploadTo", { folderName }));
@@ -91,6 +91,7 @@ export default function FileRequestModal({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -155,6 +156,7 @@ export default function FileRequestModal({
                   className="flex-1 bg-transparent text-sm outline-none text-muted-foreground"
                 />
                 <button
+                  type="button"
                   onClick={handleCopy}
                   className="p-2 bg-background border rounded-md hover:bg-accent transition-colors"
                 >
@@ -166,6 +168,7 @@ export default function FileRequestModal({
                 </button>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 className="w-full py-2 bg-secondary text-secondary-foreground rounded-md font-medium hover:bg-secondary/80"
               >

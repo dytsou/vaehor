@@ -12,7 +12,7 @@ interface TreeNodeChildrenProps {
 export default function TreeNodeChildren({
   node,
   depth,
-}: TreeNodeChildrenProps) {
+}: Readonly<TreeNodeChildrenProps>) {
   if (!node.isExpanded) {
     return null;
   }

@@ -23,7 +23,7 @@ export type GlobalSearchParamsResult =
   | { ok: true; params: GlobalSearchParams }
   | { ok: false; error: NextResponse };
 
-const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
+const sanitizeString = (str: string) => str.replaceAll(/<[^>]*>?/gm, "");
 
 function getMimeQuery(mimeType?: string | null) {
   switch (mimeType) {
@@ -116,7 +116,7 @@ export function parseGlobalSearchParams(
   return {
     ok: true,
     params: {
-      searchTerm: sanitizedSearchTerm.replace(/'/g, "''"),
+      searchTerm: sanitizedSearchTerm.replaceAll("'", "''"),
       searchType: searchParams.get("searchType") || "name",
       mimeType: searchParams.get("mimeType"),
       modifiedTime: searchParams.get("modifiedTime"),

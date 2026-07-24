@@ -32,7 +32,7 @@ interface PDFViewerProps {
   src: string;
 }
 
-export default function PDFViewer({ src }: PDFViewerProps) {
+export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
@@ -41,7 +41,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { sharePolicy, user } = useAppStore();
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+  function onDocumentLoadSuccess({ numPages }: Readonly<{ numPages: number }>) {
     setNumPages(numPages);
   }
 
@@ -67,6 +67,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
       <div className="flex items-center justify-between w-full px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/5 z-20 shrink-0">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setShowThumbnails(!showThumbnails)}
             className={cn(
               "p-2 rounded-lg transition-colors",
@@ -83,6 +84,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
 
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => changePage(-1)}
               disabled={pageNumber <= 1}
               className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 text-white transition-colors"
@@ -94,7 +96,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
                 type="number"
                 value={pageNumber}
                 onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                  const val = Number.parseInt(e.target.value);
                   if (val >= 1 && val <= (numPages || 1)) setPageNumber(val);
                 }}
                 className="w-10 bg-transparent text-center text-sm font-medium focus:outline-none text-white py-1"
@@ -104,6 +106,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => changePage(1)}
               disabled={pageNumber >= (numPages || 1)}
               className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 text-white transition-colors"
@@ -116,6 +119,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
         <div className="flex items-center gap-4">
           <div className="flex items-center bg-white/5 rounded-lg border border-white/5 p-1">
             <button
+              type="button"
               onClick={() => setScale((s) => Math.max(0.5, s - 0.1))}
               className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 transition-colors"
             >
@@ -125,6 +129,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
               {(scale * 100).toFixed(0)}%
             </span>
             <button
+              type="button"
               onClick={() => setScale((s) => Math.min(3, s + 0.1))}
               className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 transition-colors"
             >
@@ -136,6 +141,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleRotate}
               className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 transition-colors"
               title="Putar"
@@ -144,6 +150,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
             </button>
             {!sharePolicy?.preventDownload && (
               <button
+                type="button"
                 onClick={handleDownload}
                 className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 transition-colors"
                 title="Unduh"
@@ -242,6 +249,7 @@ export default function PDFViewer({ src }: PDFViewerProps) {
 
       <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-30">
         <button
+          type="button"
           onClick={() => setScale(1.0)}
           className="p-3 bg-zinc-900/80 backdrop-blur-md border border-white/10 text-zinc-400 rounded-full hover:bg-primary hover:text-white transition-all shadow-xl active:scale-90"
           title="Reset Zoom"

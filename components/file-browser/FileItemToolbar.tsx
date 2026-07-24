@@ -46,15 +46,17 @@ function FileItemDesktopActions({
   onShowDetails,
   onDownload,
   labels,
-}: Pick<
-  FileItemToolbarProps,
-  | "file"
-  | "isAdmin"
-  | "compactClass"
-  | "onShare"
-  | "onShowDetails"
-  | "onDownload"
-  | "labels"
+}: Readonly<
+  Pick<
+    FileItemToolbarProps,
+    | "file"
+    | "isAdmin"
+    | "compactClass"
+    | "onShare"
+    | "onShowDetails"
+    | "onDownload"
+    | "labels"
+  >
 >) {
   const runAction = (
     event: React.MouseEvent,
@@ -74,6 +76,7 @@ function FileItemDesktopActions({
     >
       {isAdmin && (
         <button
+          type="button"
           onClick={(event) => runAction(event, onShare)}
           title={labels.share}
           className="p-2 rounded-full hover:bg-muted select-none"
@@ -83,6 +86,7 @@ function FileItemDesktopActions({
       )}
       {!file.isFolder && (
         <button
+          type="button"
           onClick={(event) => runAction(event, onDownload)}
           title={labels.download}
           className="p-2 rounded-full hover:bg-muted select-none"
@@ -91,6 +95,7 @@ function FileItemDesktopActions({
         </button>
       )}
       <button
+        type="button"
         onClick={(event) => runAction(event, onShowDetails)}
         title={labels.viewDetails}
         className="p-2 rounded-full hover:bg-muted select-none"
@@ -115,7 +120,7 @@ export default function FileItemToolbar({
   onContextMenu,
   onToggleSelection,
   labels,
-}: FileItemToolbarProps) {
+}: Readonly<FileItemToolbarProps>) {
   return (
     <>
       {!isBulkMode && !isUploading && (
@@ -132,6 +137,7 @@ export default function FileItemToolbar({
 
       {!isUploading && !isBulkMode && (
         <button
+          type="button"
           onClick={(event) =>
             openFileItemMenuFromButton(event, file, onContextMenu)
           }

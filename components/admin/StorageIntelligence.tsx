@@ -14,7 +14,9 @@ interface StorageDataPoint {
   value: number;
 }
 
-export default function StorageIntelligence({ stats }: { stats: AdminStats }) {
+export default function StorageIntelligence({
+  stats,
+}: Readonly<{ stats: AdminStats }>) {
   const [data, setData] = useState<StorageDataPoint[]>([]);
 
   useEffect(() => {

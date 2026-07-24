@@ -120,7 +120,7 @@ export default function GlobalAudioPlayer() {
           >
             <div className="p-3 border-b font-semibold text-sm flex justify-between items-center bg-muted/10">
               <span>Antrean Putar ({audioQueue.length})</span>
-              <button onClick={() => setShowQueue(false)}>
+              <button type="button" onClick={() => setShowQueue(false)}>
                 <X size={16} />
               </button>
             </div>
@@ -173,7 +173,9 @@ export default function GlobalAudioPlayer() {
                 .getState()
                 .addToast({ message: "Gagal memuat audio", type: "error" });
             }}
-          />
+          >
+            <track kind="captions" />
+          </audio>
 
           <div className="relative h-1 w-full bg-muted cursor-pointer group">
             <div
@@ -206,6 +208,7 @@ export default function GlobalAudioPlayer() {
 
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={playPrevTrack}
                 className="p-2 text-foreground hover:text-primary transition-colors"
                 disabled={audioQueue.length <= 1}
@@ -214,6 +217,7 @@ export default function GlobalAudioPlayer() {
               </button>
 
               <button
+                type="button"
                 onClick={toggleAudioPlay}
                 className="h-8 w-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
               >
@@ -225,6 +229,7 @@ export default function GlobalAudioPlayer() {
               </button>
 
               <button
+                type="button"
                 onClick={playNextTrack}
                 className="p-2 text-foreground hover:text-primary transition-colors"
                 disabled={audioQueue.length <= 1}
@@ -237,12 +242,14 @@ export default function GlobalAudioPlayer() {
           <div className="px-4 pb-3 flex justify-between items-center border-t border-border/50 pt-2">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={toggleMute}
                 className="text-muted-foreground hover:text-foreground"
               >
                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
               <button
+                type="button"
                 onClick={() => setShowQueue(!showQueue)}
                 className={`text-muted-foreground hover:text-foreground ${
                   showQueue ? "text-primary" : ""
@@ -252,6 +259,7 @@ export default function GlobalAudioPlayer() {
               </button>
             </div>
             <button
+              type="button"
               onClick={closeAudio}
               className="text-muted-foreground hover:text-destructive"
             >

@@ -53,15 +53,17 @@ function renderPreviewByType({
   showTextPreview,
   textContent,
   subtitleTracks,
-}: Pick<
-  FileDetailModalPreviewProps,
-  | "file"
-  | "fileType"
-  | "directLink"
-  | "onVideoEnded"
-  | "showTextPreview"
-  | "textContent"
-  | "subtitleTracks"
+}: Readonly<
+  Pick<
+    FileDetailModalPreviewProps,
+    | "file"
+    | "fileType"
+    | "directLink"
+    | "onVideoEnded"
+    | "showTextPreview"
+    | "textContent"
+    | "subtitleTracks"
+  >
 >) {
   switch (fileType) {
     case "video":
@@ -125,7 +127,7 @@ export default function FileDetailModalPreview({
   subtitleTracks,
   sharePolicy,
   watermarkFallback,
-}: FileDetailModalPreviewProps) {
+}: Readonly<FileDetailModalPreviewProps>) {
   const showWatermark =
     sharePolicy?.hasWatermark && fileType !== "video" && fileType !== "pdf";
 

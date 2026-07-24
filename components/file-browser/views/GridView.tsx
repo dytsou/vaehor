@@ -23,7 +23,7 @@ export default function GridView({
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
   const listRef = useRef<HTMLDivElement | null>(null);
   const [numColumns, setNumColumns] = useState(2);
@@ -180,13 +180,19 @@ export default function GridView({
       </div>
 
       <div className="flex justify-center items-center p-8 mt-4 mb-16">
-        {isFetchingNextPage ? (
-          <Loader2 className="animate-spin text-primary" />
-        ) : !nextPageToken && files.length > 0 ? (
-          <span className="text-sm text-muted-foreground whitespace-nowrap">
-            {t("endOfList")}
-          </span>
-        ) : null}
+        {(() => {
+          if (isFetchingNextPage) {
+            return <Loader2 className="animate-spin text-primary" />;
+          }
+          if (!nextPageToken && files.length > 0) {
+            return (
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {t("endOfList")}
+              </span>
+            );
+          }
+          return null;
+        })()}
       </div>
     </div>
   );

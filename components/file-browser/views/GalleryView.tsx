@@ -22,15 +22,13 @@ export default function GalleryView({
   onDragStart,
   onFileDrop,
   onPrefetchItem,
-  onToggleFavorite,
   selectedFiles,
   isBulkMode,
-  shareLinks,
   density,
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
 
   if (files.length === 0 && !isFetchingNextPage) {
@@ -57,11 +55,6 @@ export default function GalleryView({
         columnClassName="pl-4 bg-clip-padding"
       >
         {files.map((file, index) => {
-          const isShared =
-            !file.uploadStatus &&
-            shareLinks.some(
-              (link) => !link.isCollection && link.path.includes(file.id),
-            );
           const isFocused = index === focusedIndex;
 
           return (
@@ -84,7 +77,6 @@ export default function GalleryView({
                   onShare={(e) => onShareClick(e, file)}
                   onShowDetails={(e) => onDetailsClick(e, file)}
                   onDownload={(e) => onDownloadClick(e, file)}
-                  onToggleFavorite={(e) => onToggleFavorite?.(e, file)}
                   isAdmin={isAdmin}
                   onDragStart={(e) => onDragStart(e, file)}
                   onFileDrop={onFileDrop}
@@ -94,10 +86,8 @@ export default function GalleryView({
                     }
                   }}
                   density={density}
-                  isShared={isShared}
                   uploadProgress={file.uploadProgress}
                   uploadStatus={file.uploadStatus}
-                  uploadError={file.uploadError}
                   isNavigating={navigatingId === file.id}
                 />
               </div>
@@ -107,13 +97,19 @@ export default function GalleryView({
       </Masonry>
 
       <div className="flex justify-center items-center p-8 mb-16">
-        {isFetchingNextPage ? (
-          <Loader2 className="animate-spin text-primary" />
-        ) : !nextPageToken && files.length > 0 ? (
-          <span className="text-sm text-muted-foreground">
-            {t("endOfList")}
-          </span>
-        ) : null}
+        {(() => {
+          if (isFetchingNextPage) {
+            return <Loader2 className="animate-spin text-primary" />;
+          }
+          if (!nextPageToken && files.length > 0) {
+            return (
+              <span className="text-sm text-muted-foreground">
+                {t("endOfList")}
+              </span>
+            );
+          }
+          return null;
+        })()}
       </div>
     </motion.div>
   );

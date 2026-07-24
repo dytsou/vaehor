@@ -24,9 +24,7 @@ interface EPubBook {
   ) => EPubRendition;
   destroy: () => void;
 }
-interface EPubLib {
-  (src: string): EPubBook;
-}
+type EPubLib = (src: string) => EPubBook;
 declare const ePub: EPubLib;
 
 export const LoadingPreview: React.FC = () => (
@@ -53,6 +51,7 @@ export const FileIconPlaceholder: React.FC<{
       </div>
       {isPreviewable ? (
         <button
+          type="button"
           onClick={onPreview}
           className="group relative inline-flex items-center gap-3 px-8 py-3 bg-primary text-primary-foreground text-sm font-semibold rounded-full shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all active:scale-95"
         >
@@ -102,7 +101,7 @@ export const EbookPreview: React.FC<{ src: string }> = ({ src }) => {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    if (typeof ePub === "undefined") {
+    if (ePub === undefined) {
       setError(t("libraryError"));
       setIsLoading(false);
       return;
@@ -203,13 +202,14 @@ export const DefaultPreview: React.FC<{
       </h3>
       <p className="text-sm text-zinc-500 mb-8">{t("notAvailable")}</p>
       <button
+        type="button"
         onClick={() => {
           const iframe = document.createElement("iframe");
           iframe.style.display = "none";
           iframe.src = downloadUrl;
           document.body.appendChild(iframe);
           setTimeout(() => {
-            document.body.removeChild(iframe);
+            iframe.remove();
           }, 5000);
         }}
         className="flex items-center gap-2 px-6 py-3 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-colors shadow-lg"

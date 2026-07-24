@@ -38,16 +38,13 @@ interface FileItemProps {
   onShare: (e: FileBrowserActionEvent) => void;
   onShowDetails: (e: FileBrowserActionEvent) => void;
   onDownload: (e: FileBrowserActionEvent) => void;
-  onToggleFavorite?: (e: FileBrowserActionEvent) => void;
   isAdmin: boolean;
   onDragStart: (e: React.DragEvent) => void;
   onFileDrop: (e: React.DragEvent, targetFolder: DriveFile) => void;
   onMouseEnter?: () => void;
   density?: "comfortable" | "compact";
-  isShared?: boolean;
   uploadProgress?: number;
   uploadStatus?: "uploading" | "error" | "success";
-  uploadError?: string;
   isNavigating?: boolean;
   onPrefetchItem?: (file: DriveFile) => void;
 }
@@ -86,7 +83,7 @@ function FileItem({
   uploadStatus,
   isNavigating,
   onPrefetchItem,
-}: FileItemProps) {
+}: Readonly<FileItemProps>) {
   const t = useTranslations("FileItem");
   const format = useFormatter();
   const {
@@ -142,18 +139,6 @@ function FileItem({
           isError,
         })}
         style={{ WebkitTapHighlightColor: "transparent" }}
-        onClick={onActivate}
-        onKeyDown={(event) => handleFileItemKeyDown(event, onActivate)}
-        onMouseDown={preventTextSelectionOnDoubleClick}
-        onDoubleClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onContextMenu={
-          isUploading
-            ? undefined
-            : (event) => openFileItemContextMenu(event, file, onContextMenu)
-        }
         draggable={canDrag}
         onDragStart={onDragStart}
         onDragOver={(event) =>
@@ -178,9 +163,25 @@ function FileItem({
             onDragLeave: () => setIsDragOver(false),
           })
         }
-        role="button"
-        tabIndex={0}
       >
+        <button
+          type="button"
+          className="absolute inset-0 z-0 cursor-pointer"
+          aria-label={file.name}
+          disabled={isUploading}
+          onClick={onActivate}
+          onKeyDown={(event) => handleFileItemKeyDown(event, onActivate)}
+          onMouseDown={preventTextSelectionOnDoubleClick}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onContextMenu={
+            isUploading
+              ? undefined
+              : (event) => openFileItemContextMenu(event, file, onContextMenu)
+          }
+        />
         <div className={fileItemFlexClassName(view)}>
           <div className={fileItemThumbnailWrapperClassName(isGallery)}>
             <FileItemThumbnail
@@ -252,7 +253,6 @@ const arePropsEqual = (prevProps: FileItemProps, nextProps: FileItemProps) => {
     prevProps.isActive === nextProps.isActive &&
     prevProps.isBulkMode === nextProps.isBulkMode &&
     prevProps.density === nextProps.density &&
-    prevProps.isShared === nextProps.isShared &&
     prevProps.uploadProgress === nextProps.uploadProgress &&
     prevProps.uploadStatus === nextProps.uploadStatus &&
     prevProps.file.name === nextProps.file.name &&

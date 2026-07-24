@@ -2,10 +2,16 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { WifiOff, History, FileWarning, Download, Loader2 } from "lucide-react";
+import {
+  WifiOff,
+  History,
+  FileWarning,
+  Download,
+  Loader2,
+  Play,
+} from "lucide-react";
 import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 
 interface UpNextOverlayProps {
   countdown: number;
@@ -19,7 +25,7 @@ export function UpNextOverlay({
   onCancel,
   onPlayNow,
   tPlayer,
-}: UpNextOverlayProps) {
+}: Readonly<UpNextOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -60,12 +66,14 @@ export function UpNextOverlay({
         <p className="text-gray-400 mb-8">{tPlayer("autoPlayNext")}</p>
         <div className="flex gap-4 justify-center">
           <button
+            type="button"
             onClick={onCancel}
             className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full font-medium transition-colors"
           >
             {tPlayer("cancel")}
           </button>
           <button
+            type="button"
             onClick={onPlayNow}
             className="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full font-bold transition-colors"
           >
@@ -85,7 +93,7 @@ interface NetworkErrorOverlayProps {
 export function NetworkErrorOverlay({
   lastTime,
   onRetry,
-}: NetworkErrorOverlayProps) {
+}: Readonly<NetworkErrorOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -120,7 +128,7 @@ export function FormatErrorOverlay({
   getAbsoluteSrc,
   tPlayer,
   webViewLink,
-}: FormatErrorOverlayProps) {
+}: Readonly<FormatErrorOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -141,7 +149,7 @@ export function FormatErrorOverlay({
             iframe.src = currentSrc;
             document.body.appendChild(iframe);
             setTimeout(() => {
-              document.body.removeChild(iframe);
+              iframe.remove();
             }, 5000);
           }}
           className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
@@ -226,7 +234,7 @@ export function ResumePromptOverlay({
   onResume,
   onSkip,
   tPlayer,
-}: ResumePromptOverlayProps) {
+}: Readonly<ResumePromptOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -248,12 +256,14 @@ export function ResumePromptOverlay({
         </p>
         <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
             onClick={onSkip}
             className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl text-sm font-medium transition-colors"
           >
             {tPlayer("startOver")}
           </button>
           <button
+            type="button"
             onClick={onResume}
             className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-medium transition-colors"
           >
@@ -269,7 +279,7 @@ interface BufferingOverlayProps {
   show: boolean;
 }
 
-export function BufferingOverlay({ show }: BufferingOverlayProps) {
+export function BufferingOverlay({ show }: Readonly<BufferingOverlayProps>) {
   if (!show) return null;
 
   return (
@@ -310,7 +320,7 @@ export function WatermarkOverlay({
   watermarkText,
   userEmail,
   userName,
-}: WatermarkOverlayProps) {
+}: Readonly<WatermarkOverlayProps>) {
   return (
     <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-overlay w-full h-full select-none">
       {WATERMARK_TILE_KEYS.map((tileKey) => (

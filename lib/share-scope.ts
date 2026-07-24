@@ -15,11 +15,11 @@ export type ParsedSharePath =
 
 export function parseShareLinkPath(path: string): ParsedSharePath | null {
   const trimmed = path.trim();
-  const collectionMatch = trimmed.match(/^\/share\/([^/]+)\/?$/);
+  const collectionMatch = /^\/share\/([^/]+)\/?$/.exec(trimmed);
   if (collectionMatch) {
     return { kind: "collection", shareId: collectionMatch[1] };
   }
-  const fileMatch = trimmed.match(/^\/folder\/([^/]+)\/file\/([^/]+)(?:\/|$)/);
+  const fileMatch = /^\/folder\/([^/]+)\/file\/([^/]+)(?:\/|$)/.exec(trimmed);
   if (fileMatch) {
     return {
       kind: "file",
@@ -27,7 +27,7 @@ export function parseShareLinkPath(path: string): ParsedSharePath | null {
       fileId: decodeURIComponent(fileMatch[2]),
     };
   }
-  const folderMatch = trimmed.match(/^\/folder\/([^/]+)\/?$/);
+  const folderMatch = /^\/folder\/([^/]+)\/?$/.exec(trimmed);
   if (folderMatch) {
     return {
       kind: "folder",

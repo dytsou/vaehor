@@ -184,6 +184,7 @@ export default function TrashPage() {
         {selectedFiles.length > 0 && (
           <>
             <button
+              type="button"
               onClick={() => handleBulkAction("restore")}
               disabled={isProcessing}
               className="px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 disabled:opacity-50"
@@ -191,6 +192,7 @@ export default function TrashPage() {
               {t("restore")} ({selectedFiles.length})
             </button>
             <button
+              type="button"
               onClick={() => handleBulkAction("delete")}
               disabled={isProcessing}
               className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
@@ -200,6 +202,7 @@ export default function TrashPage() {
           </>
         )}
         <button
+          type="button"
           onClick={() => handleSort("modifiedTime")}
           className="p-2 bg-muted rounded-lg hover:bg-muted/80"
           title={t("sortTooltip")}

@@ -11,7 +11,7 @@ export type BrowserFile = DriveFile & {
   isFavorite?: boolean;
   uploadProgress?: UploadItem["progress"];
   uploadStatus?: UploadItem["status"];
-  uploadError?: UploadItem["error"];
+  uploadError?: string;
 };
 
 export interface FileBrowserViewProps {

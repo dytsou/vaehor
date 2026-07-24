@@ -8,7 +8,7 @@ export function OAuthConfirmStep({
   loading,
   onFinish,
   t,
-}: OAuthConfirmStepProps) {
+}: Readonly<OAuthConfirmStepProps>) {
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center text-center">
@@ -51,6 +51,7 @@ export function OAuthConfirmStep({
       </div>
 
       <button
+        type="button"
         onClick={onFinish}
         disabled={loading}
         className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3.5 rounded-xl font-medium transition-all shadow-lg shadow-green-500/25 hover:shadow-green-500/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

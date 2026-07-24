@@ -239,7 +239,7 @@ export const config = {
   databaseUrl: env.DATABASE_URL,
 
   storageLimitGb: env.STORAGE_LIMIT_GB
-    ? parseInt(env.STORAGE_LIMIT_GB, 10)
+    ? Number.parseInt(env.STORAGE_LIMIT_GB, 10)
     : null,
   storageWarningThreshold: env.STORAGE_WARNING_THRESHOLD
     ? parseFloat(env.STORAGE_WARNING_THRESHOLD)

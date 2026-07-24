@@ -14,9 +14,9 @@ import { z } from "zod";
 
 function escapeForDoubleQuotedEnv(value: string): string {
   return value
-    .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
-    .replace(/"/g, '\\"');
+    .replaceAll("\\", String.raw`\\`)
+    .replaceAll("\n", String.raw`\n`)
+    .replaceAll('"', String.raw`\"`);
 }
 
 const setupFinishServiceAccountSchema = z

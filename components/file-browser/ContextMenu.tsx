@@ -66,7 +66,7 @@ function MenuItem({
   disabled = false,
   className = "",
   isDesktop,
-}: {
+}: Readonly<{
   onClick?: () => void;
   icon: React.ElementType;
   label: string | React.ReactNode;
@@ -74,10 +74,11 @@ function MenuItem({
   disabled?: boolean;
   className?: string;
   isDesktop: boolean;
-}) {
+}>) {
   return (
     <li>
       <button
+        type="button"
         onClick={onClick}
         disabled={disabled}
         className={cn(
@@ -124,7 +125,7 @@ export default function ContextMenu({
   onTogglePin,
   isAdmin,
   onOpenNewTab,
-}: ContextMenuProps) {
+}: Readonly<ContextMenuProps>) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -333,6 +334,7 @@ export default function ContextMenu({
 
           <div className="p-4 pt-2 mt-2 md:hidden bg-background">
             <button
+              type="button"
               onClick={onClose}
               className="w-full py-3.5 bg-muted/50 text-foreground rounded-2xl font-semibold active:scale-95 transition-transform"
             >

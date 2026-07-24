@@ -378,19 +378,13 @@ describe("lib/utils", () => {
       expect(getPrivateFolderIds()).toEqual([]);
     });
 
-    it("parses JSON array format", () => {
-      process.env.PRIVATE_FOLDER_IDS = '["id1","id2","id3"]';
-      expect(getPrivateFolderIds()).toEqual(["id1", "id2", "id3"]);
-    });
-
-    it("parses comma-separated format", () => {
-      process.env.PRIVATE_FOLDER_IDS = "id1,id2,id3";
-      expect(getPrivateFolderIds()).toEqual(["id1", "id2", "id3"]);
-    });
-
-    it("trims whitespace in comma-separated format", () => {
-      process.env.PRIVATE_FOLDER_IDS = " id1 , id2 , id3 ";
-      expect(getPrivateFolderIds()).toEqual(["id1", "id2", "id3"]);
+    it.each([
+      ['["id1","id2","id3"]', ["id1", "id2", "id3"]],
+      ["id1,id2,id3", ["id1", "id2", "id3"]],
+      [" id1 , id2 , id3 ", ["id1", "id2", "id3"]],
+    ] as const)("parses PRIVATE_FOLDER_IDS from %s", (value, expected) => {
+      process.env.PRIVATE_FOLDER_IDS = value;
+      expect(getPrivateFolderIds()).toEqual([...expected]);
     });
 
     it("filters empty strings", () => {

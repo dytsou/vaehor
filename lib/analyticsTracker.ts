@@ -49,7 +49,7 @@ export interface AnalyticsData {
 }
 
 function generateId(): string {
-  return `${Date.now()}-${randomUUID().replace(/-/g, "").substring(0, 12)}`;
+  return `${Date.now()}-${randomUUID().replaceAll("-", "").substring(0, 12)}`;
 }
 
 export async function trackPageView(params: {
@@ -66,7 +66,7 @@ export async function trackPageView(params: {
     const raw = `${params.ip}:${params.userAgent}`;
     let hash = 0;
     for (let i = 0; i < raw.length; i++) {
-      const char = raw.charCodeAt(i);
+      const char = raw.codePointAt(i) ?? 0;
       hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }

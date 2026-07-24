@@ -64,6 +64,7 @@ export default function NotificationCenter() {
                 </span>
               </div>
               <button
+                type="button"
                 onClick={toggleNotificationCenter}
                 className="p-2 hover:bg-accent rounded-full transition-colors"
               >
@@ -108,12 +109,14 @@ export default function NotificationCenter() {
             {notifications.length > 0 && (
               <div className="p-4 border-t border-border bg-muted/10 flex gap-2">
                 <button
+                  type="button"
                   onClick={markAllNotificationsRead}
                   className="flex-1 py-2 px-4 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >
                   <Check size={16} /> {t("markRead")}
                 </button>
                 <button
+                  type="button"
                   onClick={clearNotifications}
                   className="flex-1 py-2 px-4 rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/10 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                 >

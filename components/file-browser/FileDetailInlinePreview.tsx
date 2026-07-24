@@ -47,14 +47,17 @@ function FileDetailEditorToolbar({
   onSave,
   onToggleEditing,
   labels,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  "isEditing" | "isSaving" | "onSave" | "onToggleEditing" | "labels"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    "isEditing" | "isSaving" | "onSave" | "onToggleEditing" | "labels"
+  >
 >) {
   return (
     <div className="mb-2 flex justify-end gap-2">
       {isEditing && (
         <button
+          type="button"
           onClick={onSave}
           disabled={isSaving}
           className="px-3 py-1 bg-primary text-primary-foreground rounded flex items-center gap-2"
@@ -63,6 +66,7 @@ function FileDetailEditorToolbar({
         </button>
       )}
       <button
+        type="button"
         onClick={onToggleEditing}
         className="px-3 py-1 bg-secondary rounded"
       >
@@ -76,9 +80,11 @@ function FileDetailEditPreview({
   isFetchingEditableContent,
   editableContent,
   onEditableContentChange,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  "isFetchingEditableContent" | "editableContent" | "onEditableContentChange"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    "isFetchingEditableContent" | "editableContent" | "onEditableContentChange"
+  >
 >) {
   if (isFetchingEditableContent) {
     return <LoadingPreview />;
@@ -103,16 +109,18 @@ function FileDetailViewPreview({
   isPreviewable,
   subtitleTracks,
   onVideoEnded,
-}: Pick<
-  FileDetailInlinePreviewProps,
-  | "file"
-  | "fileType"
-  | "directLink"
-  | "internalPreviewOpen"
-  | "onOpenPreview"
-  | "isPreviewable"
-  | "subtitleTracks"
-  | "onVideoEnded"
+}: Readonly<
+  Pick<
+    FileDetailInlinePreviewProps,
+    | "file"
+    | "fileType"
+    | "directLink"
+    | "internalPreviewOpen"
+    | "onOpenPreview"
+    | "isPreviewable"
+    | "subtitleTracks"
+    | "onVideoEnded"
+  >
 >) {
   if (fileType === "video") {
     return (

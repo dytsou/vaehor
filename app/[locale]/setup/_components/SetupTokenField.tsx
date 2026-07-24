@@ -12,7 +12,7 @@ export function SetupTokenField({
   label,
   placeholder,
   hint,
-}: SetupTokenFieldProps) {
+}: Readonly<SetupTokenFieldProps>) {
   return (
     <div className="mb-6 rounded-xl border border-border bg-muted/20 p-4 space-y-2">
       <label className="text-sm font-medium" htmlFor="setup-token">

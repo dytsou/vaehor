@@ -132,6 +132,7 @@ export function AdminUsersTab(props: { sessionEmail: string }) {
                   {email}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleRemoveAdmin(email)}
                   disabled={
                     props.sessionEmail === email && adminEmails.length === 1
@@ -194,6 +195,7 @@ export function AdminUsersTab(props: { sessionEmail: string }) {
                     {email}
                   </span>
                   <button
+                    type="button"
                     onClick={() => handleRemoveEditor(email)}
                     className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >

@@ -77,7 +77,10 @@ const panelVariants: Variants = {
   }),
 };
 
-export default function DetailsPanel({ file, onClose }: DetailsPanelProps) {
+export default function DetailsPanel({
+  file,
+  onClose,
+}: Readonly<DetailsPanelProps>) {
   const t = useTranslations("DetailsPanel");
   const locale = useLocale();
   const metadata = file.imageMediaMetadata || file.videoMediaMetadata;

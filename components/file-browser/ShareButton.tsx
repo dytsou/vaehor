@@ -40,7 +40,7 @@ export default function ShareButton({
   items,
   isOpen: controlledIsOpen,
   onClose,
-}: ShareButtonProps) {
+}: Readonly<ShareButtonProps>) {
   const t = useTranslations("ShareButton");
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const { addToast, user, addShareLink } = useAppStore();
@@ -84,7 +84,7 @@ export default function ShareButton({
     try {
       const durationValue =
         typeof customDuration === "string"
-          ? parseInt(customDuration, 10) || 1
+          ? Number.parseInt(customDuration, 10) || 1
           : customDuration;
       const finalDuration = Math.max(1, durationValue);
       const expiresIn =
@@ -96,6 +96,14 @@ export default function ShareButton({
         ? t("shareCollection", { count: items.length })
         : itemName;
       const shareItems = isCollection ? items : undefined;
+
+      let resolvedMaxUses: number | null = null;
+      if (useMaxUses) {
+        resolvedMaxUses =
+          typeof maxUses === "string"
+            ? Number.parseInt(maxUses, 10) || null
+            : maxUses;
+      }
 
       const response = await fetch("/api/share", {
         method: "POST",
@@ -110,11 +118,7 @@ export default function ShareButton({
           preventDownload,
           hasWatermark,
           watermarkText: hasWatermark ? watermarkText : null,
-          maxUses: useMaxUses
-            ? typeof maxUses === "string"
-              ? parseInt(maxUses, 10) || null
-              : maxUses
-            : null,
+          maxUses: resolvedMaxUses,
         }),
       });
 
@@ -178,6 +182,7 @@ export default function ShareButton({
                     </p>
                   </div>
                   <button
+                    type="button"
                     onClick={handleClose}
                     className="p-2 hover:bg-accent rounded-full transition-colors"
                   >
@@ -217,6 +222,7 @@ export default function ShareButton({
                   Confirm all settings before generating the public link.
                 </div>
                 <button
+                  type="button"
                   onClick={() => generateLink(activeTab)}
                   className="w-full sm:w-auto min-w-[200px] flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
                 >
@@ -238,6 +244,7 @@ export default function ShareButton({
   return (
     <>
       <button
+        type="button"
         onClick={handleOpen}
         className="p-2 rounded-lg hover:bg-accent flex items-center justify-center text-sm gap-2 text-foreground"
         title={t("tooltip")}

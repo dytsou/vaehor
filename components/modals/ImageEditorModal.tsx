@@ -81,7 +81,7 @@ async function getCroppedImg(
 export default function ImageEditorModal({
   file,
   onClose,
-}: ImageEditorModalProps) {
+}: Readonly<ImageEditorModalProps>) {
   const { addToast, triggerRefresh } = useAppStore();
   const t = useTranslations("ImageEditorModal");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -141,6 +141,7 @@ export default function ImageEditorModal({
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="flex justify-between items-center p-4 bg-black text-white z-10">
         <button
+          type="button"
           onClick={onClose}
           className="p-2 hover:bg-white/10 rounded-full"
         >
@@ -148,6 +149,7 @@ export default function ImageEditorModal({
         </button>
         <h3 className="font-bold">{t("title")}</h3>
         <button
+          type="button"
           onClick={handleSave}
           disabled={isSaving}
           className="px-4 py-2 bg-primary text-white rounded-full flex items-center gap-2 disabled:opacity-50"
@@ -199,6 +201,7 @@ export default function ImageEditorModal({
           />
         </div>
         <button
+          type="button"
           onClick={() => setRotation((r) => r + 90)}
           className="p-3 bg-white/10 rounded-full hover:bg-white/20 mt-4"
         >

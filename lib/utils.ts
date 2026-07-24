@@ -28,7 +28,7 @@ export function sortStrings(values: Iterable<string>): string[] {
 export function formatBytes(bytes: number, decimals = 2): string {
   if (!+bytes) return "0 Bytes";
   const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
+  const dm = Math.max(0, decimals);
   const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
@@ -216,9 +216,9 @@ export function hexToHsl(hex: string): string {
   if (c.length === 3) {
     c = [c[0], c[0], c[1], c[1], c[2], c[2]];
   }
-  const r = parseInt(c.slice(0, 2).join(""), 16) / 255;
-  const g = parseInt(c.slice(2, 4).join(""), 16) / 255;
-  const b = parseInt(c.slice(4, 6).join(""), 16) / 255;
+  const r = Number.parseInt(c.slice(0, 2).join(""), 16) / 255;
+  const g = Number.parseInt(c.slice(2, 4).join(""), 16) / 255;
+  const b = Number.parseInt(c.slice(4, 6).join(""), 16) / 255;
 
   const max = Math.max(r, g, b),
     min = Math.min(r, g, b);

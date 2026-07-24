@@ -1,12 +1,11 @@
 "use client";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import Loading from "@/components/common/Loading";
 import FileList from "@/components/file-browser/FileList";
 import type { DriveFile } from "@/lib/drive";
 import { motion } from "framer-motion";
-import React from "react";
 import EmptyState from "@/components/file-browser/EmptyState";
 import { Link, SearchX } from "lucide-react";
 import { useTranslations } from "next-intl";

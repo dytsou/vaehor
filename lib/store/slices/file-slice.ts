@@ -29,13 +29,13 @@ import {
 function parseJwt(token: string): ShareTokenPayload | null {
   try {
     const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const base64 = base64Url.replaceAll("-", "+").replaceAll("_", "/");
     const jsonPayload = decodeURIComponent(
       window
         .atob(base64)
         .split("")
         .map(function (c) {
-          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+          return "%" + ("00" + (c.codePointAt(0) ?? 0).toString(16)).slice(-2);
         })
         .join(""),
     );
@@ -57,13 +57,8 @@ export const createFileSlice: StateCreator<AppState, [], [], FileSlice> = (
     set((state: AppState) => ({ refreshKey: state.refreshKey + 1 })),
   isBulkMode: false,
   selectedFiles: [],
-  setBulkMode: (isActive: boolean) => {
-    if (!isActive) {
-      set({ isBulkMode: false, selectedFiles: [] });
-    } else {
-      set({ isBulkMode: true });
-    }
-  },
+  enableBulkMode: () => set({ isBulkMode: true }),
+  disableBulkMode: () => set({ isBulkMode: false, selectedFiles: [] }),
   toggleSelection: (file: DriveFile) =>
     set((state: AppState) => {
       const isSelected = state.selectedFiles.some((f) => f.id === file.id);

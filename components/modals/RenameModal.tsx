@@ -15,7 +15,7 @@ export default function RenameModal({
   currentName,
   onClose,
   onRename,
-}: RenameModalProps) {
+}: Readonly<RenameModalProps>) {
   const [newName, setNewName] = useState(currentName);
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("RenameModal");
@@ -41,6 +41,7 @@ export default function RenameModal({
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          type="button"
           onClick={onClose}
           className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
         >

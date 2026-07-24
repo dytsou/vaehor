@@ -91,8 +91,9 @@ export async function parseDroppedItems(
   const items = dataTransfer.items;
   const files: FileEntry[] = [];
 
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i].webkitGetAsEntry() as FileSystemEntryLike | null;
+  for (const dataTransferItem of Array.from(items)) {
+    const item =
+      dataTransferItem.webkitGetAsEntry() as FileSystemEntryLike | null;
     if (item) {
       const result = await traverseFileTree(item);
       files.push(...result);

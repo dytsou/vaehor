@@ -273,6 +273,7 @@ export default function ManualDrivesManager(props: {
               )}
               {drive.source === "db" ? (
                 <button
+                  type="button"
                   onClick={() => handleDelete(drive.id)}
                   className="p-2 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
                   title={t("deleteFromDb")}
@@ -366,6 +367,7 @@ export default function ManualDrivesManager(props: {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium">{t("autoDiscovery")}</h3>
             <button
+              type="button"
               onClick={handleScanDrives}
               disabled={isScanning}
               className="flex items-center gap-2 px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
@@ -420,6 +422,7 @@ export default function ManualDrivesManager(props: {
                       </span>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => openConfigureModal(drive)}
                         className="text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-md transition-colors"
                       >
@@ -463,6 +466,7 @@ export default function ManualDrivesManager(props: {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setDriveToConfigure(null)}
                   className="text-muted-foreground hover:text-foreground"
                 >

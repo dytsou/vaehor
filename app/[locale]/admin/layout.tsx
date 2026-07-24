@@ -58,9 +58,9 @@ const AppFooter = () => {
 
 export default function MainLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const {
     refreshKey,
     toasts,

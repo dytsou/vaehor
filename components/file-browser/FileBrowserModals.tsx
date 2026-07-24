@@ -58,9 +58,6 @@ import ShareButton from "@/components/file-browser/ShareButton";
 
 interface FileBrowserModalsProps {
   authModal: { isOpen: boolean; folderId: string; folderName: string };
-  isAuthLoading: boolean;
-  onCloseAuth: () => void;
-  onAuthSubmit: (id: string, pass: string) => void;
   isFileRequestModalOpen: boolean;
   setIsFileRequestModalOpen: (open: boolean) => void;
   currentFolderId: string;
@@ -83,7 +80,6 @@ interface FileBrowserModalsProps {
   setPreviewFile: (file: DriveFile | null) => void;
   archivePreview: DriveFile | null;
   setArchivePreview: (file: DriveFile | null) => void;
-  detailsFile: DriveFile | null;
   setDetailsFile: (file: DriveFile | null) => void;
   isUploadModalOpen: boolean;
   setIsUploadModalOpen: (open: boolean) => void;
@@ -249,7 +245,7 @@ export default function FileBrowserModals(props: FileBrowserModalsProps) {
           isArchivePreviewable={
             (contextMenu.file.mimeType === "application/zip" ||
               contextMenu.file.mimeType.includes("compressed")) &&
-            parseInt(contextMenu.file.size || "0", 10) <=
+            Number.parseInt(contextMenu.file.size || "0", 10) <=
               ARCHIVE_PREVIEW_LIMIT_BYTES
           }
           onArchivePreview={handleArchivePreview}

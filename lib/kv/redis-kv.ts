@@ -58,17 +58,15 @@ interface RedisClientLike {
   pipeline(): RedisPipelineClient;
 }
 
-interface RedisConstructor {
-  new (
-    url: string,
-    options: {
-      maxRetriesPerRequest: number;
-      retryStrategy: (times: number) => number | null;
-      lazyConnect: boolean;
-      enableReadyCheck: boolean;
-    },
-  ): RedisClientLike;
-}
+type RedisConstructor = new (
+  url: string,
+  options: {
+    maxRetriesPerRequest: number;
+    retryStrategy: (times: number) => number | null;
+    lazyConnect: boolean;
+    enableReadyCheck: boolean;
+  },
+) => RedisClientLike;
 
 function getRedisConstructor(): RedisConstructor {
   if (!RedisClient) {
@@ -78,7 +76,7 @@ function getRedisConstructor(): RedisConstructor {
 }
 
 export class RedisKV implements KVClient {
-  private client: RedisClientLike;
+  private readonly client: RedisClientLike;
 
   constructor(url: string) {
     const IORedis = getRedisConstructor();
@@ -305,12 +303,10 @@ export class RedisKV implements KVClient {
       } else {
         results = await this.client.zrangebyscore(key, start, stop);
       }
+    } else if (options?.rev) {
+      results = await this.client.zrevrange(key, start, stop);
     } else {
-      if (options?.rev) {
-        results = await this.client.zrevrange(key, start, stop);
-      } else {
-        results = await this.client.zrange(key, start, stop);
-      }
+      results = await this.client.zrange(key, start, stop);
     }
 
     return results.map((member: string) => {

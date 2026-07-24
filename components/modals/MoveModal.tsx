@@ -13,6 +13,7 @@ import { useAppStore } from "@/lib/store";
 import type { DriveFile } from "@/lib/drive";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 interface MoveModalProps {
   fileToMove?: DriveFile;
@@ -22,13 +23,17 @@ interface MoveModalProps {
   initialFolderId?: string;
 }
 
+function RichBold(chunks: ReactNode) {
+  return <span className="font-bold">{chunks}</span>;
+}
+
 export default function MoveModal({
   fileToMove,
   filesToMove,
   onClose,
   onConfirmMove,
   initialFolderId,
-}: MoveModalProps) {
+}: Readonly<MoveModalProps>) {
   const rootId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID!;
   const rootName = process.env.NEXT_PUBLIC_ROOT_FOLDER_NAME || "Home";
 
@@ -154,6 +159,7 @@ export default function MoveModal({
           onClick={(e) => e.stopPropagation()}
         >
           <button
+            type="button"
             onClick={onClose}
             className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
           >
@@ -161,7 +167,8 @@ export default function MoveModal({
           </button>
           <h3 className="text-lg font-semibold mb-2">
             {t.rich("title", {
-              itemName: () => <span className="font-bold">{itemName}</span>,
+              bold: RichBold,
+              itemName,
             })}
           </h3>
           <p className="text-sm text-muted-foreground mb-4">
@@ -171,6 +178,7 @@ export default function MoveModal({
           <div className="border rounded-md p-2 flex items-center mb-4">
             {folderStack.length > 1 && (
               <button
+                type="button"
                 onClick={handleBackClick}
                 className="p-2 rounded-md hover:bg-accent"
               >
@@ -183,31 +191,40 @@ export default function MoveModal({
           </div>
 
           <div className="h-64 overflow-y-auto border rounded-md">
-            {isLoading || isInitializing ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="animate-spin" />
-              </div>
-            ) : subfolders.length > 0 ? (
-              <ul>
-                {subfolders.map((folder) => (
-                  <li key={folder.id}>
-                    <button
-                      onClick={() => handleFolderClick(folder)}
-                      className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-accent"
-                    >
-                      <span className="flex items-center gap-2">
-                        <FolderIcon size={16} /> {folder.name}
-                      </span>
-                      <ChevronRight size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-                <p>{t("noSubfolders")}</p>
-              </div>
-            )}
+            {(() => {
+              if (isLoading || isInitializing) {
+                return (
+                  <div className="flex items-center justify-center h-full">
+                    <Loader2 className="animate-spin" />
+                  </div>
+                );
+              }
+              if (subfolders.length > 0) {
+                return (
+                  <ul>
+                    {subfolders.map((folder) => (
+                      <li key={folder.id}>
+                        <button
+                          type="button"
+                          onClick={() => handleFolderClick(folder)}
+                          className="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-foreground hover:bg-accent"
+                        >
+                          <span className="flex items-center gap-2">
+                            <FolderIcon size={16} /> {folder.name}
+                          </span>
+                          <ChevronRight size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              return (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                  <p>{t("noSubfolders")}</p>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="flex justify-end gap-2 mt-6">

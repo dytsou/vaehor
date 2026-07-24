@@ -20,11 +20,12 @@ interface ExternalPlayerMenuProps {
 export function ExternalPlayerMenu({
   getAbsoluteSrc,
   onCopyUrl,
-}: ExternalPlayerMenuProps) {
+}: Readonly<ExternalPlayerMenuProps>) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           className="p-2 bg-black/40 hover:bg-black/80 text-white rounded-xl backdrop-blur-md border border-white/10 transition-all shadow-lg focus:outline-none"
           title="Stream Eksternal"
         >
@@ -114,7 +115,7 @@ export function VideoControlsOverlay({
   getAbsoluteSrc,
   onCopyUrl,
   onToggleTheater,
-}: VideoControlsOverlayProps) {
+}: Readonly<VideoControlsOverlayProps>) {
   return (
     <div
       className={cn(
@@ -145,6 +146,7 @@ export function VideoControlsOverlay({
 
       {!isMobile && !preventDownload && (
         <button
+          type="button"
           onClick={onToggleTheater}
           className={cn(
             "p-2 rounded-xl backdrop-blur-md border border-white/10 transition-all shadow-lg",

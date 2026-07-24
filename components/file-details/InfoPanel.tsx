@@ -78,7 +78,7 @@ export default function InfoPanel({
   const mediaWidth = metadata?.width;
   const mediaHeight = metadata?.height;
   const durationMillis = file.videoMediaMetadata?.durationMillis
-    ? parseInt(file.videoMediaMetadata.durationMillis, 10)
+    ? Number.parseInt(file.videoMediaMetadata.durationMillis, 10)
     : undefined;
 
   const handleSubmitTag = async (e: React.FormEvent) => {
@@ -95,29 +95,24 @@ export default function InfoPanel({
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      if (typeof content === "string") {
-        let finalContent = content;
-        if (!content.trim().startsWith("WEBVTT")) {
-          finalContent = srtToVtt(content);
-        }
-        const blob = new Blob([finalContent], { type: "text/vtt" });
-        const url = URL.createObjectURL(blob);
-
-        onAddSubtitle?.({
-          src: url,
-          kind: "subtitles",
-          srcLang: "local",
-          label: `Local: ${file.name.replace(".srt", ".vtt")}`,
-          default: true,
-        });
-      }
-    };
-    reader.readAsText(file);
     e.target.value = "";
+
+    void file.text().then((content) => {
+      let finalContent = content;
+      if (!content.trim().startsWith("WEBVTT")) {
+        finalContent = srtToVtt(content);
+      }
+      const blob = new Blob([finalContent], { type: "text/vtt" });
+      const url = URL.createObjectURL(blob);
+
+      onAddSubtitle?.({
+        src: url,
+        kind: "subtitles",
+        srcLang: "local",
+        label: `Local: ${file.name.replace(".srt", ".vtt")}`,
+        default: true,
+      });
+    });
   };
 
   const [pathString, setPathString] = useState<string>("/");
@@ -162,6 +157,7 @@ export default function InfoPanel({
         <div className="flex gap-2 mb-6">
           {isImage && onEditImage && (
             <button
+              type="button"
               onClick={onEditImage}
               className="px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
             >
@@ -170,6 +166,7 @@ export default function InfoPanel({
           )}
           {onShowHistory && (
             <button
+              type="button"
               onClick={onShowHistory}
               className="px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
             >
@@ -241,6 +238,7 @@ export default function InfoPanel({
               {tag}
               {isAdmin && (
                 <button
+                  type="button"
                   onClick={() => onRemoveTag(tag)}
                   className="hover:text-destructive transition-colors"
                 >
@@ -290,6 +288,7 @@ export default function InfoPanel({
                 onChange={handleLocalSubtitleUpload}
               />
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="px-2 py-1 bg-secondary/80 hover:bg-secondary text-xs font-semibold rounded-md flex items-center gap-1 transition-colors"
                 title={t("addLocalSubtitle")}
@@ -297,6 +296,7 @@ export default function InfoPanel({
                 <Upload size={14} />
               </button>
               <button
+                type="button"
                 onClick={() => setIsShowingSubtitleSelector(true)}
                 className="px-2 py-1 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-md flex items-center gap-1 transition-colors"
                 title={t("addSubtitle")}
@@ -323,6 +323,7 @@ export default function InfoPanel({
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => onRemoveSubtitle?.(track.src)}
                   className="p-1 hover:text-destructive transition-colors"
                 >
@@ -350,6 +351,7 @@ export default function InfoPanel({
 
       <div className="grid grid-cols-2 gap-3 mt-8">
         <button
+          type="button"
           onClick={onCopyLink}
           className="flex items-center justify-center px-4 py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg font-semibold transition-colors"
         >
@@ -358,13 +360,14 @@ export default function InfoPanel({
         </button>
 
         <button
+          type="button"
           onClick={() => {
             const iframe = document.createElement("iframe");
             iframe.style.display = "none";
             iframe.src = directLink;
             document.body.appendChild(iframe);
             setTimeout(() => {
-              document.body.removeChild(iframe);
+              iframe.remove();
             }, 5000);
           }}
           className="flex items-center justify-center px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-semibold"

@@ -95,6 +95,7 @@ export default function FileDetail(props: FileDetailProps) {
       {!controller.isTheaterMode && (
         <header className="flex items-center justify-between gap-4 mb-4 animate-in fade-in slide-in-from-top-4">
           <button
+            type="button"
             onClick={() => controller.router.back()}
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >

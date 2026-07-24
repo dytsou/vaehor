@@ -27,7 +27,7 @@ export default function ImageGallery({
   initialIndex,
   isOpen,
   onClose,
-}: ImageGalleryProps) {
+}: Readonly<ImageGalleryProps>) {
   const { shareToken, folderTokens, sharePolicy, user } = useAppStore();
 
   const slides = images.map((file) => {

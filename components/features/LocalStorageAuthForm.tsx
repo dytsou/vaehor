@@ -19,7 +19,7 @@ interface LocalStorageAuthFormProps {
 export default function LocalStorageAuthForm({
   isLoading,
   onSubmit,
-}: LocalStorageAuthFormProps) {
+}: Readonly<LocalStorageAuthFormProps>) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("AuthForm");

@@ -168,6 +168,7 @@ export default function UserFolderAccessManager(props: {
           <h2 className="text-xl font-semibold">{t("accessManagement")}</h2>
         </div>
         <button
+          type="button"
           onClick={fetchData}
           disabled={isLoading}
           className="p-2 hover:bg-accent rounded-full transition-colors"
@@ -253,12 +254,14 @@ export default function UserFolderAccessManager(props: {
                       ) : (
                         <>
                           <button
+                            type="button"
                             onClick={() => handleRequestAction(req, "reject")}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-background border hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-all active:scale-95"
                           >
                             <X size={16} /> {t("reject")}
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleRequestAction(req, "approve")}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg rounded-lg text-sm font-medium transition-all active:scale-95"
                           >
@@ -350,6 +353,7 @@ export default function UserFolderAccessManager(props: {
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => handleRemoveAccess(folderId, email)}
                       className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                       title={t("revoke")}

@@ -23,12 +23,12 @@ async function fetchStorageDetails() {
   }
   const aboutData: { storageQuota: { usage: string; limit: string } } =
     await aboutResponse.json();
-  const globalUsage = parseInt(aboutData.storageQuota.usage, 10);
+  const globalUsage = Number.parseInt(aboutData.storageQuota.usage, 10);
 
   const envLimitGB = process.env.STORAGE_LIMIT_GB;
   const limit = envLimitGB
-    ? parseInt(envLimitGB) * 1024 * 1024 * 1024
-    : parseInt(aboutData.storageQuota.limit, 10);
+    ? Number.parseInt(envLimitGB) * 1024 * 1024 * 1024
+    : Number.parseInt(aboutData.storageQuota.limit, 10);
 
   const largestFilesParams = new URLSearchParams({
     q: "trashed=false and mimeType != 'application/vnd.google-apps.folder'",
@@ -77,7 +77,7 @@ async function fetchStorageDetails() {
   }));
 
   const localUsage = allFiles.reduce(
-    (acc, file) => acc + parseInt(file.size || "0", 10),
+    (acc, file) => acc + Number.parseInt(file.size || "0", 10),
     0,
   );
 
@@ -110,7 +110,7 @@ async function fetchStorageDetails() {
       breakdownMap[type] = { size: 0, count: 0 };
     }
 
-    const fileSize = parseInt(file.size || "0", 10);
+    const fileSize = Number.parseInt(file.size || "0", 10);
     breakdownMap[type].size += fileSize;
     breakdownMap[type].count += 1;
   });

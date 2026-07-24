@@ -209,7 +209,7 @@ export function summarizeLatencies(
     Math.max(entries.length, 1);
 
   const [fastestName, fastestService] = sorted[0];
-  const [slowestName, slowestService] = sorted[sorted.length - 1];
+  const [slowestName, slowestService] = sorted.at(-1)!;
 
   return {
     totalCheckMs: Math.round(totalCheckMs),

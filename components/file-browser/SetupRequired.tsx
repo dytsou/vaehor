@@ -19,7 +19,7 @@ interface SetupRequiredProps {
 export default function SetupRequired({
   message,
   type = "expired",
-}: SetupRequiredProps) {
+}: Readonly<SetupRequiredProps>) {
   const isExpired = type === "expired";
 
   const containerVariants = {
@@ -87,6 +87,7 @@ export default function SetupRequired({
           className="flex flex-col w-full gap-2.5"
         >
           <button
+            type="button"
             onClick={() => (window.location.href = "/setup")}
             className="group flex items-center justify-center gap-2 h-11 px-6 bg-foreground text-background hover:opacity-90 text-[13px] font-semibold rounded-xl transition-all"
           >
@@ -99,6 +100,7 @@ export default function SetupRequired({
           </button>
 
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="flex items-center justify-center gap-2 h-11 px-6 bg-transparent hover:bg-secondary/50 text-foreground border border-border text-[13px] font-medium rounded-xl transition-colors"
           >

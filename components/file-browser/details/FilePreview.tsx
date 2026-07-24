@@ -12,7 +12,10 @@ interface FilePreviewProps {
   variant: "desktop" | "mobile";
 }
 
-export default function FilePreview({ file, variant }: FilePreviewProps) {
+export default function FilePreview({
+  file,
+  variant,
+}: Readonly<FilePreviewProps>) {
   const FileIconComponent = getIcon(file.mimeType);
 
   const sizeClasses =

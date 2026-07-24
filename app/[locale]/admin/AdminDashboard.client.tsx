@@ -166,6 +166,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
     >
       <div className="flex items-center gap-4 mb-8">
         <button
+          type="button"
           onClick={() => router.back()}
           className="p-2.5 rounded-full bg-card border hover:bg-accent transition-colors shadow-sm"
           aria-label="Kembali"
@@ -257,6 +258,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 {publicUrl}
                               </p>
                               <button
+                                type="button"
                                 onClick={() => handleCopy(publicUrl)}
                                 className="p-1.5 hover:bg-background rounded shadow-sm"
                               >
@@ -270,6 +272,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                               </span>
 
                               <button
+                                type="button"
                                 onClick={() => handleDelete(req, "request")}
                                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors flex items-center gap-1 text-xs font-medium"
                               >
@@ -339,6 +342,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 className="bg-transparent text-xs font-mono text-muted-foreground flex-1 outline-none min-w-0"
                               />
                               <button
+                                type="button"
                                 onClick={() => handleCopy(shareUrl)}
                                 className="p-1.5 bg-background hover:bg-accent rounded shadow-sm border"
                               >
@@ -356,6 +360,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 )}
                               </p>
                               <button
+                                type="button"
                                 onClick={() => handleDelete(link, "share")}
                                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg transition-colors text-xs font-medium flex items-center gap-1.5"
                               >

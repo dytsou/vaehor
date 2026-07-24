@@ -105,7 +105,19 @@ function interpolate(
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = values[key];
-    return value === undefined || value === null ? "" : String(value);
+    if (value === undefined || value === null) return "";
+    switch (typeof value) {
+      case "string":
+        return value;
+      case "number":
+      case "boolean":
+      case "bigint":
+        return String(value);
+      case "object":
+        return JSON.stringify(value);
+      default:
+        return "";
+    }
   });
 }
 
