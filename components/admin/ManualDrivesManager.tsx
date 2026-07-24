@@ -466,6 +466,7 @@ export default function ManualDrivesManager(props: {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setDriveToConfigure(null)}
                   className="text-muted-foreground hover:text-foreground"
                 >
