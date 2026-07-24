@@ -126,6 +126,7 @@ export default function FileBrowserHeader({
                 </h1>
               ) : (
                 <button
+                  type="button"
                   onClick={() => {
                     if (isClickable) {
                       onBreadcrumbClick(folder.id);
