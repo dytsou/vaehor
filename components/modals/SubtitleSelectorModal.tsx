@@ -53,7 +53,7 @@ export default function SubtitleSelectorModal({
   }, [folderId]);
 
   const handleSelect = (file: DriveFile) => {
-    const langMatch = /[\._]([a-z]{2,3})[\._]/i.exec(file.name);
+    const langMatch = /[._]([a-z]{2,3})[._]/i.exec(file.name);
     const lang = langMatch ? langMatch[1] : "en";
     const label = file.name;
 
