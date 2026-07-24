@@ -8,7 +8,7 @@ interface TreeNodeChevronProps {
   onToggle: (id: string) => void;
 }
 
-function TreeNodeChevronIcon({ node }: { node: FolderNode }) {
+function TreeNodeChevronIcon({ node }: Readonly<{ node: FolderNode }>) {
   if (node.isLoading) {
     return <Loader2 size={12} className="animate-spin" />;
   }
