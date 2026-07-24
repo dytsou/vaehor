@@ -24,9 +24,7 @@ interface EPubBook {
   ) => EPubRendition;
   destroy: () => void;
 }
-interface EPubLib {
-  (src: string): EPubBook;
-}
+type EPubLib = (src: string) => EPubBook;
 declare const ePub: EPubLib;
 
 export const LoadingPreview: React.FC = () => (
