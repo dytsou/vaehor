@@ -2,10 +2,16 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { WifiOff, History, FileWarning, Download, Loader2 } from "lucide-react";
+import {
+  WifiOff,
+  History,
+  FileWarning,
+  Download,
+  Loader2,
+  Play,
+} from "lucide-react";
 import { formatDuration } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 
 interface UpNextOverlayProps {
   countdown: number;
