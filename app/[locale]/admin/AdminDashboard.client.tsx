@@ -342,6 +342,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 className="bg-transparent text-xs font-mono text-muted-foreground flex-1 outline-none min-w-0"
                               />
                               <button
+                                type="button"
                                 onClick={() => handleCopy(shareUrl)}
                                 className="p-1.5 bg-background hover:bg-accent rounded shadow-sm border"
                               >
