@@ -28,7 +28,7 @@ export interface TMDBMetadata {
 
 interface TMDBSearchResult {
   id: number;
-  media_type: "movie" | "tv" | string;
+  media_type: string;
 }
 
 interface TMDBSearchResponse {
