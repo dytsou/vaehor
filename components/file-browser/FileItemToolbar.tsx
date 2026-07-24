@@ -46,15 +46,17 @@ function FileItemDesktopActions({
   onShowDetails,
   onDownload,
   labels,
-}: Pick<
-  FileItemToolbarProps,
-  | "file"
-  | "isAdmin"
-  | "compactClass"
-  | "onShare"
-  | "onShowDetails"
-  | "onDownload"
-  | "labels"
+}: Readonly<
+  Pick<
+    FileItemToolbarProps,
+    | "file"
+    | "isAdmin"
+    | "compactClass"
+    | "onShare"
+    | "onShowDetails"
+    | "onDownload"
+    | "labels"
+  >
 >) {
   const runAction = (
     event: React.MouseEvent,
