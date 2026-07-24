@@ -307,6 +307,7 @@ export default function ProtectedFoldersManager(props: {
               </div>
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => setFolderToDelete(null)}
                   className="px-4 py-2 text-sm font-medium rounded-lg border bg-background hover:bg-accent transition-colors"
                 >
