@@ -21,19 +21,20 @@ interface RedisPublisher {
   publish: (channel: string, message: string) => Promise<number>;
 }
 
-interface RedisConstructor {
-  new (url: string): RedisSubscriber & RedisPublisher;
-}
+type RedisConstructor = new (url: string) => RedisSubscriber & RedisPublisher;
 
 class EventBus {
-  private listeners = new Map<string, Set<(event: AppEvent) => void>>();
+  private readonly listeners = new Map<
+    string,
+    Set<(event: AppEvent) => void>
+  >();
   private subscriber: RedisSubscriber | null = null;
   private publisher: RedisPublisher | null = null;
   private isConnected = false;
-  private globalWithEdgeRuntime = globalThis as typeof globalThis & {
+  private readonly globalWithEdgeRuntime = globalThis as typeof globalThis & {
     EdgeRuntime?: unknown;
   };
-  private isEdge =
+  private readonly isEdge =
     typeof globalThis !== "undefined" &&
     this.globalWithEdgeRuntime.EdgeRuntime !== undefined;
 
