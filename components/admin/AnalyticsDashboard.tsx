@@ -176,6 +176,7 @@ export default function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <button
+          type="button"
           onClick={() => fetchAnalytics(true)}
           disabled={isRefreshing}
           className="p-2 hover:bg-accent rounded-full transition-colors"
