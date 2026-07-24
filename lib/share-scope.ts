@@ -19,7 +19,7 @@ export function parseShareLinkPath(path: string): ParsedSharePath | null {
   if (collectionMatch) {
     return { kind: "collection", shareId: collectionMatch[1] };
   }
-  const fileMatch = trimmed.match(/^\/folder\/([^/]+)\/file\/([^/]+)(?:\/|$)/);
+  const fileMatch = /^\/folder\/([^/]+)\/file\/([^/]+)(?:\/|$)/.exec(trimmed);
   if (fileMatch) {
     return {
       kind: "file",
