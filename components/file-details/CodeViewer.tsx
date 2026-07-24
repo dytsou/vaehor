@@ -18,7 +18,7 @@ export function CodeViewer({
   language,
   className,
   fileName,
-}: CodeViewerProps) {
+}: Readonly<CodeViewerProps>) {
   const { addToast } = useAppStore();
   const [copied, setCopied] = useState(false);
   const [fontSize, setFontSize] = useState(14);
