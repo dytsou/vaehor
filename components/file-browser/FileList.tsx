@@ -46,7 +46,7 @@ export default function FileList({
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileListProps) {
+}: Readonly<FileListProps>) {
   const {
     view,
     selectedFiles,
