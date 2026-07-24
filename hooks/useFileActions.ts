@@ -178,7 +178,7 @@ export function useFileActions(currentFolderId: string) {
   };
 
   const handleMove = async (newParentId: string) => {
-    if (!actionState.file || !actionState.file.parents) {
+    if (!actionState.file?.parents) {
       setActionState({ type: null, file: null });
       return;
     }

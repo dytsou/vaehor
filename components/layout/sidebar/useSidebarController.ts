@@ -35,7 +35,7 @@ interface DropPayload {
 function parseEnvManualDrives(envValue: string): ManualDrive[] {
   return envValue.split(",").reduce<ManualDrive[]>((accumulator, entry) => {
     const [id, name] = entry.split(":");
-    if (!id || !id.trim()) {
+    if (!id?.trim()) {
       return accumulator;
     }
 
@@ -262,7 +262,7 @@ export function useSidebarController() {
   const toggleNode = useCallback(
     async (nodeId: string) => {
       const node = treeRef.current[nodeId];
-      if (!node || !node.isFolder) {
+      if (!node?.isFolder) {
         return;
       }
 
