@@ -34,11 +34,11 @@ export function QuickStat({
   icon: Icon,
   label,
   value,
-}: {
+}: Readonly<{
   icon: React.ElementType;
   label: string;
   value: string | number;
-}) {
+}>) {
   return (
     <motion.div
       variants={itemVariants}
