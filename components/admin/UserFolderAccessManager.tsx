@@ -168,6 +168,7 @@ export default function UserFolderAccessManager(props: {
           <h2 className="text-xl font-semibold">{t("accessManagement")}</h2>
         </div>
         <button
+          type="button"
           onClick={fetchData}
           disabled={isLoading}
           className="p-2 hover:bg-accent rounded-full transition-colors"
