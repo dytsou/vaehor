@@ -148,6 +148,7 @@ export default function UploadModal({
                   <FilePlus size={16} /> {t("selectFile")}
                 </button>
                 <button
+                  type="button"
                   onClick={() => folderInputRef.current?.click()}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium transition-colors"
                 >
