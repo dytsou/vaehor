@@ -139,8 +139,6 @@ function FileItem({
           isError,
         })}
         style={{ WebkitTapHighlightColor: "transparent" }}
-        onClick={onActivate}
-        onKeyDown={(event) => handleFileItemKeyDown(event, onActivate)}
         onMouseDown={preventTextSelectionOnDoubleClick}
         onDoubleClick={(event) => {
           event.preventDefault();
@@ -175,9 +173,15 @@ function FileItem({
             onDragLeave: () => setIsDragOver(false),
           })
         }
-        role="button"
-        tabIndex={0}
       >
+        <button
+          type="button"
+          className="absolute inset-0 z-0 cursor-pointer"
+          aria-label={file.name}
+          disabled={isUploading}
+          onClick={onActivate}
+          onKeyDown={(event) => handleFileItemKeyDown(event, onActivate)}
+        />
         <div className={fileItemFlexClassName(view)}>
           <div className={fileItemThumbnailWrapperClassName(isGallery)}>
             <FileItemThumbnail
