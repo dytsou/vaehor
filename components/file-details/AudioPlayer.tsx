@@ -29,7 +29,7 @@ export default function AudioPlayer({
   title,
   mimeType,
   poster,
-}: AudioPlayerProps) {
+}: Readonly<AudioPlayerProps>) {
   const playerRef = useRef<MediaPlayerInstance>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoading, setIsLoading] = useState(true);
