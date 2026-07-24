@@ -127,6 +127,7 @@ export default function FileUploadManager() {
 
                 {upload.status !== "uploading" && (
                   <button
+                    type="button"
                     onClick={() => removeUpload(upload.name)}
                     className="p-1 hover:bg-muted rounded transition-colors"
                   >
