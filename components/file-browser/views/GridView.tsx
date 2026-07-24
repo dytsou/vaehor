@@ -23,7 +23,7 @@ export default function GridView({
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
   const listRef = useRef<HTMLDivElement | null>(null);
   const [numColumns, setNumColumns] = useState(2);
