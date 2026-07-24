@@ -381,6 +381,7 @@ export default function Header() {
                         "onClick" in item &&
                           typeof item.onClick === "function" && (
                             <button
+                              type="button"
                               key={item.id}
                               onClick={item.onClick}
                               title={item.label}
