@@ -10,7 +10,7 @@ import {
   type AppConfigUpdate,
 } from "@/lib/app-config";
 import { getAnalyticsData } from "@/lib/analyticsTracker";
-import { sortStrings } from "@/lib/utils";
+import { sortStrings, stripHtmlTags } from "@/lib/utils";
 import {
   getActivityLogs,
   getSecurityLogs,
@@ -188,17 +188,15 @@ export async function getSystemHealthAction() {
   };
 }
 
-const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
-
 const protectedFolderSchema = z.object({
   folderId: z
     .string()
     .min(5, "Folder ID tidak valid.")
-    .transform((val) => sanitizeString(val).trim()),
+    .transform((val) => stripHtmlTags(val).trim()),
   id: z
     .string()
     .optional()
-    .transform((val) => (val ? sanitizeString(val) : "admin")),
+    .transform((val) => (val ? stripHtmlTags(val) : "admin")),
   password: z.string().min(1, "Password tidak boleh kosong."),
 });
 

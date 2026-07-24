@@ -6,15 +6,14 @@ import { z } from "zod";
 import { invalidateFolderCache } from "@/lib/cache";
 import { logActivity } from "@/lib/activityLogger";
 import { createEditorRoute } from "@/lib/api-middleware";
-
-const sanitizeString = (str: string) => str.replace(/<[^>]*>?/gm, "");
+import { stripHtmlTags } from "@/lib/utils";
 
 const renameSchema = z.object({
   fileId: z.string().min(1),
   newName: z
     .string()
     .min(1, { message: "Nama baru tidak boleh kosong." })
-    .transform((val) => sanitizeString(val)),
+    .transform((val) => stripHtmlTags(val)),
 });
 export const POST = createEditorRoute(
   async ({ body, session }) => {

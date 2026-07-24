@@ -17,6 +17,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const GOOGLE_DRIVE_FILE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/** Removes angle brackets from plain-text input to prevent HTML injection. */
+export function stripHtmlTags(value: string): string {
+  return value.replace(/[<>]/g, "");
+}
+
+export function isValidGoogleDriveFileId(fileId: string): boolean {
+  return (
+    fileId.length > 0 &&
+    fileId.length <= 255 &&
+    GOOGLE_DRIVE_FILE_ID_PATTERN.test(fileId)
+  );
+}
+
 export function compareStrings(a: string, b: string): number {
   return a.localeCompare(b);
 }

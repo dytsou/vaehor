@@ -4,6 +4,7 @@ import {
   invalidateAccessToken,
   type DriveFile,
 } from "@/lib/drive";
+import { isValidGoogleDriveFileId } from "@/lib/utils";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,9 @@ async function fetchFileMetadata(
   retryCount = 0,
 ): Promise<DriveFile | null> {
   const cleanId = fileId.split("&")[0].split("?")[0].trim();
+  if (!isValidGoogleDriveFileId(cleanId)) {
+    return null;
+  }
 
   const response = await fetch(
     `https://www.googleapis.com/drive/v3/files/${cleanId}?fields=id,name,mimeType,parents,trashed,shortcutDetails&supportsAllDrives=true`,
@@ -61,6 +65,10 @@ export async function GET(request: NextRequest) {
   }
 
   fileId = fileId.split("&")[0].split("?")[0].trim();
+
+  if (!isValidGoogleDriveFileId(fileId)) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
   try {
     const accessToken = await getAccessToken();

@@ -11,6 +11,8 @@ import {
   getPrivateFolderIds,
   cleanMediaTitle,
   getBaseUrl,
+  stripHtmlTags,
+  isValidGoogleDriveFileId,
 } from "@/lib/utils";
 import {
   File as FileIcon,
@@ -456,6 +458,26 @@ describe("lib/utils", () => {
     it("returns localhost when no env var is set", () => {
       delete process.env.NEXTAUTH_URL;
       expect(getBaseUrl()).toBe("http://localhost:3000");
+    });
+  });
+
+  describe("stripHtmlTags", () => {
+    it("removes angle brackets from plain text", () => {
+      expect(stripHtmlTags("<b>hello</b>")).toBe("bhello/b");
+      expect(stripHtmlTags("<<script>script>alert(1)</script>")).toBe(
+        "scriptscriptalert(1)/script",
+      );
+    });
+  });
+
+  describe("isValidGoogleDriveFileId", () => {
+    it("accepts valid drive file ids", () => {
+      expect(isValidGoogleDriveFileId("1ABcDeFgHiJkLmNoPqRsT")).toBe(true);
+    });
+
+    it("rejects ids with path or query characters", () => {
+      expect(isValidGoogleDriveFileId("../etc/passwd")).toBe(false);
+      expect(isValidGoogleDriveFileId("abc?fields=id")).toBe(false);
     });
   });
 });

@@ -10,6 +10,7 @@ import {
 import { isProtected } from "@/lib/auth";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { logger } from "@/lib/logger";
+import { stripHtmlTags } from "@/lib/utils";
 
 export type GlobalSearchParams = {
   searchTerm: string;
@@ -23,7 +24,7 @@ export type GlobalSearchParamsResult =
   | { ok: true; params: GlobalSearchParams }
   | { ok: false; error: NextResponse };
 
-const sanitizeString = (str: string) => str.replaceAll(/<[^>]*>?/gm, "");
+const sanitizeString = stripHtmlTags;
 
 function getMimeQuery(mimeType?: string | null) {
   switch (mimeType) {
