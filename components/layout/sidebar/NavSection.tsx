@@ -54,6 +54,7 @@ export default function NavSection({ t }: Readonly<NavSectionProps>) {
       {/* Local Storage Folder */}
       {process.env.NEXT_PUBLIC_ENABLE_LOCAL_STORAGE === "true" && (
         <button
+          type="button"
           onClick={() => handleNav("local", "/folder/local-storage%3A")}
           id="sidebar-nav-local"
           className={cn(
