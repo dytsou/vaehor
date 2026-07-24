@@ -320,7 +320,7 @@ export function WatermarkOverlay({
   watermarkText,
   userEmail,
   userName,
-}: WatermarkOverlayProps) {
+}: Readonly<WatermarkOverlayProps>) {
   return (
     <div className="absolute inset-0 pointer-events-none z-[90] overflow-hidden flex flex-wrap justify-around items-center opacity-[0.25] mix-blend-overlay w-full h-full select-none">
       {WATERMARK_TILE_KEYS.map((tileKey) => (
