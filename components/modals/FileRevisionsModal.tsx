@@ -77,7 +77,11 @@ export default function FileRevisionsModal({
             <History className="text-primary" size={20} />
             {t.rich("title", { fileName })}
           </h3>
-          <button onClick={onClose} className="hover:bg-muted p-1 rounded-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="hover:bg-muted p-1 rounded-full"
+          >
             <X size={20} />
           </button>
         </div>
