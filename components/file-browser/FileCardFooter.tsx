@@ -43,7 +43,7 @@ export default function FileCardFooter({
   preventDownload,
   createActionEvent,
   labels,
-}: FileCardFooterProps) {
+}: Readonly<FileCardFooterProps>) {
   return (
     <div className="flex items-start justify-between gap-2">
       <div className="min-w-0 flex-1">
