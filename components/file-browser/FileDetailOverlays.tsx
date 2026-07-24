@@ -47,7 +47,7 @@ export default function FileDetailOverlays({
   onCloseImageEditor,
   showHistory,
   onCloseHistory,
-}: FileDetailOverlaysProps) {
+}: Readonly<FileDetailOverlaysProps>) {
   return (
     <>
       {internalPreviewOpen && (
