@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Keyboard, Command, Search, Delete, Edit2 } from "lucide-react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 import { useTranslations } from "next-intl";
+
+function CloseHintBold({ children }: Readonly<{ children: ReactNode }>) {
+  return <kbd className="font-bold">{children}</kbd>;
+}
 
 export default function KeyboardShortcutsModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -103,7 +107,7 @@ export default function KeyboardShortcutsModal() {
           </div>
           <div className="p-4 bg-muted/30 text-center text-xs text-muted-foreground">
             {t.rich("closeHint", {
-              bold: (chunks) => <kbd className="font-bold">{chunks}</kbd>,
+              bold: CloseHintBold,
             })}
           </div>
         </motion.div>
