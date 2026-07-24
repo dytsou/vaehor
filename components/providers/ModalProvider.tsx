@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 import {
@@ -151,8 +152,13 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const modalValue = useMemo(
+    () => ({ confirm, alert, prompt }),
+    [confirm, alert, prompt],
+  );
+
   return (
-    <ModalContext.Provider value={{ confirm, alert, prompt }}>
+    <ModalContext.Provider value={modalValue}>
       {children}
 
       {confirmState && (
