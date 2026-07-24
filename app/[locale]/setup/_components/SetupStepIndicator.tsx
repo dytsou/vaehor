@@ -17,10 +17,10 @@ function StepNode({ step, active }: { step: number; active: boolean }) {
 export function SetupStepIndicator({
   setupMode,
   step,
-}: {
+}: Readonly<{
   setupMode: SetupMode;
   step: number;
-}) {
+}>) {
   const totalSteps = setupMode === "oauth" ? 3 : 2;
   const nodes = [];
 
