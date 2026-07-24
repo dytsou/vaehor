@@ -87,7 +87,7 @@ export default function FileList({
 
         const combinedSelection = [...selectedFiles];
         newSelection.forEach((f) => {
-          if (!combinedSelection.find((s) => s.id === f.id)) {
+          if (!combinedSelection.some((s) => s.id === f.id)) {
             combinedSelection.push(f);
           }
         });
