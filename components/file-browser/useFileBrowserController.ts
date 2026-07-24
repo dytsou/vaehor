@@ -75,7 +75,6 @@ export function useFileBrowserController({
   const setShareToken = useAppStore((state) => state.setShareToken);
   const favorites = useAppStore((state) => state.favorites);
   const fetchFavorites = useAppStore((state) => state.fetchFavorites);
-  const detailsFile = useAppStore((state) => state.detailsFile);
   const setDetailsFile = useAppStore((state) => state.setDetailsFile);
   const setCurrentFolderId = useAppStore((state) => state.setCurrentFolderId);
   const playAudio = useAppStore((state) => state.playAudio);
