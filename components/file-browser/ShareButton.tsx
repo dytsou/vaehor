@@ -240,6 +240,7 @@ export default function ShareButton({
   return (
     <>
       <button
+        type="button"
         onClick={handleOpen}
         className="p-2 rounded-lg hover:bg-accent flex items-center justify-center text-sm gap-2 text-foreground"
         title={t("tooltip")}
