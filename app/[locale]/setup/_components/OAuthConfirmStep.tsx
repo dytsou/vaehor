@@ -8,7 +8,7 @@ export function OAuthConfirmStep({
   loading,
   onFinish,
   t,
-}: OAuthConfirmStepProps) {
+}: Readonly<OAuthConfirmStepProps>) {
   return (
     <div className="space-y-8">
       <div className="flex flex-col items-center text-center">
