@@ -89,6 +89,7 @@ export default function NavSection({ t }: Readonly<NavSectionProps>) {
         {t("favorites")}
       </button>
       <button
+        type="button"
         onClick={() => handleNav("storage", "/storage")}
         id="sidebar-nav-storage"
         className={cn(
