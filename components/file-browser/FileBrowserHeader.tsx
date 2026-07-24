@@ -223,6 +223,7 @@ export default function FileBrowserHeader({
         <div className="flex items-center gap-2 shrink-0 ml-auto">
           {view === "list" && (
             <button
+              type="button"
               onClick={() =>
                 setDensity(density === "compact" ? "comfortable" : "compact")
               }
