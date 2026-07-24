@@ -67,6 +67,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
       <div className="flex items-center justify-between w-full px-4 py-3 bg-zinc-900/90 backdrop-blur-md border-b border-white/5 z-20 shrink-0">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => setShowThumbnails(!showThumbnails)}
             className={cn(
               "p-2 rounded-lg transition-colors",
