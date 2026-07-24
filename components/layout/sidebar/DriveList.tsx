@@ -19,7 +19,7 @@ interface DriveListProps {
   t: (key: string) => string;
 }
 
-export default function DriveList({ drives, t }: DriveListProps) {
+export default function DriveList({ drives, t }: Readonly<DriveListProps>) {
   const router = useRouter();
   const currentFolderId = useAppStore((state) => state.currentFolderId);
   const navigatingId = useAppStore((state) => state.navigatingId);
