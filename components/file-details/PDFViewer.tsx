@@ -150,6 +150,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
             </button>
             {!sharePolicy?.preventDownload && (
               <button
+                type="button"
                 onClick={handleDownload}
                 className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 transition-colors"
                 title="Unduh"
