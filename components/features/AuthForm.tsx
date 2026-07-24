@@ -112,6 +112,7 @@ export default function AuthForm({
       <div className="flex flex-col items-center gap-2">
         <span className="text-xs text-muted-foreground">{t("wantAccess")}</span>
         <button
+          type="button"
           onClick={() => signIn("google")}
           className="text-sm font-medium text-primary hover:underline flex items-center gap-1.5"
         >
