@@ -56,6 +56,66 @@ export default function ArchivePreviewModal({
     staleTime: Infinity,
   });
 
+  let previewContent;
+  if (isLoading) {
+    previewContent = (
+      <div className="flex flex-col items-center justify-center h-48 p-4">
+        <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
+          <motion.div
+            className="bg-primary h-2.5 rounded-full"
+            initial={{ width: "0%" }}
+            animate={{ width: "95%" }}
+            transition={{ duration: 10, ease: "linear" }}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground mt-4">{t("loading")}</p>
+      </div>
+    );
+  } else if (error) {
+    previewContent = (
+      <div className="flex flex-col items-center justify-center h-48 text-red-500">
+        <AlertCircle className="h-12 w-12 mb-2" />
+        <p className="font-semibold">{t("failed")}</p>
+        <p className="text-sm">
+          {error instanceof Error ? error.message : t("unknownError")}
+        </p>
+      </div>
+    );
+  } else if (content.length === 0) {
+    previewContent = (
+      <div className="flex items-center justify-center h-48 text-muted-foreground">
+        <p>{t("empty")}</p>
+      </div>
+    );
+  } else {
+    previewContent = (
+      <ul className="divide-y divide-border">
+        {content.map((entry) => (
+          <li
+            key={entry.name}
+            className="flex items-center justify-between p-3"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {entry.isFolder ? (
+                <FolderIcon className="h-5 w-5 text-primary shrink-0" />
+              ) : (
+                <FileIcon className="h-5 w-5 text-muted-foreground shrink-0" />
+              )}
+              <span className="text-sm truncate" title={entry.name}>
+                {entry.name}
+              </span>
+            </div>
+            {!entry.isFolder && (
+              <span className="text-xs text-muted-foreground font-mono shrink-0 ml-2">
+                {formatBytes(entry.size)}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <AnimatePresence>
       <motion.div
@@ -87,58 +147,7 @@ export default function ArchivePreviewModal({
           </p>
 
           <div className="flex-1 overflow-y-auto border rounded-md">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center h-48 p-4">
-                <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                  <motion.div
-                    className="bg-primary h-2.5 rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ width: "95%" }}
-                    transition={{ duration: 10, ease: "linear" }}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mt-4">
-                  {t("loading")}
-                </p>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center h-48 text-red-500">
-                <AlertCircle className="h-12 w-12 mb-2" />
-                <p className="font-semibold">{t("failed")}</p>
-                <p className="text-sm">
-                  {error instanceof Error ? error.message : t("unknownError")}
-                </p>
-              </div>
-            ) : content.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-muted-foreground">
-                <p>{t("empty")}</p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-border">
-                {content.map((entry) => (
-                  <li
-                    key={entry.name}
-                    className="flex items-center justify-between p-3"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      {entry.isFolder ? (
-                        <FolderIcon className="h-5 w-5 text-primary shrink-0" />
-                      ) : (
-                        <FileIcon className="h-5 w-5 text-muted-foreground shrink-0" />
-                      )}
-                      <span className="text-sm truncate" title={entry.name}>
-                        {entry.name}
-                      </span>
-                    </div>
-                    {!entry.isFolder && (
-                      <span className="text-xs text-muted-foreground font-mono shrink-0 ml-2">
-                        {formatBytes(entry.size)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {previewContent}
           </div>
         </motion.div>
       </motion.div>
