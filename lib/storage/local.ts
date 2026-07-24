@@ -128,7 +128,7 @@ export async function getLocalFileDetails(
     const isFolder = stats.isDirectory();
     const relativePath = path
       .relative(LOCAL_ROOT, absolutePath)
-      .replace(/\\/g, "/");
+      .replaceAll(/\\/g, "/");
     const mimeType = getMimeType(absolutePath) || "application/octet-stream";
     const isImage = mimeType.startsWith("image/");
 
