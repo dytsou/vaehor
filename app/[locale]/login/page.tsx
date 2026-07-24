@@ -336,6 +336,7 @@ function CustomLoginPage() {
             </button>
 
             <button
+              type="button"
               onClick={() =>
                 signIn("guest", {
                   callbackUrl: searchParams.get("callbackUrl") || "/",
