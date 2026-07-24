@@ -397,6 +397,7 @@ export default function Header() {
               ) : (
                 <>
                   <button
+                    type="button"
                     onClick={toggleNotificationCenter}
                     className="p-2 rounded-lg hover:bg-accent relative"
                     title={t("notifications")}
