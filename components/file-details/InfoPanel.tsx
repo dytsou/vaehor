@@ -364,7 +364,7 @@ export default function InfoPanel({
             iframe.src = directLink;
             document.body.appendChild(iframe);
             setTimeout(() => {
-              document.body.removeChild(iframe);
+              document.iframe.remove();
             }, 5000);
           }}
           className="flex items-center justify-center px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-semibold"
