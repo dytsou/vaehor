@@ -100,9 +100,11 @@ function FileItemIconPreview({
   compactClass,
   isNavigating,
   Icon,
-}: Pick<
-  FileItemThumbnailProps,
-  "view" | "isGallery" | "compactClass" | "isNavigating" | "Icon"
+}: Readonly<
+  Pick<
+    FileItemThumbnailProps,
+    "view" | "isGallery" | "compactClass" | "isNavigating" | "Icon"
+  >
 >) {
   const iconSize = getFileItemIconSize(view, isGallery, compactClass);
 
