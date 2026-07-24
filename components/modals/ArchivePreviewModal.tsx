@@ -36,7 +36,7 @@ const overlayVariants = {
 export default function ArchivePreviewModal({
   file,
   onClose,
-}: ArchivePreviewModalProps) {
+}: Readonly<ArchivePreviewModalProps>) {
   const t = useTranslations("ArchivePreviewModal");
   const {
     data: content = [],
