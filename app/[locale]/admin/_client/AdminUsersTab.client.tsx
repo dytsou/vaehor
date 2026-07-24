@@ -132,6 +132,7 @@ export function AdminUsersTab(props: { sessionEmail: string }) {
                   {email}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handleRemoveAdmin(email)}
                   disabled={
                     props.sessionEmail === email && adminEmails.length === 1
