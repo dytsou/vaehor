@@ -23,7 +23,7 @@ async function fetchStorageDetails() {
   }
   const aboutData: { storageQuota: { usage: string; limit: string } } =
     await aboutResponse.json();
-  const globalUsage = parseInt(aboutData.storageQuota.usage, 10);
+  const globalUsage = Number.parseInt(aboutData.storageQuota.usage, 10);
 
   const envLimitGB = process.env.STORAGE_LIMIT_GB;
   const limit = envLimitGB
