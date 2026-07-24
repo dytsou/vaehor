@@ -91,6 +91,7 @@ export default function FileRequestModal({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
               className="text-muted-foreground hover:text-foreground"
             >
