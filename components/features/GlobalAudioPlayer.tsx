@@ -215,6 +215,7 @@ export default function GlobalAudioPlayer() {
               </button>
 
               <button
+                type="button"
                 onClick={toggleAudioPlay}
                 className="h-8 w-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
               >
