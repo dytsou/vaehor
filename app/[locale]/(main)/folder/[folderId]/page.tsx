@@ -37,7 +37,7 @@ export async function generateMetadata(props: {
   const params = await props.params;
   const folderId = decodeURIComponent(params.folderId);
   const path = await getUnifiedPath(folderId, params.locale);
-  const folderName = path[path.length - 1]?.name || "Folder";
+  const folderName = path.at(-1)?.name || "Folder";
   const appName = process.env.NEXT_PUBLIC_APP_NAME || "vaehor";
 
   const description =
