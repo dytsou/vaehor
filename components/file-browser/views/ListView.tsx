@@ -20,7 +20,6 @@ export default function ListView({
   onDragStart,
   onFileDrop,
   onPrefetchItem,
-  onToggleFavorite,
   selectedFiles,
   isBulkMode,
   shareLinks,
@@ -88,12 +87,6 @@ export default function ListView({
           const file = files[virtualRow.index];
           if (!file) return null;
 
-          const isShared =
-            !file.uploadStatus &&
-            shareLinks.some(
-              (link) => !link.isCollection && link.path.includes(file.id),
-            );
-
           const isFocused = virtualRow.index === focusedIndex;
 
           return (
@@ -136,7 +129,6 @@ export default function ListView({
                     }
                   }}
                   density={density}
-                  isShared={isShared}
                   uploadProgress={file.uploadProgress}
                   uploadStatus={file.uploadStatus}
                   uploadError={file.uploadError}

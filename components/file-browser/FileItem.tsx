@@ -43,7 +43,6 @@ interface FileItemProps {
   onFileDrop: (e: React.DragEvent, targetFolder: DriveFile) => void;
   onMouseEnter?: () => void;
   density?: "comfortable" | "compact";
-  isShared?: boolean;
   uploadProgress?: number;
   uploadStatus?: "uploading" | "error" | "success";
   uploadError?: string;
@@ -251,7 +250,6 @@ const arePropsEqual = (prevProps: FileItemProps, nextProps: FileItemProps) => {
     prevProps.isActive === nextProps.isActive &&
     prevProps.isBulkMode === nextProps.isBulkMode &&
     prevProps.density === nextProps.density &&
-    prevProps.isShared === nextProps.isShared &&
     prevProps.uploadProgress === nextProps.uploadProgress &&
     prevProps.uploadStatus === nextProps.uploadStatus &&
     prevProps.file.name === nextProps.file.name &&
