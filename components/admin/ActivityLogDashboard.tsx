@@ -226,6 +226,7 @@ export default function ActivityLogDashboard() {
           <p className="text-sm text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <button
+          type="button"
           onClick={() => fetchLogs(currentPage)}
           className="p-2 hover:bg-accent rounded-full transition-colors"
           title={t("refresh")}
