@@ -28,7 +28,7 @@ export interface FileBrowserProps {
 }
 
 function createSlug(name: string) {
-  return encodeURIComponent(name.replace(/\s+/g, "-").toLowerCase());
+  return encodeURIComponent(name.replaceAll(/\s+/g, "-").toLowerCase());
 }
 
 export function useFileBrowserController({
