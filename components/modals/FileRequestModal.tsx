@@ -23,7 +23,7 @@ export default function FileRequestModal({
   folderId,
   folderName,
   onClose,
-}: FileRequestModalProps) {
+}: Readonly<FileRequestModalProps>) {
   const { addToast } = useAppStore();
   const t = useTranslations("FileRequestModal");
   const [title, setTitle] = useState(t("uploadTo", { folderName }));
