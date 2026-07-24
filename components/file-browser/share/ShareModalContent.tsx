@@ -158,6 +158,7 @@ export function SecurityPolicies({
         </button>
 
         <button
+          type="button"
           onClick={() => setPreventDownload(!preventDownload)}
           className={cn(
             "flex items-center gap-3 p-4 rounded-2xl border text-left transition-all duration-200",
