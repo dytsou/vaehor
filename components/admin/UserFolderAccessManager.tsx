@@ -253,6 +253,7 @@ export default function UserFolderAccessManager(props: {
                       ) : (
                         <>
                           <button
+                            type="button"
                             onClick={() => handleRequestAction(req, "reject")}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-background border hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-all active:scale-95"
                           >
