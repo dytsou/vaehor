@@ -132,6 +132,7 @@ export default function AuditDashboardClient(props: { initialLogs: any[] }) {
         </div>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={fetchLogs}
             className="px-4 py-2 bg-zinc-100 dark:bg-zinc-800 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition"
           >
