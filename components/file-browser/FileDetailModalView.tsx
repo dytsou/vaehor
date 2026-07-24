@@ -48,6 +48,7 @@ export default function FileDetailModalView({
     <div className="fixed inset-0 z-[100] flex flex-col bg-black text-white h-full w-full animate-in fade-in">
       <div className="absolute top-0 left-0 right-0 z-20 flex justify-between p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <button
+          type="button"
           onClick={onClose}
           className="pointer-events-auto p-2 bg-black/40 rounded-full hover:bg-white/20"
         >
