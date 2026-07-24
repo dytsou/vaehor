@@ -141,6 +141,7 @@ export default function ImageEditorModal({
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="flex justify-between items-center p-4 bg-black text-white z-10">
         <button
+          type="button"
           onClick={onClose}
           className="p-2 hover:bg-white/10 rounded-full"
         >
