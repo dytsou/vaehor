@@ -73,7 +73,9 @@ function GridThumbnail({
   file,
   thumbnailSrc,
   onImageError,
-}: Pick<FileItemThumbnailProps, "file" | "thumbnailSrc" | "onImageError">) {
+}: Readonly<
+  Pick<FileItemThumbnailProps, "file" | "thumbnailSrc" | "onImageError">
+>) {
   return (
     <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-md overflow-hidden flex items-center justify-center bg-muted/20">
       <Image
