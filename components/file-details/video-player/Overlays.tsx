@@ -263,6 +263,7 @@ export function ResumePromptOverlay({
             {tPlayer("startOver")}
           </button>
           <button
+            type="button"
             onClick={onResume}
             className="px-4 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl text-sm font-medium transition-colors"
           >
