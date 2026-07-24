@@ -129,6 +129,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
               {(scale * 100).toFixed(0)}%
             </span>
             <button
+              type="button"
               onClick={() => setScale((s) => Math.min(3, s + 0.1))}
               className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 transition-colors"
             >
