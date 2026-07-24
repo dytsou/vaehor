@@ -253,7 +253,9 @@ export async function searchFilesInFolder(
   mimeQuery: string,
   dateQuery: string,
 ): Promise<DriveFile[]> {
-  const sanitizedSearchTerm = searchTerm.replace(/['\\]/g, String.raw`\$&`);
+  const sanitizedSearchTerm = searchTerm
+    .replaceAll("\\", String.raw`\\`)
+    .replaceAll("'", String.raw`\'`);
   let driveQuery = `${queryField} contains '${sanitizedSearchTerm}' and trashed=false`;
   driveQuery += ` and '${folderId}' in parents`;
   driveQuery += mimeQuery;
