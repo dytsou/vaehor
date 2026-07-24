@@ -10,7 +10,10 @@ function connectorClass(active: boolean) {
   return `flex-1 h-0.5 transition-all ${active ? "bg-blue-500" : "bg-border"}`;
 }
 
-function StepNode({ step, active }: { step: number; active: boolean }) {
+function StepNode({
+  step,
+  active,
+}: Readonly<{ step: number; active: boolean }>) {
   return <div className={stepCircleClass(active)}>{step}</div>;
 }
 
