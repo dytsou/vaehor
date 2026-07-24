@@ -6,7 +6,11 @@ interface OfficeViewerProps {
   src?: string;
 }
 
-export function OfficeViewer({ fileUrl, mimeType, src }: OfficeViewerProps) {
+export function OfficeViewer({
+  fileUrl,
+  mimeType,
+  src,
+}: Readonly<OfficeViewerProps>) {
   const officeMimes = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
