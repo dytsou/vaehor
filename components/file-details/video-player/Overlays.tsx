@@ -25,7 +25,7 @@ export function UpNextOverlay({
   onCancel,
   onPlayNow,
   tPlayer,
-}: UpNextOverlayProps) {
+}: Readonly<UpNextOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
