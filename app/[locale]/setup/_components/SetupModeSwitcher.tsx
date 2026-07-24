@@ -12,7 +12,7 @@ export function SetupModeSwitcher({
   onModeChange,
   serviceAccountLabel,
   oauthLabel,
-}: SetupModeSwitcherProps) {
+}: Readonly<SetupModeSwitcherProps>) {
   const isServiceAccount = setupMode === "serviceAccount";
 
   return (
