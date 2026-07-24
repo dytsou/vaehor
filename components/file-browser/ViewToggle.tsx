@@ -9,7 +9,10 @@ interface ViewToggleProps {
   onToggle: (view: "list" | "grid") => void;
 }
 
-export default function ViewToggle({ currentView, onToggle }: ViewToggleProps) {
+export default function ViewToggle({
+  currentView,
+  onToggle,
+}: Readonly<ViewToggleProps>) {
   const t = useTranslations("ViewToggle");
 
   return (
