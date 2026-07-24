@@ -77,7 +77,7 @@ async function fetchStorageDetails() {
   }));
 
   const localUsage = allFiles.reduce(
-    (acc, file) => acc + parseInt(file.size || "0", 10),
+    (acc, file) => acc + Number.parseInt(file.size || "0", 10),
     0,
   );
 
