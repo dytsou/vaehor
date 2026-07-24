@@ -249,23 +249,26 @@ export default function Header() {
     }
   }, [isMobileMenuOpen]);
 
-  const authButton =
-    status === "loading" ? (
-      <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />
-    ) : session?.user ? (
-      <button
-        type="button"
-        type="button"
-        onClick={() => {
-          notifyZeeMobileLogout();
-          signOut({ callbackUrl: "/login" }).catch(() => {});
-        }}
-        title={t("logout")}
-        className="p-2 rounded-lg hover:bg-accent"
-      >
-        <LogOut size={20} />
-      </button>
-    ) : (
+  const authButton = (() => {
+    if (status === "loading") {
+      return <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />;
+    }
+    if (session?.user) {
+      return (
+        <button
+          type="button"
+          onClick={() => {
+            notifyZeeMobileLogout();
+            signOut({ callbackUrl: "/login" }).catch(() => {});
+          }}
+          title={t("logout")}
+          className="p-2 rounded-lg hover:bg-accent"
+        >
+          <LogOut size={20} />
+        </button>
+      );
+    }
+    return (
       <button
         type="button"
         onClick={handleLoginClick}
@@ -276,6 +279,7 @@ export default function Header() {
         <span>{t("login")}</span>
       </button>
     );
+  })();
 
   const createLink = (baseHref: string) => {
     if (shareToken) {
