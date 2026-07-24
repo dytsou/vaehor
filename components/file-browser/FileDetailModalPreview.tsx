@@ -125,7 +125,7 @@ export default function FileDetailModalPreview({
   subtitleTracks,
   sharePolicy,
   watermarkFallback,
-}: FileDetailModalPreviewProps) {
+}: Readonly<FileDetailModalPreviewProps>) {
   const showWatermark =
     sharePolicy?.hasWatermark && fileType !== "video" && fileType !== "pdf";
 
