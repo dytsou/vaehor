@@ -234,7 +234,7 @@ export function ResumePromptOverlay({
   onResume,
   onSkip,
   tPlayer,
-}: ResumePromptOverlayProps) {
+}: Readonly<ResumePromptOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
