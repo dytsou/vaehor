@@ -74,6 +74,7 @@ function FileItemDesktopActions({
     >
       {isAdmin && (
         <button
+          type="button"
           onClick={(event) => runAction(event, onShare)}
           title={labels.share}
           className="p-2 rounded-full hover:bg-muted select-none"
