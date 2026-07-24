@@ -22,7 +22,7 @@ export function ServiceAccountSetupStep({
   onSubmit,
   loading,
   t,
-}: ServiceAccountSetupStepProps) {
+}: Readonly<ServiceAccountSetupStepProps>) {
   return (
     <div className="space-y-8">
       <div>
