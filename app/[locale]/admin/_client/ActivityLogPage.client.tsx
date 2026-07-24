@@ -61,6 +61,7 @@ export default function ActivityLogPageClient(props: {
         </button>
         <h1 className="text-3xl font-bold">Log Aktivitas Sistem</h1>
         <button
+          type="button"
           onClick={refresh}
           disabled={isLoading}
           className="ml-auto px-4 py-2 rounded-md border bg-background hover:bg-accent transition-colors text-sm disabled:opacity-50"
