@@ -105,7 +105,9 @@ function interpolate(
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = values[key];
-    return value === undefined || value === null ? "" : String(value);
+    if (value === undefined || value === null) return "";
+    if (typeof value === "object") return JSON.stringify(value);
+    return String(value);
   });
 }
 
