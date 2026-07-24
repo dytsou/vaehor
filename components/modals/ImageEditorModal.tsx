@@ -201,6 +201,7 @@ export default function ImageEditorModal({
           />
         </div>
         <button
+          type="button"
           onClick={() => setRotation((r) => r + 90)}
           className="p-3 bg-white/10 rounded-full hover:bg-white/20 mt-4"
         >
