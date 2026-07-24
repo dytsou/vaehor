@@ -261,6 +261,7 @@ export default function UserFolderAccessManager(props: {
                             <X size={16} /> {t("reject")}
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleRequestAction(req, "approve")}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg rounded-lg text-sm font-medium transition-all active:scale-95"
                           >
