@@ -21,7 +21,7 @@ export function ShareSidebar({
   itemName,
   itemCount,
   t,
-}: ShareSidebarProps) {
+}: Readonly<ShareSidebarProps>) {
   return (
     <div className="w-full md:w-80 bg-accent/30 border-b md:border-b-0 md:border-r border-border/50 p-6 flex flex-col">
       <div className="flex items-center gap-3 mb-8">
