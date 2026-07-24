@@ -74,6 +74,7 @@ export default function FileDetailModalView({
             </button>
           )}
           <button
+            type="button"
             onClick={onShowMobileInfo}
             className="p-2 bg-black/40 rounded-full hover:bg-white/20"
           >
