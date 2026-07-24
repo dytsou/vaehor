@@ -12,7 +12,7 @@ interface MarkdownViewerProps {
 export default function MarkdownViewer({
   content,
   className,
-}: MarkdownViewerProps) {
+}: Readonly<MarkdownViewerProps>) {
   return (
     <div
       className={cn(
