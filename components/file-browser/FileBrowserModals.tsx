@@ -249,7 +249,7 @@ export default function FileBrowserModals(props: FileBrowserModalsProps) {
           isArchivePreviewable={
             (contextMenu.file.mimeType === "application/zip" ||
               contextMenu.file.mimeType.includes("compressed")) &&
-            parseInt(contextMenu.file.size || "0", 10) <=
+            Number.parseInt(contextMenu.file.size || "0", 10) <=
               ARCHIVE_PREVIEW_LIMIT_BYTES
           }
           onArchivePreview={handleArchivePreview}
