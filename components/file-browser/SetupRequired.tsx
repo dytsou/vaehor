@@ -100,6 +100,7 @@ export default function SetupRequired({
           </button>
 
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="flex items-center justify-center gap-2 h-11 px-6 bg-transparent hover:bg-secondary/50 text-foreground border border-border text-[13px] font-medium rounded-xl transition-colors"
           >
