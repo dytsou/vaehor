@@ -139,16 +139,6 @@ function FileItem({
           isError,
         })}
         style={{ WebkitTapHighlightColor: "transparent" }}
-        onMouseDown={preventTextSelectionOnDoubleClick}
-        onDoubleClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-        onContextMenu={
-          isUploading
-            ? undefined
-            : (event) => openFileItemContextMenu(event, file, onContextMenu)
-        }
         draggable={canDrag}
         onDragStart={onDragStart}
         onDragOver={(event) =>
@@ -181,6 +171,16 @@ function FileItem({
           disabled={isUploading}
           onClick={onActivate}
           onKeyDown={(event) => handleFileItemKeyDown(event, onActivate)}
+          onMouseDown={preventTextSelectionOnDoubleClick}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onContextMenu={
+            isUploading
+              ? undefined
+              : (event) => openFileItemContextMenu(event, file, onContextMenu)
+          }
         />
         <div className={fileItemFlexClassName(view)}>
           <div className={fileItemThumbnailWrapperClassName(isGallery)}>

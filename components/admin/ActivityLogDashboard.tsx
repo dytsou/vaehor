@@ -198,7 +198,7 @@ export default function ActivityLogDashboard() {
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center gap-2 flex-wrap">
                     <p className="font-semibold text-sm sm:text-base break-words">
-                      {log.type.replaceAll(/_/g, " ")}
+                      {log.type.replaceAll("_", " ")}
                     </p>
                     <p className="text-xs text-muted-foreground font-mono shrink-0">
                       {format(
@@ -249,7 +249,7 @@ export default function ActivityLogDashboard() {
           <option value={ALL_TYPES}>{t("allTypes")}</option>
           {logTypes.map((type) => (
             <option key={type} value={type}>
-              {type.replaceAll(/_/g, " ")}
+              {type.replaceAll("_", " ")}
             </option>
           ))}
         </select>

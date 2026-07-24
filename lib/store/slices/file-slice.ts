@@ -29,7 +29,7 @@ import {
 function parseJwt(token: string): ShareTokenPayload | null {
   try {
     const base64Url = token.split(".")[1];
-    const base64 = base64Url.replaceAll(/-/g, "+").replace(/_/g, "/");
+    const base64 = base64Url.replaceAll("-", "+").replaceAll("_", "/");
     const jsonPayload = decodeURIComponent(
       window
         .atob(base64)

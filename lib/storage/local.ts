@@ -78,7 +78,7 @@ export async function listLocalFiles(
       const stats = await fs.stat(filePath);
       const relativePath = path
         .relative(LOCAL_ROOT, filePath)
-        .replaceAll(/\\/g, "/");
+        .replaceAll("\\", "/");
       const entryMimeType =
         getMimeType(entry.name) || "application/octet-stream";
       const isFolder = entry.isDirectory();
@@ -128,7 +128,7 @@ export async function getLocalFileDetails(
     const isFolder = stats.isDirectory();
     const relativePath = path
       .relative(LOCAL_ROOT, absolutePath)
-      .replaceAll(/\\/g, "/");
+      .replaceAll("\\", "/");
     const mimeType = getMimeType(absolutePath) || "application/octet-stream";
     const isImage = mimeType.startsWith("image/");
 
@@ -214,7 +214,7 @@ export async function saveLocalChunk(
       file: {
         id: `local-storage:${path
           .relative(LOCAL_ROOT, finalFilePath)
-          .replaceAll(/\\/g, "/")}`,
+          .replaceAll("\\", "/")}`,
         name: fileName,
         size: String(stats.size),
         mimeType: getMimeType(fileName) || "application/octet-stream",

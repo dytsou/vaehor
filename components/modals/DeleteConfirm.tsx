@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -11,8 +11,8 @@ interface DeleteConfirmProps {
   onConfirm: () => Promise<void>;
 }
 
-function BoldItemName({ name }: Readonly<{ name: string }>) {
-  return <span className="font-bold">{name}</span>;
+function RichBold(chunks: ReactNode) {
+  return <span className="font-bold">{chunks}</span>;
 }
 
 export default function DeleteConfirm({
@@ -55,7 +55,8 @@ export default function DeleteConfirm({
             <div className="mt-2">
               <p className="text-sm text-muted-foreground">
                 {t.rich("message", {
-                  itemName: () => <BoldItemName name={itemName} />,
+                  bold: RichBold,
+                  itemName,
                 })}
               </p>
             </div>

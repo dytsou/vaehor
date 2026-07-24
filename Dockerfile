@@ -38,7 +38,7 @@ console.log(
 );
 EOF
 )"
-pnpm rebuild $ALLOWED_BUILDS
+pnpm rebuild "$ALLOWED_BUILDS"
 EOT
 
 # Stage 3: Builder

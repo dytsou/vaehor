@@ -194,7 +194,7 @@ export function useFileBrowserController({
       const [, payloadBase64] = shareToken.split(".");
       if (!payloadBase64) return;
 
-      const base64 = payloadBase64.replaceAll(/-/g, "+").replace(/_/g, "/");
+      const base64 = payloadBase64.replaceAll("-", "+").replaceAll("_", "/");
       const jsonPayload = decodeURIComponent(
         atob(base64)
           .split("")

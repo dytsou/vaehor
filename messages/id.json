@@ -120,7 +120,7 @@
   },
   "DeleteConfirm": {
     "title": "Hapus Item",
-    "message": "Apakah Anda yakin ingin menghapus {itemName}? Tindakan ini tidak dapat dibatalkan.",
+    "message": "Apakah Anda yakin ingin menghapus <bold>{itemName}</bold>? Tindakan ini tidak dapat dibatalkan.",
     "delete": "Hapus",
     "deleting": "Menghapus...",
     "cancel": "Batal"
@@ -164,7 +164,7 @@
     "accessDenied": "Akses ditolak: Anda bukan Admin."
   },
   "MoveModal": {
-    "title": "Pindahkan {itemName}",
+    "title": "Pindahkan <bold>{itemName}</bold>",
     "selectDest": "Pilih folder tujuan:",
     "noSubfolders": "Tidak ada subfolder",
     "cancel": "Batal",
