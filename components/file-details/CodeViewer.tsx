@@ -71,6 +71,7 @@ export function CodeViewer({
               {fontSize}
             </span>
             <button
+              type="button"
               onClick={() => setFontSize(Math.min(24, fontSize + 1))}
               className="px-2 text-zinc-500 hover:text-white transition-colors"
             >
