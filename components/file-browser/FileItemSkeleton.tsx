@@ -10,7 +10,7 @@ interface FileItemSkeletonProps {
 export default function FileItemSkeleton({
   viewMode = "list",
   density = "comfortable",
-}: FileItemSkeletonProps) {
+}: Readonly<FileItemSkeletonProps>) {
   const compactClass = density === "compact" && viewMode === "list";
 
   if (viewMode === "gallery") {
