@@ -126,7 +126,7 @@ export function SecurityPolicies({
   maxUses,
   setMaxUses,
   t,
-}: SecurityPoliciesProps) {
+}: Readonly<SecurityPoliciesProps>) {
   return (
     <div className="space-y-4">
       <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 px-1">
