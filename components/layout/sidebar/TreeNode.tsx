@@ -12,7 +12,7 @@ import {
   treeNodeRowClassName,
 } from "./tree-node-utils";
 
-function TreeNodeDepthGuide({ depth }: { depth: number }) {
+function TreeNodeDepthGuide({ depth }: Readonly<{ depth: number }>) {
   if (depth <= 0) {
     return null;
   }
