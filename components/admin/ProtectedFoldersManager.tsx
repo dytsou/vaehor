@@ -141,6 +141,7 @@ export default function ProtectedFoldersManager(props: {
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => setFolderToDelete(folderId)}
                   className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                   title={t("removeProtection")}
