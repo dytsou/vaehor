@@ -1,11 +1,6 @@
 import { kv } from "@/lib/kv";
 import { logger } from "@/lib/logger";
-import {
-  appEventSchema,
-  type AppEvent,
-  type AppEventPayloadByType,
-  type EventType,
-} from "@/lib/telemetry";
+import { appEventSchema, type AppEvent, type EventType } from "@/lib/telemetry";
 
 const REDIS_CHANNEL = "vaehor:events";
 
@@ -156,4 +151,5 @@ if (process.env.NODE_ENV !== "production") {
   globalForEventBus.eventBus = eventBus;
 }
 
-export type { AppEventPayloadByType, EventType, AppEvent };
+export type { AppEvent, EventType };
+export type { AppEventPayloadByType } from "@/lib/telemetry";
