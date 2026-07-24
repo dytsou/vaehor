@@ -23,7 +23,7 @@ function TreeNodeChevronIcon({ node }: Readonly<{ node: FolderNode }>) {
 export default function TreeNodeChevron({
   node,
   onToggle,
-}: TreeNodeChevronProps) {
+}: Readonly<TreeNodeChevronProps>) {
   if (!node.isFolder) {
     return <div className="w-3 shrink-0 opacity-0" aria-hidden="true" />;
   }
