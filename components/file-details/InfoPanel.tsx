@@ -171,6 +171,7 @@ export default function InfoPanel({
           )}
           {onShowHistory && (
             <button
+              type="button"
               onClick={onShowHistory}
               className="px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
             >
