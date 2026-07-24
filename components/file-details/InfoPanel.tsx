@@ -358,6 +358,7 @@ export default function InfoPanel({
         </button>
 
         <button
+          type="button"
           onClick={() => {
             const iframe = document.createElement("iframe");
             iframe.style.display = "none";
