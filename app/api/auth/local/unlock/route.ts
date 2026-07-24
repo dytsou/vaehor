@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAppConfig } from "@/lib/app-config";
+import { getAppConfig, isHashedLocalStoragePassword } from "@/lib/app-config";
 import { SignJWT } from "jose";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { getLocalStorageAuthSecret } from "@/lib/local-auth-secret";
-import { isHashedLocalStoragePassword } from "@/lib/app-config";
 
 export async function POST(req: NextRequest) {
   try {
