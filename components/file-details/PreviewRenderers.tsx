@@ -203,6 +203,7 @@ export const DefaultPreview: React.FC<{
       </h3>
       <p className="text-sm text-zinc-500 mb-8">{t("notAvailable")}</p>
       <button
+        type="button"
         onClick={() => {
           const iframe = document.createElement("iframe");
           iframe.style.display = "none";
