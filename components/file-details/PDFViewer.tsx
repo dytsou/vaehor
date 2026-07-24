@@ -141,6 +141,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleRotate}
               className="p-2 rounded-lg hover:bg-white/10 text-zinc-400 transition-colors"
               title="Putar"
