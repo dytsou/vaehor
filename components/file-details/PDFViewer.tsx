@@ -249,6 +249,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
 
       <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-30">
         <button
+          type="button"
           onClick={() => setScale(1.0)}
           className="p-3 bg-zinc-900/80 backdrop-blur-md border border-white/10 text-zinc-400 rounded-full hover:bg-primary hover:text-white transition-all shadow-xl active:scale-90"
           title="Reset Zoom"
