@@ -112,7 +112,7 @@ export default function ShareButton({
           watermarkText: hasWatermark ? watermarkText : null,
           maxUses: useMaxUses
             ? typeof maxUses === "string"
-              ? parseInt(maxUses, 10) || null
+              ? Number.parseInt(maxUses, 10) || null
               : maxUses
             : null,
         }),
