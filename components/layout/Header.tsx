@@ -254,6 +254,7 @@ export default function Header() {
     ) : session?.user ? (
       <button
         type="button"
+        type="button"
         onClick={() => {
           notifyZeeMobileLogout();
           signOut({ callbackUrl: "/login" }).catch(() => {});
