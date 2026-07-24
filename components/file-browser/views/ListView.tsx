@@ -28,7 +28,7 @@ export default function ListView({
   isFetchingNextPage,
   nextPageToken,
   navigatingId,
-}: FileBrowserViewProps) {
+}: Readonly<FileBrowserViewProps>) {
   const t = useTranslations("FileList");
   const listRef = useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = React.useState(0);
