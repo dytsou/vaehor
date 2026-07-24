@@ -120,7 +120,7 @@ export default function GlobalAudioPlayer() {
           >
             <div className="p-3 border-b font-semibold text-sm flex justify-between items-center bg-muted/10">
               <span>Antrean Putar ({audioQueue.length})</span>
-              <button onClick={() => setShowQueue(false)}>
+              <button type="button" onClick={() => setShowQueue(false)}>
                 <X size={16} />
               </button>
             </div>
