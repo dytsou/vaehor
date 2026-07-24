@@ -61,6 +61,7 @@ export function CodeViewer({
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-white/5 rounded-md p-1 mr-2 invisible md:visible">
             <button
+              type="button"
               onClick={() => setFontSize(Math.max(10, fontSize - 1))}
               className="px-2 text-zinc-500 hover:text-white transition-colors"
             >
