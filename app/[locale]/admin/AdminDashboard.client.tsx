@@ -258,6 +258,7 @@ export function AdminDashboard(props: AdminDashboardProps) {
                                 {publicUrl}
                               </p>
                               <button
+                                type="button"
                                 onClick={() => handleCopy(publicUrl)}
                                 className="p-1.5 hover:bg-background rounded shadow-sm"
                               >
