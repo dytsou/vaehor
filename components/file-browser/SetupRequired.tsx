@@ -87,6 +87,7 @@ export default function SetupRequired({
           className="flex flex-col w-full gap-2.5"
         >
           <button
+            type="button"
             onClick={() => (window.location.href = "/setup")}
             className="group flex items-center justify-center gap-2 h-11 px-6 bg-foreground text-background hover:opacity-90 text-[13px] font-semibold rounded-xl transition-all"
           >
