@@ -280,6 +280,7 @@ export default function PublicUploadPage() {
 
                 {files.length > 0 && (
                   <button
+                    type="button"
                     onClick={handleStartUpload}
                     disabled={uploadStatus === "uploading"}
                     className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 disabled:opacity-70 flex justify-center items-center gap-2"
