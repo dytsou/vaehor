@@ -48,16 +48,38 @@ async function fetchFileMetadata(
   return (await response.json()) as DriveFile;
 }
 
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const searchParams = url.searchParams;
+async function resolveShortcutTarget(file: DriveFile): Promise<DriveFile> {
+  const targetId = file.shortcutDetails?.targetId;
+  if (file.mimeType !== "application/vnd.google-apps.shortcut" || !targetId) {
+    return file;
+  }
 
+  const targetFile = await fetchFileMetadata(targetId, await getAccessToken());
+  return targetFile ?? file;
+}
+
+function buildDestinationPath(file: DriveFile): string {
+  if (file.mimeType === "application/vnd.google-apps.folder") {
+    return `/folder/${file.id}`;
+  }
+
+  const rootFolderId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID || "root";
+  const parentId = file.parents?.[0] ?? rootFolderId;
+  const slug = encodeURIComponent(
+    (file.name || "view").replace(/\s+/g, "-").toLowerCase(),
+  );
+  return `/folder/${parentId}/file/${file.id}/${slug}`;
+}
+
+function parseFindPathQuery(request: NextRequest): {
+  fileId: string;
+  shouldView: boolean;
+} | null {
+  const searchParams = new URL(request.url).searchParams;
   let fileId = searchParams.get("id");
   let shouldView = searchParams.get("view") === "true";
 
-  if (!fileId) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  if (!fileId) return null;
 
   if (fileId.includes("view=true")) {
     shouldView = true;
@@ -65,63 +87,31 @@ export async function GET(request: NextRequest) {
   }
 
   fileId = fileId.split("&")[0].split("?")[0].trim();
+  if (!isValidGoogleDriveFileId(fileId)) return null;
 
-  if (!isValidGoogleDriveFileId(fileId)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
+  return { fileId, shouldView };
+}
+
+export async function GET(request: NextRequest) {
+  const redirectHome = () => NextResponse.redirect(new URL("/", request.url));
+  const query = parseFindPathQuery(request);
+  if (!query) return redirectHome();
 
   try {
     const accessToken = await getAccessToken();
-    let file = await fetchFileMetadata(fileId, accessToken);
+    const metadata = await fetchFileMetadata(query.fileId, accessToken);
+    if (!metadata) return redirectHome();
 
-    if (!file) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+    const file = await resolveShortcutTarget(metadata);
+    if (file.trashed) return redirectHome();
 
-    if (
-      file.mimeType === "application/vnd.google-apps.shortcut" &&
-      file.shortcutDetails?.targetId
-    ) {
-      const targetToken = await getAccessToken();
-      const targetFile = await fetchFileMetadata(
-        file.shortcutDetails.targetId,
-        targetToken,
-      );
-      if (targetFile) {
-        file = targetFile;
-      }
-    }
-
-    if (file.trashed) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
-
-    let destinationPath = "";
-
-    if (file.mimeType === "application/vnd.google-apps.folder") {
-      destinationPath = `/folder/${file.id}`;
-    } else {
-      const rootFolderId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID || "root";
-      const parentId =
-        file.parents && file.parents.length > 0
-          ? file.parents[0]
-          : rootFolderId;
-      const slug = encodeURIComponent(
-        (file.name || "view").replace(/\s+/g, "-").toLowerCase(),
-      );
-
-      destinationPath = `/folder/${parentId}/file/${file.id}/${slug}`;
-    }
-
-    const destinationUrl = new URL(destinationPath, request.url);
-
-    if (shouldView) {
+    const destinationUrl = new URL(buildDestinationPath(file), request.url);
+    if (query.shouldView) {
       destinationUrl.searchParams.set("view", "true");
     }
-
     return NextResponse.redirect(destinationUrl);
   } catch (error) {
     console.error(error);
-    return NextResponse.redirect(new URL("/", request.url));
+    return redirectHome();
   }
 }
