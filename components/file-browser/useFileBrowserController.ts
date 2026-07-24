@@ -199,7 +199,7 @@ export function useFileBrowserController({
         atob(base64)
           .split("")
           .map((char) => {
-            return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+            return "%" + ("00" + char.codePointAt(0).toString(16)).slice(-2);
           })
           .join(""),
       );
