@@ -367,28 +367,19 @@ export default function AnalyticsDashboard() {
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("browser")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.browsers}
-              title={t("browser")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.browsers} />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("operatingSystem")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.os}
-              title={t("operatingSystem")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.os} />
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-2 text-center">
               {t("deviceType")}
             </p>
-            <DeviceBreakdownChart
-              data={data.deviceBreakdown.devices}
-              title={t("deviceType")}
-            />
+            <DeviceBreakdownChart data={data.deviceBreakdown.devices} />
           </div>
         </div>
       </motion.div>
