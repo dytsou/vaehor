@@ -205,6 +205,7 @@ export default function FileBrowserHeader({
             <div className="w-px h-6 bg-border mx-1 hidden sm:block shrink-0"></div>
 
             <button
+              type="button"
               onClick={onToggleBulkMode}
               className={cn(
                 "p-2 rounded-lg border transition-colors shadow-sm flex items-center justify-center shrink-0",
