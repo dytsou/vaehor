@@ -106,6 +106,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => changePage(1)}
               disabled={pageNumber >= (numPages || 1)}
               className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 text-white transition-colors"
