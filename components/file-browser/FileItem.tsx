@@ -86,7 +86,7 @@ function FileItem({
   uploadStatus,
   isNavigating,
   onPrefetchItem,
-}: FileItemProps) {
+}: Readonly<FileItemProps>) {
   const t = useTranslations("FileItem");
   const format = useFormatter();
   const {
