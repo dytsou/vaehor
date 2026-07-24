@@ -14,7 +14,7 @@ export async function getFavorites() {
 
   const userFavoritesKey = `user:${session.user.email}:favorites`;
   const favoriteIds: string[] = await kv.smembers(userFavoritesKey);
-  const validFavoriteIds = favoriteIds.filter((id) => id);
+  const validFavoriteIds = favoriteIds.filter(Boolean);
 
   if (validFavoriteIds.length === 0) {
     return [];
