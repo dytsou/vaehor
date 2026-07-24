@@ -547,9 +547,6 @@ export function useFileBrowserController({
     },
     modalsProps: {
       authModal: { isOpen: false, folderId: "", folderName: "" },
-      isAuthLoading,
-      onCloseAuth: () => {},
-      onAuthSubmit: () => {},
       isFileRequestModalOpen,
       setIsFileRequestModalOpen,
       currentFolderId,
