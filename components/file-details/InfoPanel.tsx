@@ -162,6 +162,7 @@ export default function InfoPanel({
         <div className="flex gap-2 mb-6">
           {isImage && onEditImage && (
             <button
+              type="button"
               onClick={onEditImage}
               className="px-3 py-2 bg-secondary hover:bg-secondary/80 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
             >
