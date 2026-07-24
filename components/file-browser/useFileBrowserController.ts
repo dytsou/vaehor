@@ -199,7 +199,9 @@ export function useFileBrowserController({
         atob(base64)
           .split("")
           .map((char) => {
-            return "%" + ("00" + char.codePointAt(0).toString(16)).slice(-2);
+            return (
+              "%" + ("00" + (char.codePointAt(0) ?? 0).toString(16)).slice(-2)
+            );
           })
           .join(""),
       );
@@ -441,7 +443,7 @@ export function useFileBrowserController({
     iframe.src = url;
     document.body.appendChild(iframe);
     setTimeout(() => {
-      document.iframe.remove();
+      iframe.remove();
     }, 5000);
   };
 

@@ -149,7 +149,7 @@ export function FormatErrorOverlay({
             iframe.src = currentSrc;
             document.body.appendChild(iframe);
             setTimeout(() => {
-              document.iframe.remove();
+              iframe.remove();
             }, 5000);
           }}
           className="px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
