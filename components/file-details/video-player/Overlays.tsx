@@ -93,7 +93,7 @@ interface NetworkErrorOverlayProps {
 export function NetworkErrorOverlay({
   lastTime,
   onRetry,
-}: NetworkErrorOverlayProps) {
+}: Readonly<NetworkErrorOverlayProps>) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
