@@ -156,6 +156,7 @@ export default function FileRequestModal({
                   className="flex-1 bg-transparent text-sm outline-none text-muted-foreground"
                 />
                 <button
+                  type="button"
                   onClick={handleCopy}
                   className="p-2 bg-background border rounded-md hover:bg-accent transition-colors"
                 >
