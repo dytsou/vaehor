@@ -205,6 +205,7 @@ export default function SecurityCenter() {
 
           <div className="flex gap-2">
             <button
+              type="button"
               disabled={!canAck || updatingIncidentId === incident.id}
               onClick={() => setIncidentStatus(incident.id, "acknowledged")}
               className="px-2.5 py-1.5 text-xs rounded-md border hover:bg-accent disabled:opacity-50"
