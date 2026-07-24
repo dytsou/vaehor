@@ -79,6 +79,7 @@ export function OAuthCredentialsStep({
       </div>
 
       <button
+        type="button"
         onClick={onAuthorize}
         className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3.5 rounded-xl font-medium transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 flex items-center justify-center gap-2"
       >
