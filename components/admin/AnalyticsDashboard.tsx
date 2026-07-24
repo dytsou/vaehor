@@ -59,7 +59,7 @@ function StatCard({
   comparisonLabel,
   color,
   delay = 0,
-}: {
+}: Readonly<{
   icon: React.ElementType;
   label: string;
   value: number;
@@ -67,7 +67,7 @@ function StatCard({
   comparisonLabel?: string;
   color: string;
   delay?: number;
-}) {
+}>) {
   const diff =
     comparison !== undefined && comparison > 0
       ? Math.round(((value - comparison) / comparison) * 100)
