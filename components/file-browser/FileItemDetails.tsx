@@ -24,7 +24,7 @@ interface FileItemDetailsProps {
 function FileItemUploadProgress({
   isError,
   uploadProgress = 0,
-}: Pick<FileItemDetailsProps, "isError" | "uploadProgress">) {
+}: Readonly<Pick<FileItemDetailsProps, "isError" | "uploadProgress">>) {
   return (
     <div className="w-full mt-2">
       <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
