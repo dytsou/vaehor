@@ -64,7 +64,7 @@ export default function FileBrowserHeader({
   sort,
   onSortChange,
   onPrefetchFolder,
-}: FileBrowserHeaderProps) {
+}: Readonly<FileBrowserHeaderProps>) {
   const navRef = useRef<HTMLElement>(null);
   const { density, setDensity } = useAppStore();
   const t = useTranslations("FileBrowser");
