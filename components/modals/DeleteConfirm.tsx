@@ -11,6 +11,10 @@ interface DeleteConfirmProps {
   onConfirm: () => Promise<void>;
 }
 
+function BoldItemName({ name }: Readonly<{ name: string }>) {
+  return <span className="font-bold">{name}</span>;
+}
+
 export default function DeleteConfirm({
   itemName,
   onClose,
@@ -51,7 +55,7 @@ export default function DeleteConfirm({
             <div className="mt-2">
               <p className="text-sm text-muted-foreground">
                 {t.rich("message", {
-                  itemName: () => <span className="font-bold">{itemName}</span>,
+                  itemName: () => <BoldItemName name={itemName} />,
                 })}
               </p>
             </div>
