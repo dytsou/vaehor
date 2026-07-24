@@ -73,7 +73,7 @@ export async function getProtectedFolderCredentials(
       where: { folderId: targetId },
     });
 
-    if (folder && folder.password) {
+    if (folder?.password) {
       return { id: "admin", password: folder.password };
     }
     return null;
