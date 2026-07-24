@@ -57,6 +57,7 @@ export default function FileDetailModalView({
         <div className="flex gap-3 pointer-events-auto">
           {isTextPreviewable && !showTextPreview && (
             <button
+              type="button"
               onClick={onShowTextPreview}
               className="p-2 bg-black/40 rounded-full"
             >
