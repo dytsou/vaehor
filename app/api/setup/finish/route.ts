@@ -28,7 +28,7 @@ const SETUP_ENV_KEYS = [
 export { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
 
 export function escapeEnvValue(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/\r/g, "").replace(/\n/g, "");
+  return value.replaceAll(/\\/g, "\\\\").replace(/\r/g, "").replace(/\n/g, "");
 }
 
 export function hasPersistedSetupConfig(envContent: string): boolean {
