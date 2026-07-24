@@ -13,7 +13,7 @@ type Props = {
 
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-export function Providers({ children }: Props) {
+export function Providers({ children }: Readonly<Props>) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
