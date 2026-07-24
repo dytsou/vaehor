@@ -41,7 +41,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { sharePolicy, user } = useAppStore();
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
+  function onDocumentLoadSuccess({ numPages }: Readonly<{ numPages: number }>) {
     setNumPages(numPages);
   }
 
