@@ -242,6 +242,7 @@ export default function FileBrowserHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
+                type="button"
                 className="p-1.5 rounded-md transition-all text-muted-foreground hover:text-foreground hover:bg-background border border-border flex items-center justify-center shrink-0 gap-2 px-2"
                 title={t("sortFiles")}
               >
