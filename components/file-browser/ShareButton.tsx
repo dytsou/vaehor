@@ -97,6 +97,14 @@ export default function ShareButton({
         : itemName;
       const shareItems = isCollection ? items : undefined;
 
+      let resolvedMaxUses: number | null = null;
+      if (useMaxUses) {
+        resolvedMaxUses =
+          typeof maxUses === "string"
+            ? Number.parseInt(maxUses, 10) || null
+            : maxUses;
+      }
+
       const response = await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -110,11 +118,7 @@ export default function ShareButton({
           preventDownload,
           hasWatermark,
           watermarkText: hasWatermark ? watermarkText : null,
-          maxUses: useMaxUses
-            ? typeof maxUses === "string"
-              ? Number.parseInt(maxUses, 10) || null
-              : maxUses
-            : null,
+          maxUses: resolvedMaxUses,
         }),
       });
 
