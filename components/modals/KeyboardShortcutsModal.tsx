@@ -71,6 +71,7 @@ export default function KeyboardShortcutsModal() {
               <Keyboard className="text-primary" /> {t("title")}
             </h2>
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
               className="p-2 hover:bg-accent rounded-full transition-colors"
             >
