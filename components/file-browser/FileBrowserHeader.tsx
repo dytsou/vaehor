@@ -176,6 +176,7 @@ export default function FileBrowserHeader({
         {showAdminActions && (
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-1 pr-4 -ml-1 w-full md:w-auto">
             <button
+              type="button"
               onClick={onUploadClick}
               className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-primary transition-colors shadow-sm flex items-center justify-center shrink-0"
               title={t("upload")}
