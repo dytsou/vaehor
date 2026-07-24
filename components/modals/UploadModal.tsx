@@ -140,6 +140,7 @@ export default function UploadModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="flex items-center justify-center gap-2 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm font-medium transition-colors"
                 >
