@@ -16,7 +16,7 @@ function escapeForDoubleQuotedEnv(value: string): string {
   return value
     .replaceAll(/\\/g, "\\\\")
     .replaceAll(/\n/g, "\\n")
-    .replace(/"/g, '\\"');
+    .replaceAll(/"/g, '\\"');
 }
 
 const setupFinishServiceAccountSchema = z
