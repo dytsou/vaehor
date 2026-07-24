@@ -120,7 +120,7 @@ export default function FileItemToolbar({
   onContextMenu,
   onToggleSelection,
   labels,
-}: FileItemToolbarProps) {
+}: Readonly<FileItemToolbarProps>) {
   return (
     <>
       {!isBulkMode && !isUploading && (
