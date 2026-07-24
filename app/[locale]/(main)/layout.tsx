@@ -207,7 +207,9 @@ function MainLayoutContent({
   );
 }
 
-export default function MainLayout(props: { children: React.ReactNode }) {
+export default function MainLayout(
+  props: Readonly<{ children: React.ReactNode }>,
+) {
   return (
     <Suspense fallback={<Loading />}>
       <MainLayoutContent {...props} />

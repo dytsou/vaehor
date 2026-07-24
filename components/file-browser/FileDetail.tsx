@@ -16,7 +16,7 @@ import {
   type FileDetailProps,
 } from "./useFileDetailController";
 
-export default function FileDetail(props: FileDetailProps) {
+export default function FileDetail(props: Readonly<FileDetailProps>) {
   const {
     file,
     isModal = false,

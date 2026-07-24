@@ -70,9 +70,11 @@ export async function generateMetadata(props: {
   };
 }
 
-export default async function FolderPage(props: {
-  params: Promise<{ folderId: string; locale: string }>;
-}) {
+export default async function FolderPage(
+  props: Readonly<{
+    params: Promise<{ folderId: string; locale: string }>;
+  }>,
+) {
   const params = await props.params;
   const { folderId, locale } = params;
   const cleanFolderId = decodeURIComponent(folderId)

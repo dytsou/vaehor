@@ -169,7 +169,7 @@ function FileDetailViewPreview({
 }
 
 export default function FileDetailInlinePreview(
-  props: FileDetailInlinePreviewProps,
+  props: Readonly<FileDetailInlinePreviewProps>,
 ) {
   const { fileType, isEditing, isEditable, isTheaterMode } = props;
 

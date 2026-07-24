@@ -36,7 +36,7 @@ import { AdminSecurityTab } from "@/app/[locale]/admin/_client/AdminSecurityTab.
 import { AdminBrandingTab } from "@/app/[locale]/admin/_client/AdminBrandingTab.client";
 import { AdminLogsTab } from "@/app/[locale]/admin/_client/AdminLogsTab.client";
 
-export function AdminDashboard(props: AdminDashboardProps) {
+export function AdminDashboard(props: Readonly<AdminDashboardProps>) {
   const {
     user,
     shareLinks,

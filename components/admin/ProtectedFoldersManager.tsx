@@ -28,9 +28,11 @@ interface ProtectedFolder {
   password: string;
 }
 
-export default function ProtectedFoldersManager(props: {
-  initialFolders?: Record<string, ProtectedFolder>;
-}) {
+export default function ProtectedFoldersManager(
+  props: Readonly<{
+    initialFolders?: Record<string, ProtectedFolder>;
+  }>,
+) {
   const { addToast } = useAppStore();
   const t = useTranslations("ProtectedFoldersManager");
   const [folders, setFolders] = useState<Record<string, ProtectedFolder>>(

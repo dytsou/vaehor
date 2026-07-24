@@ -125,7 +125,9 @@ function FileItemIconPreview({
   );
 }
 
-export default function FileItemThumbnail(props: FileItemThumbnailProps) {
+export default function FileItemThumbnail(
+  props: Readonly<FileItemThumbnailProps>,
+) {
   const { file, view, isGallery, hasImage } = props;
 
   let preview: React.ReactNode;

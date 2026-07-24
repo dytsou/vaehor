@@ -11,13 +11,15 @@ import type { AccessRequestRecord } from "@/lib/link-payloads";
 import { FolderLock, HardDrive, Network, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-export function AdminSecurityTab(props: {
-  children?: React.ReactNode;
-  initialProtectedFolders?: Record<string, { id: string; password: string }>;
-  initialUserAccessPermissions?: Record<string, string[]>;
-  initialAccessRequests?: AccessRequestRecord[];
-  initialManualDrives?: { id: string; name: string; isProtected?: boolean }[];
-}) {
+export function AdminSecurityTab(
+  props: Readonly<{
+    children?: React.ReactNode;
+    initialProtectedFolders?: Record<string, { id: string; password: string }>;
+    initialUserAccessPermissions?: Record<string, string[]>;
+    initialAccessRequests?: AccessRequestRecord[];
+    initialManualDrives?: { id: string; name: string; isProtected?: boolean }[];
+  }>,
+) {
   const t = useTranslations("AdminPage");
 
   return (

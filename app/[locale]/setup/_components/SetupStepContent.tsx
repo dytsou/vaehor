@@ -23,7 +23,7 @@ function resolveSetupView(state: SetupPageState): SetupView {
   return null;
 }
 
-export function SetupStepContent(state: SetupPageState) {
+export function SetupStepContent(state: Readonly<SetupPageState>) {
   const view = resolveSetupView(state);
 
   switch (view) {

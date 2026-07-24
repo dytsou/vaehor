@@ -11,7 +11,7 @@ import {
   type FileBrowserProps,
 } from "@/components/file-browser/useFileBrowserController";
 
-export default function FileBrowser(props: FileBrowserProps) {
+export default function FileBrowser(props: Readonly<FileBrowserProps>) {
   const {
     rootProps,
     shouldShowHeader,

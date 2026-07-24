@@ -15,9 +15,11 @@ export interface LogEntry extends ActivityDetails {
   timestamp: number;
 }
 
-export default function ActivityLogPageClient(props: {
-  initialLogs: LogEntry[];
-}) {
+export default function ActivityLogPageClient(
+  props: Readonly<{
+    initialLogs: LogEntry[];
+  }>,
+) {
   const [logs, setLogs] = useState<LogEntry[]>(props.initialLogs);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();

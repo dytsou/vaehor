@@ -99,7 +99,9 @@ interface FileBrowserModalsProps {
   shareToken: string | null;
 }
 
-export default function FileBrowserModals(props: FileBrowserModalsProps) {
+export default function FileBrowserModals(
+  props: Readonly<FileBrowserModalsProps>,
+) {
   const {
     authModal = { isOpen: false, folderId: "", folderName: "" },
     isFileRequestModalOpen,

@@ -16,7 +16,9 @@ function actionBadgeClass(action: string) {
   return "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400";
 }
 
-export default function AuditDashboardClient(props: { initialLogs: any[] }) {
+export default function AuditDashboardClient(
+  props: Readonly<{ initialLogs: any[] }>,
+) {
   const [logs, setLogs] = useState<any[]>(props.initialLogs);
   const [loading, setLoading] = useState(false);
   const addToast = useAppStore((state) => state.addToast);
