@@ -95,29 +95,24 @@ export default function InfoPanel({
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result;
-      if (typeof content === "string") {
-        let finalContent = content;
-        if (!content.trim().startsWith("WEBVTT")) {
-          finalContent = srtToVtt(content);
-        }
-        const blob = new Blob([finalContent], { type: "text/vtt" });
-        const url = URL.createObjectURL(blob);
-
-        onAddSubtitle?.({
-          src: url,
-          kind: "subtitles",
-          srcLang: "local",
-          label: `Local: ${file.name.replace(".srt", ".vtt")}`,
-          default: true,
-        });
-      }
-    };
-    reader.readAsText(file);
     e.target.value = "";
+
+    void file.text().then((content) => {
+      let finalContent = content;
+      if (!content.trim().startsWith("WEBVTT")) {
+        finalContent = srtToVtt(content);
+      }
+      const blob = new Blob([finalContent], { type: "text/vtt" });
+      const url = URL.createObjectURL(blob);
+
+      onAddSubtitle?.({
+        src: url,
+        kind: "subtitles",
+        srcLang: "local",
+        label: `Local: ${file.name.replace(".srt", ".vtt")}`,
+        default: true,
+      });
+    });
   };
 
   const [pathString, setPathString] = useState<string>("/");
