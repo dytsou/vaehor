@@ -247,6 +247,7 @@ export default function GlobalAudioPlayer() {
                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
               <button
+                type="button"
                 onClick={() => setShowQueue(!showQueue)}
                 className={`text-muted-foreground hover:text-foreground ${
                   showQueue ? "text-primary" : ""
