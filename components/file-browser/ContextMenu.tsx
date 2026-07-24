@@ -125,7 +125,7 @@ export default function ContextMenu({
   onTogglePin,
   isAdmin,
   onOpenNewTab,
-}: ContextMenuProps) {
+}: Readonly<ContextMenuProps>) {
   const [isDesktop, setIsDesktop] = useState(false);
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
