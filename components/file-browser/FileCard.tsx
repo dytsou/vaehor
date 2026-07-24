@@ -66,7 +66,7 @@ export default function FileCard({
   isAdmin,
   onDragStart,
   onFileDrop,
-}: FileCardProps) {
+}: Readonly<FileCardProps>) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
