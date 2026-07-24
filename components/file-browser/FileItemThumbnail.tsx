@@ -30,14 +30,16 @@ function GalleryThumbnail({
   isImageLoading,
   onImageLoad,
   onImageError,
-}: Pick<
-  FileItemThumbnailProps,
-  | "file"
-  | "thumbnailSrc"
-  | "Icon"
-  | "isImageLoading"
-  | "onImageLoad"
-  | "onImageError"
+}: Readonly<
+  Pick<
+    FileItemThumbnailProps,
+    | "file"
+    | "thumbnailSrc"
+    | "Icon"
+    | "isImageLoading"
+    | "onImageLoad"
+    | "onImageError"
+  >
 >) {
   return (
     <div className="relative w-full bg-muted/20">
