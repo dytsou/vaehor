@@ -138,6 +138,7 @@ export default function AuthForm({
   } else {
     accessRequestContent = (
       <button
+        type="button"
         onClick={handleRequestAccess}
         disabled={isRequesting}
         className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto disabled:opacity-50"
