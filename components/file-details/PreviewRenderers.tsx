@@ -101,7 +101,7 @@ export const EbookPreview: React.FC<{ src: string }> = ({ src }) => {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    if (typeof ePub === "undefined") {
+    if (ePub === undefined) {
       setError(t("libraryError"));
       setIsLoading(false);
       return;
