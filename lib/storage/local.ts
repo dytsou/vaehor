@@ -1,4 +1,4 @@
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 import path from "path";
 import { getMimeType } from "./mime";
 import { ZeeFile, ListFilesResponse } from "@/types/storage";
