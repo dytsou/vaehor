@@ -40,7 +40,7 @@ export default function ShareButton({
   items,
   isOpen: controlledIsOpen,
   onClose,
-}: ShareButtonProps) {
+}: Readonly<ShareButtonProps>) {
   const t = useTranslations("ShareButton");
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const { addToast, user, addShareLink } = useAppStore();
