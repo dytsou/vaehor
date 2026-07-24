@@ -36,7 +36,7 @@ export function escapeEnvValue(value: string): string {
 
 export function hasPersistedSetupConfig(envContent: string): boolean {
   return SETUP_ENV_KEYS.every((key) => {
-    const match = envContent.match(new RegExp(`^${key}=(.*)$`, "m"));
+    const match = new RegExp(`^${key}=(.*)$`, "m").exec(envContent);
     if (!match) return false;
 
     const value = match[1].trim().replaceAll(/^["']|["']$/g, "");
