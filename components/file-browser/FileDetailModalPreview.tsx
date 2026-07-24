@@ -53,15 +53,17 @@ function renderPreviewByType({
   showTextPreview,
   textContent,
   subtitleTracks,
-}: Pick<
-  FileDetailModalPreviewProps,
-  | "file"
-  | "fileType"
-  | "directLink"
-  | "onVideoEnded"
-  | "showTextPreview"
-  | "textContent"
-  | "subtitleTracks"
+}: Readonly<
+  Pick<
+    FileDetailModalPreviewProps,
+    | "file"
+    | "fileType"
+    | "directLink"
+    | "onVideoEnded"
+    | "showTextPreview"
+    | "textContent"
+    | "subtitleTracks"
+  >
 >) {
   switch (fileType) {
     case "video":
