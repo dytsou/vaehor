@@ -48,7 +48,7 @@ export const GET = createAdminRoute(async () => {
       }
     });
 
-    const hourlyActivity = Array(24).fill(0);
+    const hourlyActivity = new Array(24).fill(0);
     allLogs.forEach((log: AnalyticsLog) => {
       const hour = new Date(log.timestamp).getHours();
       hourlyActivity[hour]++;
