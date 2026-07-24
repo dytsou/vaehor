@@ -58,9 +58,6 @@ import ShareButton from "@/components/file-browser/ShareButton";
 
 interface FileBrowserModalsProps {
   authModal: { isOpen: boolean; folderId: string; folderName: string };
-  isAuthLoading: boolean;
-  onCloseAuth: () => void;
-  onAuthSubmit: (id: string, pass: string) => void;
   isFileRequestModalOpen: boolean;
   setIsFileRequestModalOpen: (open: boolean) => void;
   currentFolderId: string;
