@@ -253,6 +253,7 @@ export default function Header() {
       <div className="w-24 h-9 bg-muted rounded-lg animate-pulse" />
     ) : session?.user ? (
       <button
+        type="button"
         onClick={() => {
           notifyZeeMobileLogout();
           signOut({ callbackUrl: "/login" }).catch(() => {});
