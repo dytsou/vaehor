@@ -28,7 +28,7 @@ export default function MoveModal({
   onClose,
   onConfirmMove,
   initialFolderId,
-}: MoveModalProps) {
+}: Readonly<MoveModalProps>) {
   const rootId = process.env.NEXT_PUBLIC_ROOT_FOLDER_ID!;
   const rootName = process.env.NEXT_PUBLIC_ROOT_FOLDER_NAME || "Home";
 
