@@ -84,6 +84,7 @@ export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
 
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={() => changePage(-1)}
               disabled={pageNumber <= 1}
               className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 text-white transition-colors"
