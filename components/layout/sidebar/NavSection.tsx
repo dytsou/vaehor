@@ -18,7 +18,7 @@ interface NavSectionProps {
   t: (key: string) => string;
 }
 
-export default function NavSection({ t }: NavSectionProps) {
+export default function NavSection({ t }: Readonly<NavSectionProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const user = useAppStore((state) => state.user);
