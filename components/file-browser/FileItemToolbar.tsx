@@ -93,6 +93,7 @@ function FileItemDesktopActions({
         </button>
       )}
       <button
+        type="button"
         onClick={(event) => runAction(event, onShowDetails)}
         title={labels.viewDetails}
         className="p-2 rounded-full hover:bg-muted select-none"
