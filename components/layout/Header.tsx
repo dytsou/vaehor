@@ -455,6 +455,7 @@ export default function Header() {
                 )}
               </button>
               <button
+                type="button"
                 id="header-mobile-search"
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
                 title={t("search")}
