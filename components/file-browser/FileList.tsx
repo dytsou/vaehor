@@ -55,7 +55,7 @@ export default function FileList({
     shareLinks,
     fetchShareLinks,
     setSelectedFiles,
-    setBulkMode,
+    enableBulkMode,
     toggleFavorite,
   } = useAppStore();
 
@@ -83,7 +83,7 @@ export default function FileList({
         const end = Math.max(currentIndex, lastIndex);
         const newSelection = allFileItems.slice(start, end + 1);
 
-        if (!isBulkMode) setBulkMode(true);
+        if (!isBulkMode) enableBulkMode();
 
         const combinedSelection = [...selectedFiles];
         newSelection.forEach((f) => {

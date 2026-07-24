@@ -57,13 +57,8 @@ export const createFileSlice: StateCreator<AppState, [], [], FileSlice> = (
     set((state: AppState) => ({ refreshKey: state.refreshKey + 1 })),
   isBulkMode: false,
   selectedFiles: [],
-  setBulkMode: (isActive: boolean) => {
-    if (!isActive) {
-      set({ isBulkMode: false, selectedFiles: [] });
-    } else {
-      set({ isBulkMode: true });
-    }
-  },
+  enableBulkMode: () => set({ isBulkMode: true }),
+  disableBulkMode: () => set({ isBulkMode: false, selectedFiles: [] }),
   toggleSelection: (file: DriveFile) =>
     set((state: AppState) => {
       const isSelected = state.selectedFiles.some((f) => f.id === file.id);
