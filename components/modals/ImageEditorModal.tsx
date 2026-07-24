@@ -148,6 +148,7 @@ export default function ImageEditorModal({
         </button>
         <h3 className="font-bold">{t("title")}</h3>
         <button
+          type="button"
           onClick={handleSave}
           disabled={isSaving}
           className="px-4 py-2 bg-primary text-white rounded-full flex items-center gap-2 disabled:opacity-50"
