@@ -311,6 +311,7 @@ function CustomLoginPage() {
             </div>
 
             <button
+              type="button"
               onClick={handleGoogleSignIn}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border rounded-lg hover:bg-accent transition-colors font-semibold shadow-sm"
             >
