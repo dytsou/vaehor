@@ -65,12 +65,12 @@ export function DetailRow({
   label,
   value,
   copyable = false,
-}: {
+}: Readonly<{
   icon: React.ElementType;
   label: string;
   value: string;
   copyable?: boolean;
-}) {
+}>) {
   const [copied, setCopied] = useState(false);
   const t = useTranslations("DetailsPanel");
 
