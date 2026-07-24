@@ -32,7 +32,7 @@ interface PDFViewerProps {
   src: string;
 }
 
-export default function PDFViewer({ src }: PDFViewerProps) {
+export default function PDFViewer({ src }: Readonly<PDFViewerProps>) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.0);
