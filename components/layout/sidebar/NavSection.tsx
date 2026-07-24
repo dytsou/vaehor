@@ -107,6 +107,7 @@ export default function NavSection({ t }: Readonly<NavSectionProps>) {
       {user?.role === "ADMIN" && (
         <>
           <button
+            type="button"
             onClick={() => {
               router.push("/trash");
               if (window.innerWidth < 1024) setSidebarOpen(false);
