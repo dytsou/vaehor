@@ -38,7 +38,6 @@ interface FileItemProps {
   onShare: (e: FileBrowserActionEvent) => void;
   onShowDetails: (e: FileBrowserActionEvent) => void;
   onDownload: (e: FileBrowserActionEvent) => void;
-  onToggleFavorite?: (e: FileBrowserActionEvent) => void;
   isAdmin: boolean;
   onDragStart: (e: React.DragEvent) => void;
   onFileDrop: (e: React.DragEvent, targetFolder: DriveFile) => void;

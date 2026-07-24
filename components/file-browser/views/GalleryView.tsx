@@ -84,7 +84,6 @@ export default function GalleryView({
                   onShare={(e) => onShareClick(e, file)}
                   onShowDetails={(e) => onDetailsClick(e, file)}
                   onDownload={(e) => onDownloadClick(e, file)}
-                  onToggleFavorite={(e) => onToggleFavorite?.(e, file)}
                   isAdmin={isAdmin}
                   onDragStart={(e) => onDragStart(e, file)}
                   onFileDrop={onFileDrop}
