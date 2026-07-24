@@ -29,7 +29,7 @@ export { isAllowedSetupRequestOrigin } from "@/lib/setup-request";
 
 export function escapeEnvValue(value: string): string {
   return value
-    .replaceAll("\\", "\\\\")
+    .replaceAll("\\", String.raw`\\`)
     .replaceAll("\r", "")
     .replaceAll("\n", "");
 }
