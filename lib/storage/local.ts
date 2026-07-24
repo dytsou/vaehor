@@ -190,7 +190,7 @@ export async function saveLocalChunk(
   const rangeMatch = contentRange.match(/bytes (\d+)-(\d+)\/(\d+)/);
   if (!rangeMatch) throw new Error("Content-Range tidak valid");
 
-  const start = parseInt(rangeMatch[1]);
+  const start = Number.parseInt(rangeMatch[1]);
   const end = parseInt(rangeMatch[2]);
   const total = parseInt(rangeMatch[3]);
 
