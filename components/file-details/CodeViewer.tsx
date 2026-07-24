@@ -78,6 +78,7 @@ export function CodeViewer({
           </div>
 
           <button
+            type="button"
             onClick={handleCopy}
             className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all border border-white/5 flex items-center gap-2 group"
           >
