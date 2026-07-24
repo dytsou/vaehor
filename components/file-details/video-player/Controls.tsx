@@ -115,7 +115,7 @@ export function VideoControlsOverlay({
   getAbsoluteSrc,
   onCopyUrl,
   onToggleTheater,
-}: VideoControlsOverlayProps) {
+}: Readonly<VideoControlsOverlayProps>) {
   return (
     <div
       className={cn(
