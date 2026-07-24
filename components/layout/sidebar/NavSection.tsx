@@ -121,6 +121,7 @@ export default function NavSection({ t }: Readonly<NavSectionProps>) {
             <Trash2 size={16} /> {t("trash")}
           </button>
           <button
+            type="button"
             onClick={() => {
               router.push("/admin");
               if (window.innerWidth < 1024) setSidebarOpen(false);
