@@ -94,6 +94,7 @@ export function BreadcrumbDropdown({
     <DropdownMenu onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           className={cn(
             "p-1 hover:bg-accent rounded-md transition-all group shrink-0 mx-0.5",
             isOpen && "bg-accent",
