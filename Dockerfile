@@ -25,7 +25,17 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
 COPY package.json ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm install --offline --frozen-lockfile --ignore-scripts && \
-  pnpm rebuild $(node -e "const fs=require('fs');const m=fs.readFileSync('pnpm-workspace.yaml','utf8').match(/^allowBuilds:\n((?:  .+\n)*)/m);if(!m)process.exit(1);console.log([...m[1].matchAll(/^  \"?([^\":]+)\"?:/gm)].map(x=>x[1]).join(' '));")
+  ALLOWED_BUILDS="$(node <<'EOF'
+const fs = require("fs");
+const yaml = fs.readFileSync("pnpm-workspace.yaml", "utf8");
+const m = yaml.match(/^allowBuilds:\n((?:  .+\n)*)/m);
+if (!m) process.exit(1);
+console.log(
+  [...m[1].matchAll(/^  "?([^":]+)"?:/gm)].map((x) => x[1]).join(" "),
+);
+EOF
+)" && \
+  pnpm rebuild $ALLOWED_BUILDS
 
 # Stage 3: Builder
 FROM base AS builder
@@ -74,18 +84,16 @@ RUN addgroup --system --gid 1001 nodejs && \
   adduser --system --uid 1001 nextjs && \
   set -eux; \
   for i in 1 2 3 4 5; do \
-  if apk add --no-cache curl dumb-init postgresql-client openssl; then \
+  if apk add --no-cache curl dumb-init openssl postgresql-client; then \
   break; \
   fi; \
   if [ "$i" -eq 5 ]; then \
-  apk add --no-cache curl dumb-init postgresql-client openssl3; \
+  apk add --no-cache curl dumb-init openssl3 postgresql-client; \
   break; \
   fi; \
   sleep "$((i * 2))"; \
-  done
-
-# Install prisma CLI for migrations; bcryptjs for hash-password.sh (omitted from standalone trace)
-RUN npm install -g prisma@7.7.0 --ignore-scripts && \
+  done && \
+  npm install -g prisma@7.7.0 --ignore-scripts && \
   mkdir -p /app/hash-tool && cd /app/hash-tool && \
   npm install bcryptjs@3.0.2 --omit=dev --no-package-lock --ignore-scripts && \
   chmod -R a-w /app/hash-tool
