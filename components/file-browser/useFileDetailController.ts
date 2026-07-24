@@ -94,7 +94,7 @@ export function useFileDetailController({
   const handleAddSubtitle = (track: SubtitleTrack) => {
     setActiveSubtitleTracks((prev) => {
       if (
-        prev.find(
+        prev.some(
           (item) => item.src === track.src || item.label === track.label,
         )
       ) {
