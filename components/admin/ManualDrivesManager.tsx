@@ -422,6 +422,7 @@ export default function ManualDrivesManager(props: {
                       </span>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => openConfigureModal(drive)}
                         className="text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5 rounded-md transition-colors"
                       >
