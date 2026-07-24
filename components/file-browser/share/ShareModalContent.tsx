@@ -253,7 +253,7 @@ export function SecurityPolicies({
               value={maxUses}
               autoFocus
               onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
+                const val = Number.parseInt(e.target.value, 10);
                 setMaxUses(isNaN(val) ? "" : val);
               }}
               className="w-full mt-1.5 px-3 py-1.5 rounded-lg border-2 border-primary/20 bg-background text-sm outline-none focus:border-primary/50"
