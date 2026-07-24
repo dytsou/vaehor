@@ -187,7 +187,7 @@ export async function saveLocalChunk(
   );
   const finalFilePath = path.join(finalFolderPath, fileName);
 
-  const rangeMatch = contentRange.match(/bytes (\d+)-(\d+)\/(\d+)/);
+  const rangeMatch = /bytes (\d+)-(\d+)\/(\d+)/.exec(contentRange);
   if (!rangeMatch) throw new Error("Content-Range tidak valid");
 
   const start = Number.parseInt(rangeMatch[1]);
