@@ -20,7 +20,7 @@ export function OAuthCredentialsStep({
   onModeChange,
   onAuthorize,
   t,
-}: OAuthCredentialsStepProps) {
+}: Readonly<OAuthCredentialsStepProps>) {
   return (
     <div className="space-y-8">
       <div>
