@@ -192,6 +192,7 @@ export default function TrashPage() {
               {t("restore")} ({selectedFiles.length})
             </button>
             <button
+              type="button"
               onClick={() => handleBulkAction("delete")}
               disabled={isProcessing}
               className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 disabled:opacity-50"
