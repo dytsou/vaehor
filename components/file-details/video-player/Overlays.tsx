@@ -269,7 +269,7 @@ interface BufferingOverlayProps {
   show: boolean;
 }
 
-export function BufferingOverlay({ show }: BufferingOverlayProps) {
+export function BufferingOverlay({ show }: Readonly<BufferingOverlayProps>) {
   if (!show) return null;
 
   return (
