@@ -66,6 +66,7 @@ export function UpNextOverlay({
         <p className="text-gray-400 mb-8">{tPlayer("autoPlayNext")}</p>
         <div className="flex gap-4 justify-center">
           <button
+            type="button"
             onClick={onCancel}
             className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full font-medium transition-colors"
           >
