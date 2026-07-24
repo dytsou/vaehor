@@ -256,6 +256,7 @@ export function ResumePromptOverlay({
         </p>
         <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
             onClick={onSkip}
             className="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl text-sm font-medium transition-colors"
           >
