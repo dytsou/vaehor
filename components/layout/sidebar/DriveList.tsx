@@ -53,6 +53,7 @@ export default function DriveList({ drives, t }: Readonly<DriveListProps>) {
           >
             {drives.map((drive) => (
               <button
+                type="button"
                 key={drive.id}
                 onClick={() => {
                   setNavigatingId(drive.id);
