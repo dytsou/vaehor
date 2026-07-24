@@ -141,6 +141,7 @@ const MobileNav: FC<MobileNavProps> = ({
                     "onClick" in item &&
                     typeof item.onClick === "function" && (
                       <button
+                        type="button"
                         onClick={() => {
                           item.onClick!();
                           onClose();
