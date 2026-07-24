@@ -192,7 +192,7 @@ export async function saveLocalChunk(
 
   const start = Number.parseInt(rangeMatch[1]);
   const end = Number.parseInt(rangeMatch[2]);
-  const total = parseInt(rangeMatch[3]);
+  const total = Number.parseInt(rangeMatch[3]);
 
   const buffer = Buffer.from(chunk);
   const handle = await fs.open(tempFilePath, start === 0 ? "w" : "r+");
