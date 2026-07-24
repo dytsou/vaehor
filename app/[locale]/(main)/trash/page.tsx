@@ -202,6 +202,7 @@ export default function TrashPage() {
           </>
         )}
         <button
+          type="button"
           onClick={() => handleSort("modifiedTime")}
           className="p-2 bg-muted rounded-lg hover:bg-muted/80"
           title={t("sortTooltip")}
