@@ -240,6 +240,7 @@ export default function GlobalAudioPlayer() {
           <div className="px-4 pb-3 flex justify-between items-center border-t border-border/50 pt-2">
             <div className="flex items-center gap-2">
               <button
+                type="button"
                 onClick={toggleMute}
                 className="text-muted-foreground hover:text-foreground"
               >
