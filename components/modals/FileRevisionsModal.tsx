@@ -26,7 +26,7 @@ export default function FileRevisionsModal({
   fileId,
   fileName,
   onClose,
-}: FileRevisionsModalProps) {
+}: Readonly<FileRevisionsModalProps>) {
   const [revisions, setRevisions] = useState<DriveRevision[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { addToast } = useAppStore();
