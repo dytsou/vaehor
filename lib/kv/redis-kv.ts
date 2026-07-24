@@ -303,12 +303,10 @@ export class RedisKV implements KVClient {
       } else {
         results = await this.client.zrangebyscore(key, start, stop);
       }
+    } else if (options?.rev) {
+      results = await this.client.zrevrange(key, start, stop);
     } else {
-      if (options?.rev) {
-        results = await this.client.zrevrange(key, start, stop);
-      } else {
-        results = await this.client.zrange(key, start, stop);
-      }
+      results = await this.client.zrange(key, start, stop);
     }
 
     return results.map((member: string) => {
