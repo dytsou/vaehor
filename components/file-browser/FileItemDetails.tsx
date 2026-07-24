@@ -59,7 +59,7 @@ export default function FileItemDetails({
   isError,
   uploadProgress,
   formatDate,
-}: FileItemDetailsProps) {
+}: Readonly<FileItemDetailsProps>) {
   const showListMetadata =
     view === "list" && !file.isFolder && !compactClass && !isUploading;
 
