@@ -96,8 +96,3 @@ export async function getAnyFileDetails(
     isFolder: driveFile.mimeType === "application/vnd.google-apps.folder",
   };
 }
-
-export async function getDownloadStream(fileId: string) {
-  if (fileId.startsWith("local-storage:")) {
-  }
-}
