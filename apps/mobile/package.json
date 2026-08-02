@@ -23,15 +23,15 @@
     "@capacitor/preferences": "8.0.1",
     "@capawesome/capacitor-background-task": "8.0.2",
     "@capawesome/capacitor-file-picker": "8.0.3",
-    "@capgo/capacitor-native-biometric": "8.3.6",
+    "@capgo/capacitor-native-biometric": "8.6.2",
     "@vaehor/sdk": "workspace:*",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@capacitor/assets": "3.0.5",
     "@capacitor/cli": "8.4.2",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
     "typescript": "^7.0.2",
