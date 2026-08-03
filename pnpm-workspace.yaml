@@ -34,7 +34,9 @@ overrides:
   picomatch: 4.0.4
   ajv@6.12.6: 6.14.0
   ajv@8.17.1: 8.18.0
-  postcss: 8.5.12
+  postcss: 8.5.18
+  # ponytail: hold nanoid below 3.3.17 until minimumReleaseAge clears (~24h)
+  nanoid: 3.3.16
   nodemailer: 9.0.1
   protobufjs: 7.6.5
   qs: 6.15.2
