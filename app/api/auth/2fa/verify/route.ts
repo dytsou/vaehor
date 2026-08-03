@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { createUserRoute } from "@/lib/api-middleware";
-import { authenticator } from "otplib";
+import { verify } from "otplib";
 import { kv } from "@/lib/kv";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { z } from "zod";
@@ -35,7 +35,7 @@ export const POST = createUserRoute(
         );
       }
 
-      const isValid = authenticator.check(token, secret);
+      const { valid: isValid } = await verify({ token, secret });
       if (!isValid) {
         return NextResponse.json(
           { error: "Kode verifikasi tidak valid." },

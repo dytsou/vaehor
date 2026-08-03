@@ -72,7 +72,7 @@ export default function StorageIntelligence({
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value: number) => [`${value} files`, "Count"]}
+                formatter={(value) => [`${value ?? 0} files`, "Count"]}
               />
             </PieChart>
           </ResponsiveContainer>
