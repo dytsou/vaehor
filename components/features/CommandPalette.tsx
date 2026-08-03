@@ -16,7 +16,7 @@ import {
   Search,
   Star,
   Home,
-  Github,
+  GitBranch,
   Send,
   File,
   Folder,
@@ -231,7 +231,7 @@ export default function CommandPalette() {
             }
             className={itemClass}
           >
-            <Github className="mr-2 h-4 w-4" />
+            <GitBranch className="mr-2 h-4 w-4" />
             <span>{t("github")}</span>
           </Command.Item>
 

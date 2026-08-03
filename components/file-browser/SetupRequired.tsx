@@ -9,7 +9,7 @@ import {
   ArrowRight,
   Database,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 interface SetupRequiredProps {
   message?: string;
@@ -33,7 +33,7 @@ export default function SetupRequired({
         staggerChildren: 0.08,
       },
     },
-  };
+  } satisfies Variants;
 
   const itemVariants = {
     hidden: { opacity: 0, y: 8 },
@@ -42,7 +42,7 @@ export default function SetupRequired({
       y: 0,
       transition: { duration: 0.4, ease: "easeOut" },
     },
-  };
+  } satisfies Variants;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] w-full px-6 bg-background rounded-3xl">

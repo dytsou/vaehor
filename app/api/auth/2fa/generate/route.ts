@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { createUserRoute } from "@/lib/api-middleware";
-import { authenticator } from "otplib";
+import { generateSecret, generateURI } from "otplib";
 import qrcode from "qrcode";
 import { kv } from "@/lib/kv";
 
@@ -14,12 +14,16 @@ export const POST = createUserRoute(
         return NextResponse.json({ error: "Akses ditolak." }, { status: 401 });
       }
 
-      const secret = authenticator.generateSecret();
+      const secret = generateSecret();
       const appName = "vaehor";
 
       await kv.set(`2fa:secret:temp:${userEmail}`, secret, { ex: 300 });
 
-      const otpauth = authenticator.keyuri(userEmail, appName, secret);
+      const otpauth = generateURI({
+        issuer: appName,
+        label: userEmail,
+        secret,
+      });
       const qrCodeDataURL = await qrcode.toDataURL(otpauth);
 
       return NextResponse.json({ secret, qrCodeDataURL });

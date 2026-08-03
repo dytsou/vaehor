@@ -17,14 +17,14 @@ import {
   LogIn,
   LogOut,
   ArrowLeft,
-  Github,
+  GitBranch,
   Bell,
   PanelLeft,
   HelpCircle,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import Search from "@/components/features/Search";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useTranslations } from "next-intl";
 import LocaleSwitcher from "@/components/common/LocaleSwitcher";
 
@@ -58,7 +58,7 @@ const navItemVariants = {
       duration: 0.1,
     },
   },
-};
+} satisfies Variants;
 
 interface MenuItem {
   id: string;
@@ -224,7 +224,7 @@ export default function Header() {
       href: "https://github.com/dytsou/vaehor",
       target: "_blank",
       rel: "noopener noreferrer",
-      icon: Github,
+      icon: GitBranch,
       label: t("github"),
     },
     {
