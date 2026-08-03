@@ -11,9 +11,9 @@ overrides:
   "@hono/node-server": 2.0.10
   "@opentelemetry/core": 2.8.0
   body-parser: 2.3.0
-  brace-expansion@1.1.12: 1.1.16
-  brace-expansion@2.0.2: 2.1.2
-  brace-expansion@5.0.5: 5.0.7
+  brace-expansion@1.1.12: 1.1.18
+  brace-expansion@2.0.2: 2.1.4
+  brace-expansion@5.0.5: 5.0.9
   dompurify: 3.4.12
   esbuild: 0.28.1
   fast-uri: 3.1.4
