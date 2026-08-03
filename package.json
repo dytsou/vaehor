@@ -137,7 +137,7 @@
     "@typespec/http": "^1.14.0",
     "@typespec/openapi": "^1.14.0",
     "@typespec/openapi3": "^1.14.0",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "autoprefixer": "^10.5.4",
     "baseline-browser-mapping": "^2.11.7",
