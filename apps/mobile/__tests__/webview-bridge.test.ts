@@ -23,9 +23,37 @@ describe("attachUploadBridge", () => {
       new MessageEvent("message", {
         data: { type: ZEE_MOBILE_MESSAGE, action: "logout" },
         source: childWindow,
+        origin: "https://files.example.com",
       }),
     );
 
     expect(onLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores iframe messages from an unexpected origin", () => {
+    const iframe = document.createElement("iframe");
+    const childWindow = {} as Window;
+    vi.spyOn(iframe, "contentWindow", "get").mockReturnValue(
+      childWindow as unknown as Window,
+    );
+
+    const onLogout = vi.fn();
+    attachUploadBridge({
+      origin: "https://files.example.com",
+      sessionToken: "session-token",
+      iframe,
+      onProgress: vi.fn(),
+      onLogout,
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: { type: ZEE_MOBILE_MESSAGE, action: "logout" },
+        source: childWindow,
+        origin: "https://evil.example.com",
+      }),
+    );
+
+    expect(onLogout).not.toHaveBeenCalled();
   });
 });
