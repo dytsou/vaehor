@@ -54,6 +54,8 @@ describe("lib/mobile-bridge", () => {
           action: "upload/pick-done",
           requestId,
         },
+        source: window.parent,
+        origin: window.location.origin,
       }),
     );
 
@@ -76,6 +78,8 @@ describe("lib/mobile-bridge", () => {
           requestId,
           error: "Session expired",
         },
+        source: window.parent,
+        origin: window.location.origin,
       }),
     );
 
@@ -102,5 +106,40 @@ describe("lib/mobile-bridge", () => {
     notifyZeeMobileLogout();
 
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it("ignores native upload responses from an unrelated source", async () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", { postMessage });
+    const bridge = createZeeMobileBridge();
+
+    const pending = bridge.pickAndUpload({ parentId: "folder-1" });
+    const requestId = postMessage.mock.calls[0][0].requestId;
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: ZEE_MOBILE_MESSAGE,
+          action: "upload/pick-done",
+          requestId,
+        },
+        source: { different: "window" } as unknown as Window,
+        origin: window.location.origin,
+      }),
+    );
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: ZEE_MOBILE_MESSAGE,
+          action: "upload/pick-done",
+          requestId,
+        },
+        source: window.parent,
+        origin: window.location.origin,
+      }),
+    );
+
+    await expect(pending).resolves.toBeUndefined();
   });
 });

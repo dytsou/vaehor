@@ -101,6 +101,7 @@ async function handlePickAndUpload(
 export function attachUploadBridge(handlers: UploadBridgeHandlers): () => void {
   const onMessage = (event: MessageEvent) => {
     if (event.source !== handlers.iframe.contentWindow) return;
+    if (event.origin !== handlers.origin) return;
     const data = event.data as ZeeMobileMessage | undefined;
     if (data?.type !== ZEE_MOBILE_MESSAGE) return;
 
