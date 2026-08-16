@@ -111,6 +111,7 @@ const nextConfig = {
   serverExternalPackages: ["ioredis"],
 
   experimental: {
+    useTypeScriptCli: false,
     serverActions: {
       bodySizeLimit: "5mb",
     },
