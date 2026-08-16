@@ -64,16 +64,11 @@ function postToParent(message: ZeeMobileMessage): void {
 }
 
 /**
- * Guards against a malicious or unrelated frame injecting messages: the only
- * trusted sender is the native shell (our direct parent) at the shell's
- * origin. When parentOrigin() falls back to "*" (undiscoverable embedder
- * origin), the source check is the remaining net.
+ * Handlers must verify event.origin against the shell's origin before
+ * trusting received messages. Only the native shell (our direct parent) at
+ * the shell's origin may talk to us; when parentOrigin() returns "*"
+ * (embedder origin undiscoverable), the source check is the remaining net.
  */
-function isMessageFromNativeShell(event: MessageEvent): boolean {
-  if (event.source !== window.parent) return false;
-  const origin = parentOrigin();
-  return origin === "*" || event.origin === origin;
-}
 
 /** Notify the native shell to wipe stored session (WebView sign-out). */
 export function notifyZeeMobileLogout(): void {
@@ -93,7 +88,9 @@ export function createZeeMobileBridge(): ZeeMobileBridge {
         }, 600_000);
 
         const handler = (event: MessageEvent) => {
-          if (!isMessageFromNativeShell(event)) return;
+          if (event.source !== window.parent) return;
+          const trustedOrigin = parentOrigin();
+          if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
           const data = event.data as ZeeMobileMessage | undefined;
           if (data?.type !== ZEE_MOBILE_MESSAGE) return;
           if (!("requestId" in data) || data.requestId !== requestId) return;
@@ -146,7 +143,9 @@ export function subscribeZeeMobileUploadComplete(
   if (typeof window === "undefined") return () => {};
 
   const handler = (event: MessageEvent) => {
-    if (!isMessageFromNativeShell(event)) return;
+    if (event.source !== window.parent) return;
+    const trustedOrigin = parentOrigin();
+    if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
     const data = event.data as ZeeMobileMessage | undefined;
     if (data?.type !== ZEE_MOBILE_MESSAGE) return;
     if (data.action === "upload/pick-done") onComplete();
