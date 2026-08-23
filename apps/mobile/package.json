@@ -23,7 +23,7 @@
     "@capacitor/preferences": "8.0.1",
     "@capawesome/capacitor-background-task": "8.0.2",
     "@capawesome/capacitor-file-picker": "8.0.4",
-    "@capgo/capacitor-native-biometric": "8.6.5",
+    "@capgo/capacitor-native-biometric": "8.6.6",
     "@vaehor/sdk": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
