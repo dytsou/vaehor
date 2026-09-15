@@ -274,17 +274,17 @@ importers:
         specifier: npm:typescript@^7.0.2
         version: typescript@7.0.2
       '@typespec/compiler':
-        specifier: ^1.15.0
-        version: 1.15.0(@types/node@26.4.1)
+        specifier: ^1.16.0
+        version: 1.16.0(@types/node@26.4.1)
       '@typespec/http':
         specifier: ^1.15.0
-        version: 1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))
+        version: 1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))
       '@typespec/openapi':
         specifier: ^1.15.0
-        version: 1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1)))
+        version: 1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1)))
       '@typespec/openapi3':
         specifier: ^1.16.0
-        version: 1.16.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1)))(@typespec/openapi@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))))
+        version: 1.16.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1)))(@typespec/openapi@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))))
       '@vitejs/plugin-react':
         specifier: ^5.1.2
         version: 5.2.0(supports-color@8.1.1)(vite@7.3.6(@types/node@26.4.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.8.3))
@@ -3671,8 +3671,8 @@ packages:
     peerDependencies:
       '@typespec/compiler': ^1.16.0
 
-  '@typespec/compiler@1.15.0':
-    resolution: {integrity: sha512-NbCIRAIzyozchlSaGPVuyV43bC+y+OpXYCuT+8M8kt35Ln9zWzLFcIt7irofQ5QUXBZrHsBFpI5fTOFdCGeWCA==}
+  '@typespec/compiler@1.16.0':
+    resolution: {integrity: sha512-pT4gN+OSEXZMLxIhtI3QgIUafeFktfIBKVb7p+X/rAzDymQSO8yAb+srMBQ43PIcmfrvMxCNaD1SKBa9AGhWtA==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -8476,8 +8476,8 @@ packages:
   vscode-languageserver-protocol@3.18.2:
     resolution: {integrity: sha512-XRyDbT0Pp3sSNti3JmxVEUMySWCSi1hhM+/KUlCy1hV1zmrqpM1OwO12EAki8blhmLuIMpaJrYbo0OzGVfK2Qg==}
 
-  vscode-languageserver-textdocument@1.0.12:
-    resolution: {integrity: sha512-cxWNPesCnQCcMPeenjKKsOCKQZ/L6Tv19DTRIGuLWe32lyzWhihGVJ/rcckZXJxfdKCFvRLS3fpBIsV/ZGX4zA==}
+  vscode-languageserver-textdocument@1.0.14:
+    resolution: {integrity: sha512-EQyqJMi552E4ZTf46izQ4Fj6XquqxCySR3J5ZSD1SisMf6RfpeOWHxGBE8Gr6V0/3GHIGdAzDn8F8+1nTGCnoQ==}
 
   vscode-languageserver-types@3.18.0:
     resolution: {integrity: sha512-8TsGPNMIMiiBdkORgRSvLjuiEIiAFtO+KssmYWxQ+uSVvlf7RjK8YKCOjPzZ+YA04jXEV7+7LvkSmHkhpNS99g==}
@@ -12083,11 +12083,11 @@ snapshots:
     dependencies:
       '@typescript/old': typescript@6.0.3
 
-  '@typespec/asset-emitter@0.79.2(@typespec/compiler@1.15.0(@types/node@26.4.1))':
+  '@typespec/asset-emitter@0.79.2(@typespec/compiler@1.16.0(@types/node@26.4.1))':
     dependencies:
-      '@typespec/compiler': 1.15.0(@types/node@26.4.1)
+      '@typespec/compiler': 1.16.0(@types/node@26.4.1)
 
-  '@typespec/compiler@1.15.0(@types/node@26.4.1)':
+  '@typespec/compiler@1.16.0(@types/node@26.4.1)':
     dependencies:
       '@babel/code-frame': 7.29.7
       '@inquirer/prompts': 8.6.0(@types/node@26.4.1)
@@ -12102,31 +12102,31 @@ snapshots:
       tar: 7.5.19
       temporal-polyfill: 1.0.4
       vscode-languageserver: 10.1.0
-      vscode-languageserver-textdocument: 1.0.12
+      vscode-languageserver-textdocument: 1.0.14
       yaml: 2.8.3
       yargs: 18.1.0
     transitivePeerDependencies:
       - '@types/node'
 
-  '@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))':
+  '@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))':
     dependencies:
-      '@typespec/compiler': 1.15.0(@types/node@26.4.1)
+      '@typespec/compiler': 1.16.0(@types/node@26.4.1)
 
-  '@typespec/openapi3@1.16.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1)))(@typespec/openapi@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))))':
+  '@typespec/openapi3@1.16.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1)))(@typespec/openapi@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))))':
     dependencies:
       '@scalar/json-magic': 0.13.4
       '@scalar/openapi-parser': 0.28.16
       '@scalar/openapi-types': 0.9.5
-      '@typespec/asset-emitter': 0.79.2(@typespec/compiler@1.15.0(@types/node@26.4.1))
-      '@typespec/compiler': 1.15.0(@types/node@26.4.1)
-      '@typespec/http': 1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))
-      '@typespec/openapi': 1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1)))
+      '@typespec/asset-emitter': 0.79.2(@typespec/compiler@1.16.0(@types/node@26.4.1))
+      '@typespec/compiler': 1.16.0(@types/node@26.4.1)
+      '@typespec/http': 1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))
+      '@typespec/openapi': 1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1)))
       yaml: 2.8.3
 
-  '@typespec/openapi@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1)))':
+  '@typespec/openapi@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))(@typespec/http@1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1)))':
     dependencies:
-      '@typespec/compiler': 1.15.0(@types/node@26.4.1)
-      '@typespec/http': 1.15.0(@typespec/compiler@1.15.0(@types/node@26.4.1))
+      '@typespec/compiler': 1.16.0(@types/node@26.4.1)
+      '@typespec/http': 1.15.0(@typespec/compiler@1.16.0(@types/node@26.4.1))
 
   '@ungap/structured-clone@1.3.0': {}
 
@@ -17393,7 +17393,7 @@ snapshots:
       vscode-jsonrpc: 9.0.1
       vscode-languageserver-types: 3.18.0
 
-  vscode-languageserver-textdocument@1.0.12: {}
+  vscode-languageserver-textdocument@1.0.14: {}
 
   vscode-languageserver-types@3.18.0: {}
 
