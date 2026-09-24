@@ -84,7 +84,8 @@ jobs:
         run: pnpm run ci:playwright:browser-deps
 
       - name: Run E2E Tests
-        run: pnpm test:e2e --project=chromium
+        timeout-minutes: 5
+        run: pnpm test:e2e --project=chromium --reporter=list
         env:
           CI: true
           SKIP_ENV_VALIDATION: "1"
