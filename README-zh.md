@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/dytsou/vaehor">
-    <img src="https://cdn-icons-png.freepik.com/512/2991/2991248.png" alt="vaehor Logo" width="130" height="130">
+    <img src="app/icon.svg" alt="vaehor Logo" width="130" height="130">
   </a>
 
   <h1 align="center">⚡ vaehor</h1>

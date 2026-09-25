@@ -1,10 +1,11 @@
-# Placeholder store assets
+# vaehor app assets
 
-Capacitor default icons and splashes live under `android/app/src/main/res/` (and `ios/App/App/Assets.xcassets` after `cap add ios`).
+`icon.svg` is the source for the Android and iOS launcher icons and splash screens. It uses the same VA paths as `app/icon.svg` and `apps/mobile/public/icon.svg`, with extra space around the mark so square launcher icons do not crop it.
 
-Before distributing release APK/IPA (A4), replace with final branding:
+After changing the SVG, regenerate native assets from `apps/mobile`:
 
-- Android: mipmap icons + splash drawables
-- iOS: AppIcon and Splash asset sets
+```sh
+pnpm cap:assets
+```
 
-See [`docs/mobile/artifact-release.md`](../../docs/mobile/artifact-release.md).
+Review the generated launcher icons and splash screens before release. See [`docs/mobile/artifact-release.md`](../../../docs/mobile/artifact-release.md).

@@ -58,7 +58,7 @@ CI archives a signed `.xcarchive`. Export to `.ipa` locally (see below).
 
 ### Branding
 
-- [ ] Replace placeholder icons/splash under `apps/mobile/android/app/src/main/res/` and iOS asset catalog
+- [ ] Review generated launcher icons and splash screens under `apps/mobile/android/app/src/main/res/` and the iOS asset catalog; run `pnpm cap:assets` in `apps/mobile` after changing `resources/icon.svg`
 - [ ] Final display name in `capacitor.config.ts` (`appName`)
 
 ### OAuth (mobile Google sign-in)
