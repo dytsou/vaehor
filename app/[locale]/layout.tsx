@@ -54,7 +54,7 @@ export const metadata: Metadata = {
       "Transform your Google Drive into a professional portfolio website, media gallery, or file repository.",
     images: [
       {
-        url: "https://cdn-icons-png.freepik.com/512/2991/2991248.png",
+        url: "/icons/icon-512.png",
         width: 512,
         height: 512,
         alt: "vaehor Logo",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "vaehor",
     description: "Your Google Drive, Supercharged.",
-    images: ["https://cdn-icons-png.freepik.com/512/2991/2991248.png"],
+    images: ["/icons/icon-512.png"],
   },
   other: {
     "mobile-web-app-capable": "yes",

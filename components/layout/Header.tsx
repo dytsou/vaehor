@@ -7,7 +7,6 @@ import { useSession, signOut, signIn } from "next-auth/react";
 import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTheme } from "next-themes";
 import Image from "next/image";
-import AppIcon from "@/app/icon.png";
 import {
   Sun,
   Moon,
@@ -301,9 +300,11 @@ export default function Header() {
         />
       ) : (
         <Image
-          src={AppIcon}
-          alt="Google Drive Logo"
-          className="w-8 h-8 mr-3 dark:invert"
+          src="/icon.svg"
+          alt=""
+          width={32}
+          height={32}
+          className="w-8 h-8 mr-3 object-contain"
         />
       )}
       <span className="font-bold">{appName || "vaehor"}</span>
