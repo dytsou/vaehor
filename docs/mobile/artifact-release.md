@@ -1,119 +1,55 @@
-# Artifact release (direct distribution)
+# Mobile artifact release
 
-See [development.md](./development.md) for local device testing before building release binaries.
+This document defines the iOS App Store and Google Play release targets for the Expo React Native app in `apps/mobile/`. The app keeps the single publisher identity `com.vaehor.mobile`; operators continue to host their own vaehor servers.
 
-Checklist for distributing **vaehor Mobile** (`com.vaehor.mobile`) as installable artifacts — signed APK (Android) and locally exported IPA (iOS). This is a single publisher app; operators self-host the backend and add their server URL in the app.
+## U1 status
 
-This project does **not** publish through App Store or Google Play.
+The Expo SDK 57 native project and local development-build commands are the build foundation. The app is **not ready for either store**: only the initial native shell is implemented, the feature rows in [`parity-inventory.md`](./parity-inventory.md) are open, and signed store artifact automation and publisher submission evidence have not been established. Do not submit or publish this foundation build.
 
-## CI workflow
+The existing `.github/workflows/mobile-release.yml` still contains the old Capacitor release steps. Updating that workflow to create signed Android App Bundles and iOS store archives is unresolved release work; it is not evidence of an Expo store build.
 
-GitHub Actions: [`.github/workflows/mobile-release.yml`](../../.github/workflows/mobile-release.yml)
+## Native identity and platform targets
 
-Triggers:
+The source of app identity and native build settings is [`apps/mobile/app.config.ts`](../../apps/mobile/app.config.ts):
 
-- Push tag `mobile-v*` (e.g. `mobile-v1.0.0`)
-- Manual **workflow_dispatch**
+- iOS bundle ID: `com.vaehor.mobile`
+- Android application ID: `com.vaehor.mobile`
+- URL scheme: `vaehor`
+- Android target API: 36 (recheck the Play requirement when submitting)
+- iOS deployment target: 16.4
+- App version: `1.0.0`; Android `versionCode` starts at 1
 
-Artifacts:
+Regenerate native projects from this config with `pnpm mobile:prebuild`. Review generated iOS and Android project changes before producing release builds.
 
-| Job               | Output                                     |
-| ----------------- | ------------------------------------------ |
-| `build-shell`     | Validates shell build + tests              |
-| `android-release` | Signed release `.apk` (sideload)           |
-| `ios-archive`     | `.xcarchive` (when iOS secrets configured) |
+## Required artifacts
 
-The iOS job is skipped entirely when `IOS_CERTIFICATE_BASE64` is not set.
+For the initial public launch, prepare and test both signed release artifacts from the complete parity build:
 
-### Repository secrets
+- Google Play: signed Android App Bundle (`.aab`), uploaded to an internal testing track before production rollout
+- Apple App Store: signed iOS archive exported for App Store Connect, uploaded to TestFlight before public release
 
-**Android**
+The local `pnpm mobile:android` and `pnpm mobile:ios` commands create development builds for a simulator or connected device. They are not store artifacts. The `pnpm mobile:build` command exports JavaScript bundles for both native platforms; it does not sign or package store binaries.
 
-| Secret                      | Description                          |
-| --------------------------- | ------------------------------------ |
-| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded `.keystore` or `.jks` |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                    |
-| `ANDROID_KEY_ALIAS`         | Key alias                            |
-| `ANDROID_KEY_PASSWORD`      | Key password                         |
+## Release gates
 
-Without Android secrets, CI still builds an **unsigned** release APK.
+- [ ] Both platforms implement every release-critical row in [`parity-inventory.md`](./parity-inventory.md), with evidence for user, share, setup, admin, and access-control flows.
+- [ ] Verify the final iOS and Android store builds against the same feature set; no product task may fall back to a WebView or hosted website.
+- [ ] Implement and run CI that creates a signed Android App Bundle and signed iOS archive from the Expo native project. The current Capacitor workflow is obsolete and must be replaced before release automation is used.
+- [ ] Configure publisher signing credentials and verify artifact provenance without checking secrets into the repository.
+- [ ] Set unique release build numbers and confirm both artifacts use `com.vaehor.mobile` and `vaehor`.
+- [ ] Recheck current App Store and Google Play policies, Android target API requirements, permissions, and privacy declarations at submission time.
+- [ ] Provide both store reviewers with a reachable HTTPS self-hosted review server, user and administrator accounts, and working authentication instructions.
+- [ ] Complete store listings, support contact, privacy policy, data-safety declarations, screenshots, and required app-content questionnaires.
+- [ ] Test each platform's internal distribution track before public release.
 
-**iOS** (macOS runner)
+## Authentication and operator setup
 
-| Secret                            | Description                       |
-| --------------------------------- | --------------------------------- |
-| `IOS_CERTIFICATE_BASE64`          | Distribution `.p12` (base64)      |
-| `IOS_CERTIFICATE_PASSWORD`        | Certificate password              |
-| `IOS_PROVISIONING_PROFILE_BASE64` | Distribution provisioning profile |
-| `IOS_KEYCHAIN_PASSWORD`           | Ephemeral keychain password       |
+Google OAuth may open the system browser and return through `vaehor://auth/callback`. A product screen must remain native. Callback handling and real-device sign-in verification are tracked as unresolved in the parity inventory; the callback scheme alone does not prove the flow works.
 
-CI archives a signed `.xcarchive`. Export to `.ipa` locally (see below).
+Operators must make their server reachable over HTTPS and configure the existing server-side mobile OAuth routes as the authentication unit is completed. Store review requires a server and reviewer credentials that remain available throughout review.
 
-## Pre-release checklist
+## Branding and versioning
 
-### App identity
+The icon source is [`apps/mobile/resources/icon.svg`](../../apps/mobile/resources/icon.svg), rasterized for Expo from `apps/mobile/resources/icon.png`. Review generated launcher icons and launch screens on both platforms before release. Set the app's marketing version in `app.config.ts`, Android `versionCode`, and iOS build number according to the selected build automation.
 
-- [ ] Bundle ID / application ID: `com.vaehor.mobile` (matches `apps/mobile/capacitor.config.ts`)
-- [ ] Bump `versionCode` / `versionName` in `apps/mobile/android/app/build.gradle` and iOS `MARKETING_VERSION` before each release tag
-
-### Branding
-
-- [ ] Review generated launcher icons and splash screens under `apps/mobile/android/app/src/main/res/` and the iOS asset catalog; run `pnpm cap:assets` in `apps/mobile` after changing `resources/icon.svg`
-- [ ] Final display name in `capacitor.config.ts` (`appName`)
-
-### OAuth (mobile Google sign-in)
-
-- [ ] Register authorized redirect URI: `vaehor://auth/callback` on the Google OAuth client used for mobile
-- [ ] `NEXTAUTH_URL` on each operator server matches their public HTTPS domain
-
-### Privacy
-
-- [ ] Privacy policy URL (publisher-hosted) for users who sideload the app
-- [ ] Document what data the app stores (session cookies, server URL, no analytics in shell v1 unless added)
-
-### Backend
-
-- [ ] Operator deployment on Traefik with valid TLS ([`docs/deployment.md`](../deployment.md))
-- [ ] Staging validation: large upload (>50 MB) and share deep link
-
-## Download and install
-
-### Android (APK)
-
-1. Open the workflow run for tag `mobile-v*`.
-2. Download artifact **`vaehor-android-apk`**.
-3. Transfer the APK to the device and install (enable "Install unknown apps" for your file manager or browser if prompted).
-
-### iOS (archive → IPA on macOS)
-
-1. Download artifact **`vaehor-ios-archive`** from the workflow run.
-2. Copy the `.xcarchive` to a Mac with Xcode installed.
-3. Export IPA using one of:
-   - **Xcode:** Window → Organizer → import archive → Distribute App → choose Ad Hoc, Development, or Enterprise (must match your provisioning profile).
-   - **CLI:** copy [`apps/mobile/ios/ExportOptions.plist.example`](../../apps/mobile/ios/ExportOptions.plist.example) to `ExportOptions.plist`, set `method` and `provisioningProfiles`, then:
-
-     ```bash
-     xcodebuild -exportArchive \
-       -archivePath /path/to/Vaehor.xcarchive \
-       -exportPath ./export \
-       -exportOptionsPlist ExportOptions.plist
-     ```
-
-4. Install the IPA via Apple Configurator, MDM, or another method allowed by your export method (Ad Hoc requires device UDIDs in the profile).
-
-## Versioning
-
-- Tag format: `mobile-vX.Y.Z`
-- Bump Android `versionCode` / `versionName` and iOS `MARKETING_VERSION` before tagging.
-
-## Local release build (optional)
-
-```bash
-pnpm --filter @vaehor/mobile run build
-cd apps/mobile && pnpm exec cap sync
-cd android && ./gradlew :app:assembleRelease   # set ANDROID_KEYSTORE_* env vars
-```
-
-Output: `apps/mobile/android/app/build/outputs/apk/release/app-release.apk`
-
-iOS requires macOS, CocoaPods, and Xcode signing — prefer CI for reproducible archives, then export IPA locally.
+For local development steps, see [`development.md`](./development.md).

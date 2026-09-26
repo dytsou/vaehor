@@ -53,7 +53,7 @@
   - [🛡️ Security \& Access Control](#️-security--access-control)
   - [🗂️ Drive Management](#️-drive-management)
   - [🛠️ Admin Dashboard](#️-admin-dashboard)
-  - [📱 Mobile (Capacitor)](#-mobile-capacitor)
+  - [📱 Mobile (React Native)](#-mobile-react-native)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🏗 Architecture Overview](#-architecture-overview)
 - [🚀 Getting Started](#-getting-started)
@@ -77,13 +77,13 @@
 - [📦 Deployment Guide](#-deployment-guide)
   - [VPS / DigitalOcean](#vps--digitalocean)
   - [Automatic HTTPS with DuckDNS + Traefik](#automatic-https-with-duckdns--traefik)
-  - [Mobile app (Capacitor)](#mobile-app-capacitor)
+  - [Mobile app (React Native)](#mobile-app-react-native)
   - [Other Platforms](#other-platforms)
 - [🔐 Security](#-security)
   - [Authentication \& Authorization](#authentication--authorization)
   - [Roles \& Permissions](#roles--permissions)
   - [Password Hashing (bcrypt)](#password-hashing-bcrypt)
-  - [Mobile OAuth (Capacitor)](#mobile-oauth-capacitor)
+  - [Mobile OAuth](#mobile-oauth)
   - [Security Headers \& CSP](#security-headers--csp)
 - [📖 API Reference](#-api-reference)
 - [⌨️ Keyboard Shortcuts](#️-keyboard-shortcuts)
@@ -164,17 +164,15 @@
 | **System Health**   | Monitor database, Redis, API health               |
 | **File Request**    | Create public upload links                        |
 
-### 📱 Mobile (Capacitor)
+### 📱 Mobile (React Native)
 
-| Feature            | Description                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| **iOS / Android**  | Installable hybrid shell in `apps/mobile/` (WebView UI on your self-hosted origin) |
-| **Native OAuth**   | Google sign-in via system browser + `vaehor://auth/callback`                       |
-| **Biometrics**     | Optional biometric unlock for stored sessions per server                           |
-| **Native Uploads** | File picker / camera bridge into the existing resumable upload API                 |
-| **Deep Links**     | Custom scheme + optional Universal / App Links                                     |
+| Feature           | Description                                                                    |
+| ----------------- | ------------------------------------------------------------------------------ |
+| **iOS / Android** | Expo development-build app in `apps/mobile/`, with a React Native screen shell |
+| **Self-hosted**   | The app identity is separate from each operator's vaehor server                |
+| **Migration**     | Full native feature parity is in progress; this foundation is not store-ready  |
 
-See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/mobile/).
+See [Deployment → Mobile app](#mobile-app-react-native) and [docs/mobile/](docs/mobile/).
 
 ---
 
@@ -194,7 +192,7 @@ See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/m
 <tr><td rowspan="4"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
 <tr><td>Vitest + Playwright</td><td>Unit tests + end-to-end testing</td></tr>
 <tr><td>Biome + Prettier + Husky</td><td>Code linting and formatting, Markdown/YAML/HTML formatting, git hooks</td></tr>
-<tr><td>Capacitor 7</td><td>iOS/Android hybrid shell (`apps/mobile/`)</td></tr>
+<tr><td>Expo SDK 57 + React Native 0.86</td><td>Native iOS/Android app (`apps/mobile/`)</td></tr>
 </table>
 
 ---
@@ -203,8 +201,12 @@ See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/m
 
 ```mermaid
 flowchart TB
-    subgraph CLIENT["🌐 Web Browser + Capacitor Mobile Shell"]
-        A["React 19 + Next.js 16 (WebView)\nApp Router · Zustand · TanStack Query"]
+    subgraph CLIENT["🌐 Web Browser"]
+        A["React 19 + Next.js 16\nApp Router · Zustand · TanStack Query"]
+    end
+
+    subgraph MOBILE["📱 React Native Mobile App"]
+        M["Expo development build\nNative routes · Native networking"]
     end
 
     subgraph TRAEFIK["🔒 Traefik Reverse Proxy"]
@@ -386,7 +388,7 @@ pnpm test:e2e         # E2E tests (Playwright)
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
    - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
-   - `vaehor://auth/callback` — Capacitor mobile Google sign-in (custom scheme; see [Mobile app](#mobile-app-capacitor) and [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md))
+   - `vaehor://auth/callback` — reserved callback scheme for mobile Google sign-in (system-browser flow; client callback work is pending; see [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md))
 5. Save the **Client ID** and **Client Secret**
 
 ### 5. Connect Google Drive (choose one)
@@ -539,21 +541,20 @@ Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443.
    docker compose up -d --build
    ```
 
-### Mobile app (Capacitor)
+### Mobile app (React Native)
 
-Installable iOS/Android client in `apps/mobile/` — WebView UI, native OAuth, biometrics, file upload, and deep links.
+The Expo React Native foundation in `apps/mobile/` targets iOS and Android. Full feature parity and store artifacts are still in progress; product screens do not use a WebView fallback.
 
 **Operator checklist (self-hosted + mobile):**
 
 1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
-2. Register `vaehor://auth/callback` on the Google OAuth client (see [Google Cloud Setup](#google-cloud-setup)).
-3. Bookmark that origin in the app on first launch.
-4. For Universal / App Links, host `.well-known` files — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md).
+2. Keep the backend reachable over HTTPS. Mobile authentication and share-link callback flows are being migrated; the configured scheme alone does not indicate a working app flow.
 
 ```bash
-pnpm mobile:dev          # Shell UI dev server
-pnpm mobile:build        # Production shell bundle
-pnpm mobile:sync         # Copy into android/ (and ios/ when added)
+pnpm mobile:dev          # Expo Metro server
+pnpm mobile:android      # Build/install Android development client
+pnpm mobile:ios          # Build/install iOS development client (macOS)
+pnpm mobile:prebuild      # Regenerate native projects from Expo config
 ```
 
 Device live reload and release builds: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
@@ -588,12 +589,12 @@ Device live reload and release builds: [docs/mobile/development.md](docs/mobile/
 
 ### Authentication & Authorization
 
-| Method              | Description                                 | Config                                                                                |
-| ------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **Google OAuth**    | Login with Google account                   | Set OAuth credentials                                                                 |
-| **Admin Password**  | Email + password login for admins           | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` (prod); plaintext `ADMIN_PASSWORD` is dev-only |
-| **Two-Factor Auth** | TOTP-based 2FA with QR code                 | Admin dashboard setup                                                                 |
-| **Mobile OAuth**    | System-browser Google sign-in for Capacitor | `vaehor://auth/callback` + mobile API routes (below)                                  |
+| Method              | Description                           | Config                                                                                |
+| ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Google OAuth**    | Login with Google account             | Set OAuth credentials                                                                 |
+| **Admin Password**  | Email + password login for admins     | `ADMIN_EMAILS` + `ADMIN_PASSWORD_HASH` (prod); plaintext `ADMIN_PASSWORD` is dev-only |
+| **Two-Factor Auth** | TOTP-based 2FA with QR code           | Admin dashboard setup                                                                 |
+| **Mobile OAuth**    | Planned system-browser Google sign-in | `vaehor://auth/callback` + existing mobile API routes; client migration is pending    |
 
 **Role Hierarchy:**
 
@@ -629,14 +630,14 @@ ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
 
 > **Production:** set `ADMIN_PASSWORD_HASH` (generate with `scripts/hash-password.sh`). Plaintext `ADMIN_PASSWORD` is for local/dev only — credential login in production requires the hash.
 
-### Mobile OAuth (Capacitor)
+### Mobile OAuth
 
-Native Google sign-in does **not** use an embedded WebView login. The shell opens the system browser, then hands off via a custom scheme:
+The planned native Google sign-in uses the system browser and returns through a custom scheme. The client callback is not implemented in the U1 foundation:
 
 1. Register `vaehor://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
 2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
 3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
-4. CORS allowlists Capacitor origins (`capacitor://localhost`, `ionic://localhost`) for native/SDK calls; primary WebView traffic is same-origin to your server.
+4. The React Native client uses native networking. Mobile endpoint authentication and real-device callback verification are still pending.
 
 Operator detail: [docs/mobile/development.md](docs/mobile/development.md), [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md).
 
@@ -770,7 +771,7 @@ vaehor/
 │   └── hash-password.sh          # bcrypt password hash generator
 │
 ├── apps/
-│   └── mobile/                   # Capacitor iOS/Android shell
+│   └── mobile/                   # Expo / React Native iOS and Android app
 ├── deploy/
 │   └── traefik/                  # Traefik static + dynamic config
 ├── docker-compose.yml            # Production stack

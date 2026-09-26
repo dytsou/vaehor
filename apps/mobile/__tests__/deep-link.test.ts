@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendBootstrapRedirect,
   buildShareCustomSchemeUrl,
   findBookmarkForOrigin,
   parseDeepLink,
@@ -62,17 +61,6 @@ describe("deep-link", () => {
       },
     ]);
     expect(match?.id).toBe("1");
-  });
-
-  it("builds bootstrap redirect URLs", () => {
-    expect(
-      appendBootstrapRedirect(
-        "/api/mobile/session-bootstrap?token=abc",
-        "/en/share/id",
-      ),
-    ).toBe(
-      "/api/mobile/session-bootstrap?token=abc&redirect=%2Fen%2Fshare%2Fid",
-    );
   });
 
   it("round-trips custom scheme builder", () => {

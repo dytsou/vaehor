@@ -1,11 +1,11 @@
 # vaehor app assets
 
-`icon.svg` is the source for the Android and iOS launcher icons and splash screens. It uses the same VA paths as `app/icon.svg` and `apps/mobile/public/icon.svg`, with extra space around the mark so square launcher icons do not crop it.
+`icon.svg` is the editable brand source. Expo uses the generated `icon.png` for the iOS app icon and Android adaptive icon.
 
-After changing the SVG, regenerate native assets from `apps/mobile`:
+After changing the SVG, regenerate the PNG at 1024 × 1024 pixels, then regenerate and inspect both native projects:
 
 ```sh
-pnpm cap:assets
+pnpm --filter @vaehor/mobile exec expo prebuild --clean --platform all
 ```
 
-Review the generated launcher icons and splash screens before release. See [`docs/mobile/artifact-release.md`](../../../docs/mobile/artifact-release.md).
+Review generated launcher icons and launch screens on iOS and Android before release. See [`docs/mobile/artifact-release.md`](../../../docs/mobile/artifact-release.md).

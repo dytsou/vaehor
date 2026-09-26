@@ -119,7 +119,3 @@ export async function issueBootstrapPath(
   const body = (await res.json()) as { bootstrapUrl: string };
   return body.bootstrapUrl;
 }
-
-export function webViewEntryUrl(origin: string, bootstrapPath: string): string {
-  return `${origin}${bootstrapPath}`;
-}

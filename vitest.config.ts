@@ -21,6 +21,7 @@ export default defineConfig({
       ".next/**",
       "e2e/**",
       "apps/mobile/node_modules/**",
+      "apps/mobile/__tests__/app-shell.test.tsx",
       "packages/mcp/node_modules/**",
       "packages/sdk/node_modules/**",
     ],

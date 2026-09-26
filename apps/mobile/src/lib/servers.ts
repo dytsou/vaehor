@@ -3,12 +3,6 @@ import { checkServerHealth, normalizeServerOrigin } from "./api-client";
 
 import { clearSessionForServer } from "./session-store";
 
-export async function clearWebViewCookiesForOrigin(
-  origin: string,
-): Promise<void> {
-  await clearSessionForServer(origin);
-}
-
 export type ServerBookmark = {
   id: string;
   url: string;
@@ -119,9 +113,7 @@ export async function switchActiveServer(
   store: ServerStore,
   nextId: string,
   previousOrigin?: string | null,
-  clearCookies: (
-    origin: string,
-  ) => Promise<void> = clearWebViewCookiesForOrigin,
+  clearCookies: (origin: string) => Promise<void> = clearSessionForServer,
 ): Promise<ServerBookmark | null> {
   const servers = await store.getServers();
   const next = servers.find((s) => s.id === nextId);

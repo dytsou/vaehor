@@ -108,14 +108,6 @@ export function findBookmarkForOrigin(
   return servers.find((server) => server.url === normalized) ?? null;
 }
 
-export function appendBootstrapRedirect(
-  bootstrapPath: string,
-  redirectPath: string,
-): string {
-  const separator = bootstrapPath.includes("?") ? "&" : "?";
-  return `${bootstrapPath}${separator}redirect=${encodeURIComponent(redirectPath)}`;
-}
-
 export function buildShareCustomSchemeUrl(target: DeepLinkTarget): string {
   const url = new URL("vaehor://share");
   const parsed = new URL(target.path, target.origin);
