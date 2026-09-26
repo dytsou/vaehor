@@ -1,10 +1,11 @@
-import { Preferences } from "@capacitor/preferences";
-import { NativeBiometric } from "@capgo/capacitor-native-biometric";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import { normalizeServerOrigin } from "./api-client";
 
 export const MAX_BIOMETRIC_FAILURES = 3;
 
 const failuresKey = (origin: string) =>
-  `zee.biometricFailures.${encodeURIComponent(origin)}`;
+  `vaehor.biometricFailures.v1.${encodeURIComponent(normalizeServerOrigin(origin))}`;
 
 export type SessionStoreDeps = {
   setCredentials: (
@@ -22,11 +23,26 @@ export type SessionStoreDeps = {
 
 export const defaultSessionStoreDeps: SessionStoreDeps = {
   async setCredentials(server, username, password) {
-    await NativeBiometric.setCredentials({ server, username, password });
+    await SecureStore.setItemAsync(
+      server,
+      JSON.stringify({ username, password }),
+    );
   },
   async getCredentials(server) {
     try {
-      const creds = await NativeBiometric.getCredentials({ server });
+      const value = await SecureStore.getItemAsync(server);
+      if (!value) return null;
+      const creds: unknown = JSON.parse(value);
+      if (
+        typeof creds !== "object" ||
+        creds === null ||
+        !("username" in creds) ||
+        typeof creds.username !== "string" ||
+        !("password" in creds) ||
+        typeof creds.password !== "string"
+      ) {
+        return null;
+      }
       return { username: creds.username, password: creds.password };
     } catch {
       return null;
@@ -34,22 +50,27 @@ export const defaultSessionStoreDeps: SessionStoreDeps = {
   },
   async deleteCredentials(server) {
     try {
-      await NativeBiometric.deleteCredentials({ server });
+      await SecureStore.deleteItemAsync(server);
     } catch {
       // ponytail: delete is best-effort when credentials were never stored
     }
   },
   async getFailures(origin) {
-    const { value } = await Preferences.get({ key: failuresKey(origin) });
-    return value ? Number.parseInt(value, 10) : 0;
+    const value = await AsyncStorage.getItem(failuresKey(origin));
+    const parsed = value ? Number.parseInt(value, 10) : 0;
+    return Number.isFinite(parsed) ? parsed : 0;
   },
   async setFailures(origin, count) {
-    await Preferences.set({ key: failuresKey(origin), value: String(count) });
+    await AsyncStorage.setItem(failuresKey(origin), String(count));
   },
 };
 
 export function serverCredentialKey(origin: string): string {
-  return origin;
+  const normalizedOrigin = normalizeServerOrigin(origin);
+  const originHex = Array.from(normalizedOrigin, (character) =>
+    character.charCodeAt(0).toString(16).padStart(2, "0"),
+  ).join("");
+  return `vaehor.session.v1.${originHex}`;
 }
 
 export async function saveSessionForServer(
@@ -57,22 +78,30 @@ export async function saveSessionForServer(
   sessionToken: string,
   deps: SessionStoreDeps = defaultSessionStoreDeps,
 ): Promise<void> {
-  await deps.setCredentials(serverCredentialKey(origin), origin, sessionToken);
-  await deps.setFailures(origin, 0);
+  const normalizedOrigin = normalizeServerOrigin(origin);
+  await deps.setCredentials(
+    serverCredentialKey(normalizedOrigin),
+    normalizedOrigin,
+    sessionToken,
+  );
+  await deps.setFailures(normalizedOrigin, 0);
 }
 
 export async function loadSessionForServer(
   origin: string,
   deps: SessionStoreDeps = defaultSessionStoreDeps,
 ): Promise<string | null> {
-  const failures = await deps.getFailures(origin);
+  const normalizedOrigin = normalizeServerOrigin(origin);
+  const failures = await deps.getFailures(normalizedOrigin);
   if (failures >= MAX_BIOMETRIC_FAILURES) {
-    await clearSessionForServer(origin, deps);
+    await clearSessionForServer(normalizedOrigin, deps);
     return null;
   }
 
-  const creds = await deps.getCredentials(serverCredentialKey(origin));
-  if (creds?.username !== origin) return null;
+  const creds = await deps.getCredentials(
+    serverCredentialKey(normalizedOrigin),
+  );
+  if (creds?.username !== normalizedOrigin) return null;
   return creds.password;
 }
 
@@ -80,18 +109,20 @@ export async function clearSessionForServer(
   origin: string,
   deps: SessionStoreDeps = defaultSessionStoreDeps,
 ): Promise<void> {
-  await deps.deleteCredentials(serverCredentialKey(origin));
-  await deps.setFailures(origin, 0);
+  const normalizedOrigin = normalizeServerOrigin(origin);
+  await deps.deleteCredentials(serverCredentialKey(normalizedOrigin));
+  await deps.setFailures(normalizedOrigin, 0);
 }
 
 export async function recordBiometricFailure(
   origin: string,
   deps: SessionStoreDeps = defaultSessionStoreDeps,
 ): Promise<number> {
-  const next = (await deps.getFailures(origin)) + 1;
-  await deps.setFailures(origin, next);
+  const normalizedOrigin = normalizeServerOrigin(origin);
+  const next = (await deps.getFailures(normalizedOrigin)) + 1;
+  await deps.setFailures(normalizedOrigin, next);
   if (next >= MAX_BIOMETRIC_FAILURES) {
-    await clearSessionForServer(origin, deps);
+    await clearSessionForServer(normalizedOrigin, deps);
   }
   return next;
 }
@@ -100,7 +131,7 @@ export async function resetBiometricFailures(
   origin: string,
   deps: SessionStoreDeps = defaultSessionStoreDeps,
 ): Promise<void> {
-  await deps.setFailures(origin, 0);
+  await deps.setFailures(normalizeServerOrigin(origin), 0);
 }
 
 export async function issueBootstrapPath(
@@ -108,10 +139,12 @@ export async function issueBootstrapPath(
   sessionToken: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string> {
-  const res = await fetchImpl(`${origin}/api/mobile/session-bootstrap`, {
+  const serverOrigin = normalizeServerOrigin(origin);
+  const res = await fetchImpl(`${serverOrigin}/api/mobile/session-bootstrap`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sessionToken }),
+    credentials: "omit",
   });
   if (!res.ok) {
     throw new Error("bootstrap_issue_failed");

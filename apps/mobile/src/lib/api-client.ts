@@ -2,10 +2,9 @@
 
 import { getHealthCheckUrl } from "@vaehor/sdk";
 
-export const SESSION_COOKIE_NAME = "authjs.session-token";
-
 export function normalizeServerOrigin(input: string): string {
   const trimmed = input.trim();
+  if (!trimmed) throw new Error("invalid_origin");
   const withScheme = /^https?:\/\//i.test(trimmed)
     ? trimmed
     : `https://${trimmed}`;
@@ -13,10 +12,26 @@ export function normalizeServerOrigin(input: string): string {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("invalid_protocol");
   }
+  if (url.username || url.password) {
+    throw new Error("credentials_in_origin_blocked");
+  }
   url.pathname = "";
   url.search = "";
   url.hash = "";
   return url.origin;
+}
+
+export function requireSecureServerOrigin(input: string): string {
+  const origin = normalizeServerOrigin(input);
+  const { protocol, hostname } = new URL(origin);
+  const isLoopback =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]";
+  if (protocol !== "https:" && !isLoopback) {
+    throw new Error("https_required");
+  }
+  return origin;
 }
 
 export type ServerFetch = (
@@ -28,11 +43,16 @@ export function createServerFetch(
   origin: string,
   sessionToken: string,
 ): ServerFetch {
-  const base = normalizeServerOrigin(origin);
+  const base = requireSecureServerOrigin(origin);
   return (path, init = {}) => {
+    const url = new URL(path, `${base}/`);
+    if (url.origin !== base) {
+      throw new Error("cross_origin_request_blocked");
+    }
     const headers = new Headers(init.headers);
-    headers.set("Cookie", `${SESSION_COOKIE_NAME}=${sessionToken}`);
-    return fetch(`${base}${path}`, {
+    headers.delete("Cookie");
+    headers.set("Authorization", `Bearer ${sessionToken}`);
+    return fetch(url.toString(), {
       ...init,
       headers,
       credentials: "omit",

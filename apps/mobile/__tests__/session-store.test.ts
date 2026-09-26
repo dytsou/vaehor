@@ -1,4 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  },
+}));
+vi.mock("expo-secure-store", () => ({
+  setItemAsync: vi.fn(),
+  getItemAsync: vi.fn(),
+  deleteItemAsync: vi.fn(),
+}));
+
 import {
   MAX_BIOMETRIC_FAILURES,
   clearSessionForServer,
@@ -6,6 +20,7 @@ import {
   loadSessionForServer,
   recordBiometricFailure,
   saveSessionForServer,
+  serverCredentialKey,
   type SessionStoreDeps,
 } from "../src/lib/session-store";
 
@@ -56,6 +71,34 @@ describe("session-store", () => {
     await expect(
       loadSessionForServer("https://a.example", deps),
     ).resolves.toBeNull();
+  });
+
+  it("uses one normalized-origin namespace and clears only that server", async () => {
+    const deps = memoryDeps();
+    await saveSessionForServer(
+      "https://a.example/path?discard=1",
+      "token-a",
+      deps,
+    );
+    await saveSessionForServer("https://b.example", "token-b", deps);
+
+    await expect(loadSessionForServer("https://a.example", deps)).resolves.toBe(
+      "token-a",
+    );
+    await clearSessionForServer("https://a.example/another-path", deps);
+
+    await expect(
+      loadSessionForServer("https://a.example", deps),
+    ).resolves.toBeNull();
+    await expect(loadSessionForServer("https://b.example", deps)).resolves.toBe(
+      "token-b",
+    );
+  });
+
+  it("uses SecureStore-safe characters for server credential keys", () => {
+    const key = serverCredentialKey("https://a.example/path?discard=1");
+    expect(key).toMatch(/^[A-Za-z0-9._-]+$/);
+    expect(key).toBe(serverCredentialKey("https://a.example/other-path"));
   });
 
   it("wipes session after repeated biometric failures", async () => {

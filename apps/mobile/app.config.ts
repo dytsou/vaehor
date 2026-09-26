@@ -9,7 +9,18 @@ const config: ExpoConfig = {
   platforms: ["ios", "android"],
   userInterfaceStyle: "automatic",
   icon: "./resources/icon.png",
-  plugins: ["expo-router"],
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-web-browser",
+    [
+      "expo-local-authentication",
+      {
+        faceIDPermission:
+          "Allow Vaehor to use Face ID to unlock saved server sessions.",
+      },
+    ],
+  ],
   ios: {
     bundleIdentifier: "com.vaehor.mobile",
     buildNumber: "1",

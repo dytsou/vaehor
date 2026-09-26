@@ -1,4 +1,5 @@
-import { Preferences } from "@capacitor/preferences";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 import { checkServerHealth, normalizeServerOrigin } from "./api-client";
 
 import { clearSessionForServer } from "./session-store";
@@ -10,8 +11,8 @@ export type ServerBookmark = {
   biometricsEnabled: boolean;
 };
 
-const SERVERS_KEY = "zee.servers";
-const ACTIVE_KEY = "zee.activeServerId";
+const SERVERS_KEY = "vaehor.servers.v1";
+const ACTIVE_KEY = "vaehor.activeServerId.v1";
 
 export type ServerStore = {
   getServers(): Promise<ServerBookmark[]>;
@@ -22,28 +23,38 @@ export type ServerStore = {
 
 export const preferencesStore: ServerStore = {
   async getServers() {
-    const { value } = await Preferences.get({ key: SERVERS_KEY });
+    const value = await AsyncStorage.getItem(SERVERS_KEY);
     if (!value) return [];
-    return JSON.parse(value) as ServerBookmark[];
+    const bookmarks = JSON.parse(value) as ServerBookmark[];
+    const seen = new Set<string>();
+    return bookmarks.flatMap((bookmark) => {
+      try {
+        const url = normalizeServerOrigin(bookmark.url);
+        if (seen.has(url)) return [];
+        seen.add(url);
+        return [{ ...bookmark, url }];
+      } catch {
+        return [];
+      }
+    });
   },
   async setServers(servers) {
-    await Preferences.set({ key: SERVERS_KEY, value: JSON.stringify(servers) });
+    await AsyncStorage.setItem(SERVERS_KEY, JSON.stringify(servers));
   },
   async getActiveId() {
-    const { value } = await Preferences.get({ key: ACTIVE_KEY });
-    return value ?? null;
+    return await AsyncStorage.getItem(ACTIVE_KEY);
   },
   async setActiveId(id) {
     if (id) {
-      await Preferences.set({ key: ACTIVE_KEY, value: id });
+      await AsyncStorage.setItem(ACTIVE_KEY, id);
     } else {
-      await Preferences.remove({ key: ACTIVE_KEY });
+      await AsyncStorage.removeItem(ACTIVE_KEY);
     }
   },
 };
 
 export function createServerId(): string {
-  return crypto.randomUUID();
+  return Crypto.randomUUID();
 }
 
 export function defaultLabelForOrigin(origin: string): string {
@@ -71,6 +82,14 @@ export async function validateAndNormalizeUrl(
   let origin: string;
   try {
     origin = normalizeServerOrigin(input);
+    const { protocol, hostname } = new URL(origin);
+    const isLoopback =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "[::1]";
+    if (protocol !== "https:" && !isLoopback) {
+      throw new Error("https_required");
+    }
   } catch {
     throw new ServerValidationError("invalid_url");
   }
@@ -112,25 +131,31 @@ export async function addServer(
 export async function switchActiveServer(
   store: ServerStore,
   nextId: string,
-  previousOrigin?: string | null,
-  clearCookies: (origin: string) => Promise<void> = clearSessionForServer,
 ): Promise<ServerBookmark | null> {
   const servers = await store.getServers();
   const next = servers.find((s) => s.id === nextId);
   if (!next) return null;
-
-  let previous = previousOrigin ?? null;
-  if (!previous) {
-    const activeId = await store.getActiveId();
-    previous = servers.find((s) => s.id === activeId)?.url ?? null;
-  }
-
-  if (previous && previous !== next.url) {
-    await clearCookies(previous);
-  }
-
   await store.setActiveId(next.id);
   return next;
+}
+
+export async function removeServer(
+  store: ServerStore,
+  serverId: string,
+  clearSession: (origin: string) => Promise<void> = clearSessionForServer,
+): Promise<boolean> {
+  const servers = await store.getServers();
+  const removed = servers.find((server) => server.id === serverId);
+  if (!removed) return false;
+
+  const remaining = servers.filter((server) => server.id !== serverId);
+  await clearSession(removed.url);
+  await store.setServers(remaining);
+
+  if ((await store.getActiveId()) === serverId) {
+    await store.setActiveId(remaining[0]?.id ?? null);
+  }
+  return true;
 }
 
 export async function getActiveServer(
