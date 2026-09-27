@@ -14,6 +14,8 @@ const favoriteSchema = z.object({
 
 const FAVORITES_PAGE_SIZE = 30;
 const DRIVE_LOOKUP_BATCH_SIZE = 6;
+const compareFavoriteIds = (left: string, right: string) =>
+  left.localeCompare(right, "en-US", { sensitivity: "variant" });
 
 export const GET = createUserRoute(
   async ({ session, request }) => {
@@ -21,7 +23,7 @@ export const GET = createUserRoute(
     const favoritesKey = `user:${email}:favorites`;
     const ids = [
       ...new Set((await kv.smembers(favoritesKey)).filter(Boolean)),
-    ].sort();
+    ].sort(compareFavoriteIds);
     const { searchParams } = new URL(request.url);
 
     if (searchParams.get("idsOnly") === "true") {
@@ -30,7 +32,7 @@ export const GET = createUserRoute(
 
     const pageToken = searchParams.get("pageToken");
     const firstIdAfterCursor = pageToken
-      ? ids.findIndex((id) => id > pageToken)
+      ? ids.findIndex((id) => compareFavoriteIds(id, pageToken) > 0)
       : 0;
     const start = firstIdAfterCursor < 0 ? ids.length : firstIdAfterCursor;
     const pageIds = ids.slice(start, start + FAVORITES_PAGE_SIZE);
