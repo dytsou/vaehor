@@ -12,7 +12,18 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     "expo-secure-store",
+    "expo-sharing",
+    "expo-video",
     "expo-web-browser",
+    [
+      "expo-audio",
+      {
+        microphonePermission: false,
+        recordAudioAndroid: false,
+        enableBackgroundRecording: false,
+        enableBackgroundPlayback: true,
+      },
+    ],
     [
       "expo-local-authentication",
       {
@@ -26,6 +37,10 @@ const config: ExpoConfig = {
     buildNumber: "1",
     supportsTablet: true,
     deploymentTarget: "16.4",
+    infoPlist: {
+      NSLocalNetworkUsageDescription:
+        "Vaehor connects to your chosen self-hosted server on your local network so you can browse, preview, download, and upload files.",
+    },
   },
   android: {
     package: "com.vaehor.mobile",

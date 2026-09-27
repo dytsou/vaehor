@@ -543,12 +543,12 @@ Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443.
 
 ### Mobile app (React Native)
 
-The Expo React Native foundation in `apps/mobile/` targets iOS and Android. Full feature parity and store artifacts are still in progress; product screens do not use a WebView fallback.
+The Expo React Native app in `apps/mobile/` targets iOS and Android. Product screens use native routes and APIs. The parity inventory lists remaining feature and device-acceptance gaps; the current CI exports bundles but does not sign or submit store artifacts.
 
 **Operator checklist (self-hosted + mobile):**
 
 1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
-2. Keep the backend reachable over HTTPS. Mobile authentication and share-link callback flows are being migrated; the configured scheme alone does not indicate a working app flow.
+2. Keep the backend reachable over HTTPS. OAuth callback and custom share-link routing exist in source; verify them on devices before relying on them. HTTPS links for arbitrary operator domains still need native domain association.
 
 ```bash
 pnpm mobile:dev          # Expo Metro server

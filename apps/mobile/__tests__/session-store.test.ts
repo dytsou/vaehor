@@ -18,9 +18,14 @@ import {
   clearSessionForServer,
   issueBootstrapPath,
   loadSessionForServer,
+  clearLocalStorageAccessTokenForServer,
+  loadLocalStorageAccessTokenForServer,
   recordBiometricFailure,
+  saveLocalStorageAccessTokenForServer,
   saveSessionForServer,
   serverCredentialKey,
+  localStorageAccessTokenKey,
+  type LocalStorageAccessStoreDeps,
   type SessionStoreDeps,
 } from "../src/lib/session-store";
 
@@ -99,6 +104,46 @@ describe("session-store", () => {
     const key = serverCredentialKey("https://a.example/path?discard=1");
     expect(key).toMatch(/^[A-Za-z0-9._-]+$/);
     expect(key).toBe(serverCredentialKey("https://a.example/other-path"));
+  });
+
+  it("keeps local-storage unlock tokens in a server-scoped SecureStore key", async () => {
+    const tokens = new Map<string, string>();
+    const deps: LocalStorageAccessStoreDeps = {
+      async setToken(key, token) {
+        tokens.set(key, token);
+      },
+      async getToken(key) {
+        return tokens.get(key) ?? null;
+      },
+      async deleteToken(key) {
+        tokens.delete(key);
+      },
+    };
+
+    await saveLocalStorageAccessTokenForServer(
+      "https://a.example/path",
+      "local-token-a",
+      deps,
+    );
+    await saveLocalStorageAccessTokenForServer(
+      "https://b.example",
+      "local-token-b",
+      deps,
+    );
+
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://a.example", deps),
+    ).resolves.toBe("local-token-a");
+    await clearLocalStorageAccessTokenForServer("https://a.example", deps);
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://a.example", deps),
+    ).resolves.toBeNull();
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://b.example", deps),
+    ).resolves.toBe("local-token-b");
+    expect(localStorageAccessTokenKey("https://a.example")).toMatch(
+      /^[A-Za-z0-9._-]+$/,
+    );
   });
 
   it("wipes session after repeated biometric failures", async () => {

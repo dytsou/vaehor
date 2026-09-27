@@ -2,7 +2,7 @@
 
 `apps/mobile/` is an Expo SDK 57 and React Native 0.86 development-build app. Its UI, navigation, and task screens run natively on iOS and Android. Product tasks do not load the self-hosted website in a WebView. The selected server remains the authority for user accounts, permissions, file data, and administrative changes.
 
-The initial route is a native server-selection shell with system theme and device-language selection, plus loading, network-loss, retry, and recoverable-error states. The first screen is foundation work; server management and product task screens are being migrated in the units listed in [`parity-inventory.md`](./parity-inventory.md).
+The native routes include server selection and authentication, file browsing and management, native previews, shares and file requests, settings, setup, and an initial admin area. Current source coverage and remaining device or feature gaps are tracked in [`parity-inventory.md`](./parity-inventory.md).
 
 ## Prerequisites
 
@@ -48,15 +48,15 @@ pnpm --filter @vaehor/mobile run prebuild:clean
 
 ## Test and typecheck
 
-The mobile test command runs the existing Vitest utility suite and the focused Jest/React Native shell suite:
+The mobile test command runs the Vitest utility suite and the focused Jest/React Native shell suite:
 
 ```bash
 pnpm mobile:test
-pnpm --filter @vaehor/mobile exec jest --preset jest-expo --runInBand __tests__/app-shell.test.tsx
-pnpm exec tsc -p apps/mobile/tsconfig.json --noEmit
+pnpm typecheck
+pnpm mobile:build
 ```
 
-The shell test covers the initial server-selection screen, loading, offline retry, recoverable error, locale, and theme; it verifies no browser placeholder is rendered. The U1 route currently contains only that native shell. Physical-device authentication, deep links, and product parity remain open in the inventory.
+The shell test covers server selection, loading, offline retry, recoverable errors, locale, and theme. The Vitest suite covers mobile API and utility behavior. These checks do not replace iOS and Android simulator or physical-device acceptance; consult the inventory for those open flows.
 
 ## Local backend
 
@@ -66,7 +66,7 @@ For backend work on a local network, bind Next.js to the LAN and use a reachable
 pnpm dev --hostname 0.0.0.0
 ```
 
-Production servers must use HTTPS. Do not use a development server URL as a product-screen fallback; configure the native app to call the selected server's API after that feature's parity unit is implemented.
+Production servers must use HTTPS. Native product screens call the selected server's API; they do not display the hosted product website.
 
 ## App identity
 

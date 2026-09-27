@@ -15,7 +15,7 @@ export const POST = createEditorRoute(
   async ({ request, session, query }) => {
     try {
       if (query.type === "init") {
-        return await handleUploadInit(request);
+        return await handleUploadInit(request, session);
       }
 
       if (query.type === "chunk") {

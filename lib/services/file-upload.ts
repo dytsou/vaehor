@@ -4,6 +4,8 @@ import { z } from "zod";
 import { getAccessToken } from "@/lib/drive";
 import { logActivity } from "@/lib/activityLogger";
 import { invalidateFolderCache } from "@/lib/cache";
+import { checkLocalStorageAccess } from "@/lib/auth";
+import { ensureRestrictedFolderAccess } from "@/lib/services/files-list";
 
 const GOOGLE_UPLOAD_HOST = "www.googleapis.com";
 const GOOGLE_UPLOAD_PATH_PREFIX = "/upload/drive/v3/files";
@@ -27,6 +29,13 @@ export const uploadQuerySchema = z
         code: z.ZodIssueCode.custom,
         path: ["uploadUrl"],
         message: "uploadUrl wajib diisi untuk chunk upload.",
+      });
+    }
+    if (value.type === "chunk" && !value.parentId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["parentId"],
+        message: "parentId wajib diisi untuk chunk upload.",
       });
     }
   });
@@ -79,7 +88,7 @@ async function recordChunkUploadActivity(
   });
 }
 
-export async function handleUploadInit(request: NextRequest) {
+export async function handleUploadInit(request: NextRequest, session: Session) {
   const body = await request.json();
   const parsedBody = uploadInitBodySchema.safeParse(body);
   if (!parsedBody.success) {
@@ -94,7 +103,25 @@ export async function handleUploadInit(request: NextRequest) {
 
   const { name, mimeType, parentId, size } = parsedBody.data;
 
+  const accessDenied = await ensureRestrictedFolderAccess(
+    request,
+    parentId,
+    session,
+    false,
+  );
+  if (accessDenied) return accessDenied;
+
   if (parentId.startsWith("local-storage:")) {
+    if (!(await checkLocalStorageAccess(request))) {
+      return NextResponse.json(
+        {
+          error: "Local storage authentication is required.",
+          isLocalAuthNeeded: true,
+        },
+        { status: 401 },
+      );
+    }
+
     return NextResponse.json({
       uploadUrl: `local-storage-upload://${encodeURIComponent(
         parentId,
@@ -198,7 +225,26 @@ export async function handleUploadChunk(
   parentId: string | undefined,
   session: Session,
 ) {
+  if (!parentId) return invalidChunkParamsResponse();
+  const accessDenied = await ensureRestrictedFolderAccess(
+    request,
+    parentId,
+    session,
+    false,
+  );
+  if (accessDenied) return accessDenied;
+
   if (uploadUrl.startsWith("local-storage-upload://")) {
+    if (!(await checkLocalStorageAccess(request))) {
+      return NextResponse.json(
+        {
+          error: "Local storage authentication is required.",
+          isLocalAuthNeeded: true,
+        },
+        { status: 401 },
+      );
+    }
+
     return handleLocalStorageChunk(request, uploadUrl, parentId, session);
   }
 

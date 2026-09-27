@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as Network from "expo-network";
 import {
@@ -9,12 +9,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   clearSessionForServer,
+  clearLocalStorageAccessTokenForServer,
   loadSessionForServer,
   recordBiometricFailure,
   resetBiometricFailures,
@@ -30,9 +30,11 @@ import {
 } from "../lib/servers";
 import { isBiometricAvailable, promptBiometricUnlock } from "../lib/biometrics";
 import { startGoogleOAuth } from "../lib/oauth";
+import { useMobilePreferences } from "../lib/mobile-preferences";
 
 export default function ServerSelectionRoute() {
-  const theme = useColorScheme();
+  const router = useRouter();
+  const { theme, locale } = useMobilePreferences();
   const colors = themeColors(theme === "dark");
   const params = useLocalSearchParams<{
     connected?: string;
@@ -260,6 +262,7 @@ export default function ServerSelectionRoute() {
     setError(null);
     try {
       await clearSessionForServer(activeServer.url);
+      await clearLocalStorageAccessTokenForServer(activeServer.url);
       setSessionToken(null);
       setNeedsBiometricUnlock(false);
     } catch {
@@ -288,6 +291,7 @@ export default function ServerSelectionRoute() {
     setWorking(true);
     setError(null);
     try {
+      await clearLocalStorageAccessTokenForServer(server.url);
       await removeServer(preferencesStore, server.id);
       await loadServerState(false);
     } catch {
@@ -315,6 +319,21 @@ export default function ServerSelectionRoute() {
               Your files, on your server
             </Text>
           </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/settings")}
+            style={{ marginLeft: "auto" }}
+          >
+            <Text
+              style={{
+                color: colors.foreground,
+                fontSize: 14,
+                fontWeight: "600",
+              }}
+            >
+              {locale === "zh" ? "設定" : "Settings"}
+            </Text>
+          </Pressable>
         </View>
 
         {offline ? (
@@ -407,6 +426,13 @@ export default function ServerSelectionRoute() {
                 {sessionToken ? (
                   <>
                     <Text style={styles.connected}>Signed in securely</Text>
+                    <Pressable
+                      style={styles.primaryButton}
+                      disabled={working || offline}
+                      onPress={() => router.push("/files")}
+                    >
+                      <Text style={styles.primaryButtonText}>Browse files</Text>
+                    </Pressable>
                     <Pressable
                       style={styles.secondaryButton}
                       disabled={working}
@@ -504,6 +530,22 @@ export default function ServerSelectionRoute() {
               >
                 <Text style={styles.primaryButtonText}>
                   {working ? "Checking server…" : "Add server"}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={!originInput.trim() || working}
+                onPress={() =>
+                  router.push({
+                    pathname: "/setup",
+                    params: { serverOrigin: originInput.trim() },
+                  })
+                }
+              >
+                <Text
+                  style={[styles.secondaryButtonText, { color: "#1f6f78" }]}
+                >
+                  Set up this server
                 </Text>
               </Pressable>
             </View>

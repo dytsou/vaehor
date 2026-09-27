@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "next-auth";
-import { jwtVerify } from "jose";
 import { getAccessToken, type DriveFile } from "@/lib/drive";
 import {
   authenticateShareRequest,
@@ -11,6 +10,7 @@ import { isAccessRestricted } from "@/lib/securityUtils";
 import { kv } from "@/lib/kv";
 import { db } from "@/lib/db";
 import { stripHtmlTags } from "@/lib/utils";
+import { getAuthorizedFolderIds } from "@/lib/services/folder-access-token";
 
 const CACHE_TTL = 3600;
 const FILE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -25,8 +25,7 @@ export type FolderSearchParams = {
 };
 
 export type FolderSearchParamsResult =
-  | { ok: true; params: FolderSearchParams }
-  | { ok: false; error: NextResponse };
+  { ok: true; params: FolderSearchParams } | { ok: false; error: NextResponse };
 
 const sanitizeString = stripHtmlTags;
 
@@ -264,23 +263,7 @@ async function fetchDriveSearchResults(
 async function extractAllowedFolderTokens(
   request: NextRequest,
 ): Promise<string[]> {
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.split(" ")[1];
-  if (!token) {
-    return [];
-  }
-
-  try {
-    const secret = new TextEncoder().encode(process.env.SHARE_SECRET_KEY!);
-    const { payload } = await jwtVerify(token, secret);
-    if (payload.folderId) {
-      return [payload.folderId as string];
-    }
-  } catch {
-    // Ignore invalid folder access tokens.
-  }
-
-  return [];
+  return getAuthorizedFolderIds(request);
 }
 
 async function loadProtectedFolderMap() {

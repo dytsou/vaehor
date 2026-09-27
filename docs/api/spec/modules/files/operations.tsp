@@ -14,27 +14,39 @@ namespace VaehorApi {
   @get
   @route("/files")
   @doc("Get a paginated list of files and folders within a specified folder.")
+  @useAuth(OptionalMobileAuth)
   op listFiles(
     @query folderId: string,
     @query pageSize?: int32,
     @query pageToken?: string,
     @query share_token?: string,
+    @header("X-Folder-Access-Token") xFolderAccessToken?: string,
+    @header("X-Local-Storage-Token") xLocalStorageToken?: string,
   ): OkResponse<FileListResponse> | UnauthorizedErrorResponse | NotFoundErrorResponse;
 
   @tag("Files")
   @get
   @route("/filedetails")
   @doc("Get detailed metadata for a specific file.")
-  op getFileDetails(@query fileId: string): OkResponse<DriveFile>;
+  @useAuth(OptionalMobileAuth)
+  op getFileDetails(
+    @query fileId: string,
+    @query share_token?: string,
+    @header("X-Folder-Access-Token") xFolderAccessToken?: string,
+    @header("X-Local-Storage-Token") xLocalStorageToken?: string,
+  ): OkResponse<DriveFile> | UnauthorizedErrorResponse | NotFoundErrorResponse;
 
   @tag("Files")
   @get
   @route("/download")
   @doc("Initiate file download from Google Drive.")
+  @useAuth(OptionalMobileAuth)
   op downloadFile(
     @query fileId: string,
     @query share_token?: string,
     @query access_token?: string,
+    @header("X-Folder-Access-Token") xFolderAccessToken?: string,
+    @header("X-Local-Storage-Token") xLocalStorageToken?: string,
   ):
     | OkResponse<unknown>
     | RedirectResponse
@@ -45,28 +57,36 @@ namespace VaehorApi {
   @get
   @route("/search")
   @doc("Search for files within a folder.")
+  @useAuth(OptionalMobileAuth)
   op searchFiles(
     @query q: string,
     @query folderId: string,
     @query type?: SearchType,
-  ): OkResponse<DriveFile[]>;
+    @query share_token?: string,
+    @header("X-Folder-Access-Token") xFolderAccessToken?: string,
+    @header("X-Local-Storage-Token") xLocalStorageToken?: string,
+  ): OkResponse<DriveFile[]> | UnauthorizedErrorResponse;
 
   @tag("Files")
   @post
   @route("/files/upload")
-  @doc("Upload a file to Google Drive (Admin only).")
+  @doc("Initialize or send a chunk for an upload by an authenticated user with upload access.")
+  @useAuth(MobileAuth)
   op uploadFile(
     @query type: UploadMode,
     @query uploadUrl?: string,
     @query parentId?: string,
     @header contentRange?: string,
+    @header("X-Folder-Access-Token") xFolderAccessToken?: string,
+    @header("X-Local-Storage-Token") xLocalStorageToken?: string,
     @body body: ResumableUploadInitBody | bytes,
   ): EmptyOkResponse | UnauthorizedErrorResponse | ForbiddenErrorResponse;
 
   @tag("Files")
   @patch
   @route("/files/rename")
-  @doc("Rename a file or folder (Admin only).")
+  @doc("Rename a file or folder with the required server-side permission.")
+  @useAuth(MobileAuth)
   op renameFile(
     @body body: RenameFileRequest,
   ): EmptyOkResponse | UnauthorizedErrorResponse;
@@ -74,7 +94,8 @@ namespace VaehorApi {
   @tag("Files")
   @delete
   @route("/files/delete")
-  @doc("Move file to trash (Admin only).")
+  @doc("Move a file to trash with the required server-side permission.")
+  @useAuth(MobileAuth)
   op deleteFile(
     @body body: DeleteFileRequest,
   ): EmptyOkResponse | UnauthorizedErrorResponse;
@@ -84,7 +105,7 @@ namespace VaehorApi {
   @tag("Files")
   @post
   @route("/files/move")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op moveFile(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -92,7 +113,7 @@ namespace VaehorApi {
   @tag("Files")
   @post
   @route("/files/copy")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op copyFile(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -100,7 +121,7 @@ namespace VaehorApi {
   @tag("Files")
   @post
   @route("/files/bulk-move")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op bulkMoveFiles(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -108,7 +129,7 @@ namespace VaehorApi {
   @tag("Files")
   @post
   @route("/files/bulk-delete")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op bulkDeleteFiles(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -116,7 +137,7 @@ namespace VaehorApi {
   @tag("Files")
   @patch
   @route("/files/update")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op updateFileMetadata(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -124,7 +145,7 @@ namespace VaehorApi {
   @tag("Files")
   @patch
   @route("/files/update-media")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op updateFileMedia(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -132,7 +153,7 @@ namespace VaehorApi {
   @tag("Files")
   @get
   @route("/files/{fileId}/revisions")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op listFileRevisions(
     @path fileId: string,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -140,12 +161,13 @@ namespace VaehorApi {
   @tag("Files")
   @get
   @route("/search/global")
+  @useAuth(MobileAuth)
   op globalSearch(@query q: string): OkResponse<unknown>;
 
   @tag("Files")
   @post
   @route("/folder/create")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op createFolder(
     @body body: unknown,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;
@@ -153,23 +175,25 @@ namespace VaehorApi {
   @tag("Files")
   @get
   @route("/folderpath")
+  @useAuth(OptionalMobileAuth)
   op getFolderPath(@query folderId: string): OkResponse<unknown>;
 
   @tag("Files")
   @get
   @route("/trash")
-  @useAuth(SessionAuth)
+  @useAuth(MobileAuth)
   op getTrash(): OkResponse<unknown> | UnauthorizedErrorResponse;
 
   @tag("Files")
   @get
   @route("/metadata")
+  @useAuth(OptionalMobileAuth)
   op getMetadata(@query url?: string, @query id?: string): OkResponse<unknown>;
 
   @tag("Files")
   @get
   @route("/archive-preview")
-  @useAuth(SessionAuth)
+  @useAuth(OptionalMobileAuth)
   op archivePreview(
     @query fileId: string,
   ): OkResponse<unknown> | UnauthorizedErrorResponse;

@@ -6,7 +6,6 @@
     "resolveJsonModule": true,
     "types": ["jest"],
     "paths": {
-      "@vaehor/sdk": ["../../packages/sdk/src/index.ts"],
       "@vaehor/mobile-bridge-protocol": ["../../lib/mobile-bridge-protocol.ts"]
     }
   },

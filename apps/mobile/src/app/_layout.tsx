@@ -7,6 +7,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppShellScreen } from "../app-shell/AppShellScreen";
 import { getDeviceLocale } from "../app-shell/locale";
 import {
+  MobilePreferencesProvider,
+  useMobilePreferences,
+} from "../lib/mobile-preferences";
+import { MobileAudioPlaybackProvider } from "../lib/audio-playback";
+import {
   completePendingOAuthCallback,
   parseOAuthCallbackUrl,
 } from "../lib/oauth";
@@ -14,9 +19,7 @@ import { parseDeepLink, resolveShareDestination } from "../lib/deep-link";
 import { preferencesStore } from "../lib/servers";
 
 export default function RootLayout() {
-  const theme = useColorScheme();
   const router = useRouter();
-  const backgroundColor = theme === "dark" ? "#111820" : "#F4F7F8";
 
   useEffect(() => {
     let mounted = true;
@@ -78,14 +81,29 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor },
-        }}
-      />
+      <MobilePreferencesProvider>
+        <RootStack />
+      </MobilePreferencesProvider>
     </SafeAreaProvider>
+  );
+}
+
+function RootStack() {
+  const { theme } = useMobilePreferences();
+  const backgroundColor = theme === "dark" ? "#111820" : "#F4F7F8";
+
+  return (
+    <MobileAudioPlaybackProvider>
+      <>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor },
+          }}
+        />
+      </>
+    </MobileAudioPlaybackProvider>
   );
 }
 

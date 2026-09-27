@@ -1,0 +1,104 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { revalidateTag } from "next/cache";
+import { createUserRoute } from "@/lib/api-middleware";
+import { db } from "@/lib/db";
+import { getFileDetailsFromDrive } from "@/lib/drive";
+import { kv } from "@/lib/kv";
+import { isPrivateFolder } from "@/lib/auth";
+
+const favoriteSchema = z.object({
+  fileId: z.string().min(1),
+  isFavorite: z.boolean(),
+});
+
+const FAVORITES_PAGE_SIZE = 30;
+const DRIVE_LOOKUP_BATCH_SIZE = 6;
+
+export const GET = createUserRoute(
+  async ({ session, request }) => {
+    const email = session.user.email!;
+    const favoritesKey = `user:${email}:favorites`;
+    const ids = [
+      ...new Set((await kv.smembers(favoritesKey)).filter(Boolean)),
+    ].sort();
+    const { searchParams } = new URL(request.url);
+
+    if (searchParams.get("idsOnly") === "true") {
+      return NextResponse.json({ favoriteIds: ids });
+    }
+
+    const pageToken = searchParams.get("pageToken");
+    const firstIdAfterCursor = pageToken
+      ? ids.findIndex((id) => id > pageToken)
+      : 0;
+    const start = firstIdAfterCursor < 0 ? ids.length : firstIdAfterCursor;
+    const pageIds = ids.slice(start, start + FAVORITES_PAGE_SIZE);
+    const entries: {
+      id: string;
+      file: Awaited<ReturnType<typeof getFileDetailsFromDrive>>;
+    }[] = [];
+
+    for (
+      let index = 0;
+      index < pageIds.length;
+      index += DRIVE_LOOKUP_BATCH_SIZE
+    ) {
+      const batch = pageIds.slice(index, index + DRIVE_LOOKUP_BATCH_SIZE);
+      entries.push(
+        ...(await Promise.all(
+          batch.map(async (id) => ({
+            id,
+            file: await getFileDetailsFromDrive(id),
+          })),
+        )),
+      );
+    }
+
+    const protectedFolders = await db.protectedFolder.findMany({
+      select: { folderId: true },
+    });
+
+    const missingIds = entries
+      .filter(({ file }) => !file || file.trashed)
+      .map(({ id }) => id);
+    if (missingIds.length > 0) {
+      await Promise.all(missingIds.map((id) => kv.srem(favoritesKey, id)));
+    }
+
+    const protectedIds = new Set(
+      protectedFolders.map(({ folderId }) => folderId),
+    );
+    const files = entries.flatMap(({ file }) => {
+      if (!file || file.trashed) return [];
+      return [
+        {
+          ...file,
+          isFolder: file.mimeType === "application/vnd.google-apps.folder",
+          isProtected: protectedIds.has(file.id) || isPrivateFolder(file.id),
+        },
+      ];
+    });
+
+    const nextPageToken =
+      start + pageIds.length < ids.length ? pageIds.at(-1) : undefined;
+
+    return NextResponse.json({ files, nextPageToken });
+  },
+  { requireEmail: true },
+);
+
+export const POST = createUserRoute(
+  async ({ session, body }) => {
+    const email = session.user.email!;
+    const favoritesKey = `user:${email}:favorites`;
+    if (body.isFavorite) {
+      await kv.sadd(favoritesKey, body.fileId);
+    } else {
+      await kv.srem(favoritesKey, body.fileId);
+    }
+    revalidateTag("favorites", "max");
+    return NextResponse.json({ success: true, isFavorite: body.isFavorite });
+  },
+  { bodySchema: favoriteSchema, requireEmail: true },
+);

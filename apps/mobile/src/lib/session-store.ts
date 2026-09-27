@@ -21,6 +21,32 @@ export type SessionStoreDeps = {
   setFailures: (origin: string, count: number) => Promise<void>;
 };
 
+export type LocalStorageAccessStoreDeps = {
+  setToken: (key: string, token: string) => Promise<void>;
+  getToken: (key: string) => Promise<string | null>;
+  deleteToken: (key: string) => Promise<void>;
+};
+
+export const defaultLocalStorageAccessStoreDeps: LocalStorageAccessStoreDeps = {
+  async setToken(key, token) {
+    await SecureStore.setItemAsync(key, token);
+  },
+  async getToken(key) {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
+  },
+  async deleteToken(key) {
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch {
+      // A token may have expired or already been removed.
+    }
+  },
+};
+
 export const defaultSessionStoreDeps: SessionStoreDeps = {
   async setCredentials(server, username, password) {
     await SecureStore.setItemAsync(
@@ -65,12 +91,45 @@ export const defaultSessionStoreDeps: SessionStoreDeps = {
   },
 };
 
-export function serverCredentialKey(origin: string): string {
+function normalizedOriginHex(origin: string): string {
   const normalizedOrigin = normalizeServerOrigin(origin);
-  const originHex = Array.from(normalizedOrigin, (character) =>
+  return Array.from(normalizedOrigin, (character) =>
     character.charCodeAt(0).toString(16).padStart(2, "0"),
   ).join("");
+}
+
+export function serverCredentialKey(origin: string): string {
+  const originHex = normalizedOriginHex(origin);
   return `vaehor.session.v1.${originHex}`;
+}
+
+export function localStorageAccessTokenKey(origin: string): string {
+  const originHex = normalizedOriginHex(origin);
+  return `vaehor.localStorageAccess.v1.${originHex}`;
+}
+
+export async function saveLocalStorageAccessTokenForServer(
+  origin: string,
+  token: string,
+  deps: LocalStorageAccessStoreDeps = defaultLocalStorageAccessStoreDeps,
+): Promise<void> {
+  if (!token.trim()) throw new Error("local_storage_token_missing");
+  await deps.setToken(localStorageAccessTokenKey(origin), token);
+}
+
+export async function loadLocalStorageAccessTokenForServer(
+  origin: string,
+  deps: LocalStorageAccessStoreDeps = defaultLocalStorageAccessStoreDeps,
+): Promise<string | null> {
+  const token = await deps.getToken(localStorageAccessTokenKey(origin));
+  return token?.trim() || null;
+}
+
+export async function clearLocalStorageAccessTokenForServer(
+  origin: string,
+  deps: LocalStorageAccessStoreDeps = defaultLocalStorageAccessStoreDeps,
+): Promise<void> {
+  await deps.deleteToken(localStorageAccessTokenKey(origin));
 }
 
 export async function saveSessionForServer(

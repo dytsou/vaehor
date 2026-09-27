@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { getHealthCheckUrl } from "@vaehor/sdk";
-import { checkServerHealth, createServerFetch } from "../src/lib/api-client";
+import {
+  checkServerHealth,
+  createPublicServerFetch,
+  createServerFetch,
+} from "../src/lib/api-client";
 
 describe("api-client", () => {
   it("checks health via SDK path on normalized origin", async () => {
@@ -36,6 +40,30 @@ describe("api-client", () => {
     const headers = new Headers(init.headers);
     expect(url).toBe("https://files.example.com/api/auth/me");
     expect(headers.get("Authorization")).toBe("Bearer server-session-token");
+    expect(headers.has("Cookie")).toBe(false);
+    expect(init.credentials).toBe("omit");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("omits browser and bearer credentials for public request links", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const publicFetch = createPublicServerFetch("https://files.example.com");
+    await publicFetch("/api/file-request/token", {
+      headers: {
+        Authorization: "Bearer should-not-be-forwarded",
+        Cookie: "session=should-not-be-forwarded",
+      },
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = new Headers(init.headers);
+    expect(url).toBe("https://files.example.com/api/file-request/token");
+    expect(headers.has("Authorization")).toBe(false);
     expect(headers.has("Cookie")).toBe(false);
     expect(init.credentials).toBe("omit");
 

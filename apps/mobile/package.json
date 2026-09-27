@@ -4,32 +4,6 @@
   "private": true,
   "type": "module",
   "main": "expo-router/entry",
-  "expo": {
-    "autolinking": {
-      "ios": {
-        "exclude": [
-          "@capacitor/app",
-          "@capacitor/browser",
-          "@capacitor/network",
-          "@capacitor/preferences",
-          "@capawesome/capacitor-background-task",
-          "@capawesome/capacitor-file-picker",
-          "@capgo/capacitor-native-biometric"
-        ]
-      },
-      "android": {
-        "exclude": [
-          "@capacitor/app",
-          "@capacitor/browser",
-          "@capacitor/network",
-          "@capacitor/preferences",
-          "@capawesome/capacitor-background-task",
-          "@capawesome/capacitor-file-picker",
-          "@capgo/capacitor-native-biometric"
-        ]
-      }
-    }
-  },
   "scripts": {
     "start": "expo start --dev-client",
     "dev": "pnpm start",
@@ -40,37 +14,35 @@
     "export:android": "expo export --platform android",
     "export:ios": "expo export --platform ios",
     "test": "pnpm run test:utility && pnpm run test:shell",
-    "test:utility": "cd ../.. && pnpm exec vitest run apps/mobile/__tests__",
+    "test:utility": "cd ../.. && pnpm compile:sdk && pnpm exec vitest run apps/mobile/__tests__",
     "test:shell": "jest __tests__/app-shell.test.tsx --runInBand"
   },
   "dependencies": {
+    "@kishannareshpal/expo-pdf": "^0.3.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@vaehor/sdk": "workspace:*",
     "expo": "~57.0.25",
+    "expo-audio": "~57.0.5",
     "expo-crypto": "~57.0.3",
     "expo-dev-client": "~57.0.19",
+    "expo-document-picker": "~57.0.2",
+    "expo-file-system": "~57.0.7",
     "expo-linking": "~57.0.11",
     "expo-local-authentication": "~57.0.3",
     "expo-localization": "~57.0.2",
     "expo-network": "~57.0.2",
     "expo-router": "~57.0.23",
     "expo-secure-store": "~57.0.4",
+    "expo-sharing": "~57.0.22",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
+    "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
     "react": "^19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0"
   },
   "devDependencies": {
-    "@capacitor/app": "8.1.1",
-    "@capacitor/browser": "8.0.4",
-    "@capacitor/core": "8.5.2",
-    "@capacitor/network": "8.0.1",
-    "@capacitor/preferences": "8.0.1",
-    "@capawesome/capacitor-background-task": "8.0.3",
-    "@capawesome/capacitor-file-picker": "8.1.0",
-    "@capgo/capacitor-native-biometric": "8.6.10",
     "@testing-library/react-native": "^14.0.1",
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.0",

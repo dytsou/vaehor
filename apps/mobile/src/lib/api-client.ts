@@ -39,9 +39,9 @@ export type ServerFetch = (
   init?: RequestInit,
 ) => Promise<Response>;
 
-export function createServerFetch(
+function createScopedServerFetch(
   origin: string,
-  sessionToken: string,
+  authorizationToken: string | null,
 ): ServerFetch {
   const base = requireSecureServerOrigin(origin);
   return (path, init = {}) => {
@@ -51,13 +51,28 @@ export function createServerFetch(
     }
     const headers = new Headers(init.headers);
     headers.delete("Cookie");
-    headers.set("Authorization", `Bearer ${sessionToken}`);
+    if (authorizationToken === null) {
+      headers.delete("Authorization");
+    } else {
+      headers.set("Authorization", `Bearer ${authorizationToken}`);
+    }
     return fetch(url.toString(), {
       ...init,
       headers,
       credentials: "omit",
     });
   };
+}
+
+export function createServerFetch(
+  origin: string,
+  sessionToken: string,
+): ServerFetch {
+  return createScopedServerFetch(origin, sessionToken);
+}
+
+export function createPublicServerFetch(origin: string): ServerFetch {
+  return createScopedServerFetch(origin, null);
 }
 
 export async function checkServerHealth(origin: string): Promise<boolean> {

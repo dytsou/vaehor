@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { findBookmarkForOrigin, type DeepLinkTarget } from "../lib/deep-link";
+import { mobileThemeColors } from "../lib/mobile-theme";
+import { useMobilePreferences } from "../lib/mobile-preferences";
 import {
   addServer,
   preferencesStore,
@@ -18,6 +20,8 @@ import {
 
 export default function ShareRoute() {
   const router = useRouter();
+  const { theme } = useMobilePreferences();
+  const colors = mobileThemeColors(theme === "dark");
   const params = useLocalSearchParams<{
     origin?: string;
     path?: string;
@@ -83,14 +87,25 @@ export default function ShareRoute() {
       : "Connect to this server";
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <View style={styles.card}>
+    <SafeAreaView
+      style={[styles.screen, { backgroundColor: colors.background }]}
+    >
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <Text style={styles.brand}>vaehor</Text>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.origin}>{origin || "Invalid share link"}</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          {title}
+        </Text>
+        <Text style={[styles.origin, { color: colors.muted }]}>
+          {origin || "Invalid share link"}
+        </Text>
         {loading ? <ActivityIndicator color="#1f6f78" /> : null}
         {!loading && !bookmark && target ? (
-          <Text style={styles.body}>
+          <Text style={[styles.body, { color: colors.foreground }]}>
             Add this self-hosted server to continue. The link will stay scoped
             to this address.
           </Text>
@@ -127,15 +142,12 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     justifyContent: "center",
-    backgroundColor: "#f4f7f8",
     padding: 24,
   },
   card: {
     gap: 16,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#d9e2e5",
-    backgroundColor: "#ffffff",
     padding: 24,
   },
   brand: { color: "#1f6f78", fontSize: 16, fontWeight: "700" },

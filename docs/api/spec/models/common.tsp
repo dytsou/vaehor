@@ -74,6 +74,11 @@ namespace VaehorApi {
     @body body: Error;
   }
 
+  model TooManyRequestsErrorResponse {
+    @statusCode statusCode: 429;
+    @body body: Error;
+  }
+
   model ServiceUnavailableErrorResponse {
     @statusCode statusCode: 503;
     @body body: Error;
@@ -83,4 +88,7 @@ namespace VaehorApi {
     ApiKeyLocation.cookie,
     "next-auth.session-token"
   >;
+
+  alias MobileAuth = SessionAuth | BearerAuth;
+  alias OptionalMobileAuth = MobileAuth | NoAuth;
 }
