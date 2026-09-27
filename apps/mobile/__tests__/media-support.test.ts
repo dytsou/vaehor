@@ -53,6 +53,22 @@ describe("native media support", () => {
     expect(findSubtitleCue(cues, 2.5)).toBeNull();
   });
 
+  it("does not treat unsupported tags as supported WebVTT formatting tags", () => {
+    const cues = parseSubtitleCues(
+      "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n<iframe>Caption text</iframe>",
+    );
+
+    expect(cues[0]?.text).toBe("<iframe>Caption text</iframe>");
+  });
+
+  it("decodes caption entities only once", () => {
+    const cues = parseSubtitleCues(
+      "WEBVTT\n\n00:00:01.000 --> 00:00:02.000\n&amp;lt;script&amp;gt;",
+    );
+
+    expect(cues[0]?.text).toBe("&lt;script&gt;");
+  });
+
   it("keeps saved progress isolated by server and clears it when playback restarts", async () => {
     const store = createMemoryStore();
     const videoId = createVideoProgressId("https://a.example/", "file-1");

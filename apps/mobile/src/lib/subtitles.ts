@@ -113,12 +113,23 @@ function parseTimestamp(value: string): number | null {
 
 function cleanCueText(value: string): string {
   return value
-    .replace(/<\/?(?:i|b|u|font|c(?:\.[\w-]+)?)[^>]*>/gi, "")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
+    .replace(/<\/?(?:i|b|u|font|c(?:\.[\w-]+)?)(?=[\s>])[^<>]*>/gi, "")
+    .replace(/&(amp|lt|gt|quot|#39);/gi, (entity) => {
+      switch (entity.toLowerCase()) {
+        case "&amp;":
+          return "&";
+        case "&lt;":
+          return "<";
+        case "&gt;":
+          return ">";
+        case "&quot;":
+          return '"';
+        case "&#39;":
+          return "'";
+        default:
+          return entity;
+      }
+    })
     .trim();
 }
 
