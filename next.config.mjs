@@ -168,6 +168,15 @@ const nextConfig = {
         ],
       },
       {
+        source: "/api/setup/native-callback",
+        headers: [
+          {
+            key: "Referrer-Policy",
+            value: "no-referrer",
+          },
+        ],
+      },
+      {
         source: "/api/download",
         headers: [
           {

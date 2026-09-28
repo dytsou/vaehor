@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "@/app/api/setup/native-callback/route";
+import nextConfig from "../../../../next.config.mjs";
 
 describe("app/api/setup/native-callback route", () => {
   it("redirects a bounded authorization response to the fixed app scheme", () => {
@@ -33,5 +34,15 @@ describe("app/api/setup/native-callback route", () => {
     );
 
     expect(GET(request).status).toBe(400);
+  });
+
+  it("keeps the native callback referrer policy stricter than the global policy", async () => {
+    const headers = await nextConfig.headers?.();
+    const callbackPolicy = headers
+      ?.filter((rule) => rule.source === "/api/setup/native-callback")
+      .flatMap((rule) => rule.headers ?? [])
+      .find((header) => header.key.toLowerCase() === "referrer-policy");
+
+    expect(callbackPolicy?.value).toBe("no-referrer");
   });
 });
