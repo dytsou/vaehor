@@ -11,6 +11,39 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { findBookmarkForOrigin, type DeepLinkTarget } from "../lib/deep-link";
 import { mobileThemeColors } from "../lib/mobile-theme";
 import { useMobilePreferences } from "../lib/mobile-preferences";
+
+function shareScreenTitle(
+  loading: boolean,
+  bookmark: ServerBookmark | null,
+): string {
+  if (loading) return "Opening shared link";
+  if (bookmark) return `Shared from ${bookmark.label}`;
+  return "Connect to this server";
+}
+
+async function addShareTargetServer(options: {
+  origin: string;
+  onAdded: () => void;
+  setAdding: (adding: boolean) => void;
+  setError: (error: string | null) => void;
+}): Promise<void> {
+  options.setError(null);
+  options.setAdding(true);
+  try {
+    await addServer(preferencesStore, { url: options.origin });
+    options.onAdded();
+  } catch (cause) {
+    const isUnreachable =
+      cause instanceof Error && cause.message === "unreachable";
+    options.setError(
+      isUnreachable
+        ? "This server could not be reached. Check the address and try again."
+        : "This server address is not valid.",
+    );
+  } finally {
+    options.setAdding(false);
+  }
+}
 import {
   addServer,
   preferencesStore,
@@ -61,30 +94,17 @@ export default function ShareRoute() {
     });
   };
 
-  const addTargetServer = async () => {
-    setError(null);
-    setAdding(true);
-    try {
-      await addServer(preferencesStore, { url: origin });
-      openTarget();
-    } catch (cause) {
-      setError(
-        cause instanceof Error && cause.message === "unreachable"
-          ? "This server could not be reached. Check the address and try again."
-          : "This server address is not valid.",
-      );
-    } finally {
-      setAdding(false);
-    }
-  };
+  const addTargetServer = () =>
+    addShareTargetServer({
+      origin,
+      onAdded: openTarget,
+      setAdding,
+      setError,
+    });
 
   const target: DeepLinkTarget | null =
     origin && path ? { origin, path } : null;
-  const title = loading
-    ? "Opening shared link"
-    : bookmark
-      ? `Shared from ${bookmark.label}`
-      : "Connect to this server";
+  const title = shareScreenTitle(loading, bookmark);
 
   return (
     <SafeAreaView

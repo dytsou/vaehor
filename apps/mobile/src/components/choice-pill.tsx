@@ -4,11 +4,11 @@ export function ChoicePill({
   label,
   selected,
   onPress,
-}: {
+}: Readonly<{
   label: string;
   selected: boolean;
   onPress: () => void;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"

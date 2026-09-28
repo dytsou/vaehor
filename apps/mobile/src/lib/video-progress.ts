@@ -7,7 +7,11 @@ const STORAGE_KEY = "vaehor_mobile_video_progress_v1";
 const MAX_SAVED_VIDEOS = 100;
 
 export function createVideoProgressId(origin: string, fileId: string): string {
-  return JSON.stringify([origin.replace(/\/+$/, ""), fileId]);
+  let normalizedOrigin = origin;
+  while (normalizedOrigin.endsWith("/")) {
+    normalizedOrigin = normalizedOrigin.slice(0, -1);
+  }
+  return JSON.stringify([normalizedOrigin, fileId]);
 }
 
 export async function getVideoProgress(

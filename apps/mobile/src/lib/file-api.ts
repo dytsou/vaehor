@@ -154,7 +154,8 @@ export function listMobileFavorites(
   const params = new URLSearchParams();
   if (pageToken) params.set("pageToken", pageToken);
   const query = params.toString();
-  const path = `${getListMobileFavoritesUrl()}${query ? `?${query}` : ""}`;
+  const querySuffix = query ? `?${query}` : "";
+  const path = `${getListMobileFavoritesUrl()}${querySuffix}`;
   return requestJson(fetchImpl, path, signal);
 }
 
@@ -352,9 +353,7 @@ export async function downloadMobileFile(options: {
   } catch (cause) {
     if (options.signal?.aborted) throw cause;
     const status =
-      cause instanceof Error
-        ? Number(cause.message.match(/(?:status|HTTP)\s*[:=]?\s*(\d{3})/i)?.[1])
-        : 0;
+      cause instanceof Error ? readDownloadErrorStatus(cause.message) : 0;
     const messages: Record<number, string> = {
       401: "Your sign-in has expired. Return to the server screen and sign in again.",
       403: "This server does not allow this file to be downloaded.",
@@ -395,6 +394,39 @@ export function buildBulkDownloadRequest(fileIds: string[]): RequestInit {
   };
 }
 
+function readDownloadErrorStatus(message: string): number {
+  const upperMessage = message.toUpperCase();
+  for (const label of ["STATUS", "HTTP"]) {
+    const labelIndex = upperMessage.indexOf(label);
+    if (labelIndex < 0) continue;
+
+    let digitIndex = labelIndex + label.length;
+    while (digitIndex < message.length) {
+      const character = message[digitIndex];
+      if (
+        character === " " ||
+        character === "\t" ||
+        character === "\n" ||
+        character === ":" ||
+        character === "="
+      ) {
+        digitIndex += 1;
+      } else {
+        break;
+      }
+    }
+
+    const digits = message.slice(digitIndex, digitIndex + 3);
+    if (
+      digits.length === 3 &&
+      [...digits].every((digit) => digit >= "0" && digit <= "9")
+    ) {
+      return Number(digits);
+    }
+  }
+  return 0;
+}
+
 export async function downloadMobileArchive(
   fetchImpl: (path: string, init?: RequestInit) => Promise<Response>,
   fileIds: string[],
@@ -408,14 +440,12 @@ export async function downloadMobileArchive(
       error?: unknown;
       message?: unknown;
     } | null;
-    const message =
-      typeof payload?.message === "string"
-        ? payload.message
-        : typeof payload?.error === "string"
-          ? payload.error
-          : response.status === 401
-            ? "Your sign-in has expired. Return to the server screen and sign in again."
-            : "The selected files could not be downloaded.";
+    let message =
+      response.status === 401
+        ? "Your sign-in has expired. Return to the server screen and sign in again."
+        : "The selected files could not be downloaded.";
+    if (typeof payload?.error === "string") message = payload.error;
+    if (typeof payload?.message === "string") message = payload.message;
     throw new MobileApiError(response.status, message);
   }
 

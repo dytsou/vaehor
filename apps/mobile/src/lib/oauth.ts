@@ -100,7 +100,7 @@ export const defaultOAuthDeps: OAuthDeps = {
       typeof body.cookieName !== "string" ||
       typeof body.bootstrapToken !== "string"
     ) {
-      throw new Error("oauth_redeem_invalid");
+      throw new TypeError("oauth_redeem_invalid");
     }
     return {
       cookieName: body.cookieName,

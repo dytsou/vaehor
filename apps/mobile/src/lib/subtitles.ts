@@ -39,12 +39,14 @@ export function findExternalSubtitleFiles<T extends SubtitleFile>(
 export function parseSubtitleCues(source: string): SubtitleCue[] {
   const lines = source
     .replace(/^\uFEFF/, "")
-    .replace(/\r/g, "")
+    .replaceAll("\r", "")
     .split("\n");
   const cues: SubtitleCue[] = [];
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const timing = lines[index].match(/^\s*(\S+)\s*-->\s*(\S+)/);
+  let lineIndex = 0;
+  while (lineIndex < lines.length) {
+    const timing = /^\s*(\S+)\s*-->\s*(\S+)/.exec(lines[lineIndex]!);
+    lineIndex += 1;
     if (!timing) continue;
 
     const start = parseTimestamp(timing[1]);
@@ -52,12 +54,9 @@ export function parseSubtitleCues(source: string): SubtitleCue[] {
     if (start === null || end === null || end <= start) continue;
 
     const body: string[] = [];
-    for (
-      index += 1;
-      index < lines.length && lines[index].trim() !== "";
-      index += 1
-    ) {
-      body.push(lines[index]);
+    while (lineIndex < lines.length && lines[lineIndex]!.trim() !== "") {
+      body.push(lines[lineIndex]!);
+      lineIndex += 1;
     }
     const text = cleanCueText(body.join("\n"));
     if (text) cues.push({ start, end, text });
@@ -93,10 +92,8 @@ function parseTimestamp(value: string): number | null {
   if (parts.length < 2 || parts.length > 3) return null;
 
   const hours = parts.length === 3 ? Number(parts[0]) : 0;
-  const minutes = Number(parts[parts.length - 2]);
-  const secondsMatch = parts[parts.length - 1].match(
-    /^(\d{2})(?:[,.](\d{1,3}))?$/,
-  );
+  const minutes = Number(parts.at(-2));
+  const secondsMatch = /^(\d{2})(?:[,.](\d{1,3}))?$/.exec(parts.at(-1)!);
   if (!secondsMatch) return null;
   const seconds = Number(secondsMatch[1]);
   const milliseconds = Number((secondsMatch[2] ?? "").padEnd(3, "0") || 0);

@@ -12,11 +12,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { createServerFetch } from "../lib/api-client";
-import { listMobileDrives } from "../lib/file-api";
-import { getActiveServer, preferencesStore } from "../lib/servers";
 import { useMobilePreferences } from "../lib/mobile-preferences";
-import { loadBiometricServerSession } from "../lib/biometric-session";
 import { formatMobileFileSize } from "../lib/mobile-formatters";
+import { loadActiveRouteSession } from "./route-session";
 
 type TrashedFile = {
   id: string;
@@ -52,49 +50,29 @@ export default function TrashRoute() {
 
   useEffect(() => {
     let active = true;
-    void (async () => {
-      try {
-        const server = await getActiveServer(preferencesStore);
-        if (!active) return;
-        if (!server) {
-          router.replace("/");
-          return;
-        }
-        const session = await loadBiometricServerSession(server);
-        if (!active) return;
-        if (session.status !== "authenticated") {
-          if (session.status === "missing") {
-            router.replace("/");
-          } else {
-            setError(
-              session.status === "biometrics-unavailable"
-                ? "Biometric unlock is unavailable on this device. Return to the server screen to continue."
-                : "Biometric unlock was not completed. Return to the server screen to continue.",
-            );
-          }
-          return;
-        }
-        const fetchImpl = createServerFetch(server.url, session.token);
-        const drives = await listMobileDrives(fetchImpl);
-        if (!active) return;
-        if (drives.role.toUpperCase() !== "ADMIN") {
-          setAuthorized(false);
-          return;
-        }
+    void loadActiveRouteSession({
+      isActive: () => active,
+      redirectToServer: () => router.replace("/"),
+      setError,
+    })
+      .then(async (routeSession) => {
+        if (!active || !routeSession || routeSession.role !== "ADMIN") return;
         setAuthorized(true);
-        apiRef.current = fetchImpl;
-        await refresh(fetchImpl);
-      } catch (cause) {
-        if (active)
+        apiRef.current = routeSession.fetchImpl;
+        await refresh(routeSession.fetchImpl);
+      })
+      .catch((cause: unknown) => {
+        if (active) {
           setError(
             cause instanceof Error
               ? cause.message
               : "Could not load the trash.",
           );
-      } finally {
+        }
+      })
+      .finally(() => {
         if (active) setLoading(false);
-      }
-    })();
+      });
     return () => {
       active = false;
     };

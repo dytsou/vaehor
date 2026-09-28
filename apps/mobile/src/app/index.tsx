@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import * as Network from "expo-network";
 import {
   ActivityIndicator,
@@ -29,6 +30,227 @@ import { isBiometricAvailable, promptBiometricUnlock } from "../lib/biometrics";
 import { loadBiometricServerSession } from "../lib/biometric-session";
 import { startGoogleOAuth } from "../lib/oauth";
 import { useMobilePreferences } from "../lib/mobile-preferences";
+
+function signInFailureMessage(message: string): string {
+  if (message.includes("oauth_state")) {
+    return "Could not start sign-in with this server. Please retry.";
+  }
+  if (message.includes("timeout") || message.includes("AbortError")) {
+    return "The server took too long to respond. Check your connection and retry.";
+  }
+  return "Sign-in failed. Check the server address and try again.";
+}
+
+type ActiveServerActionsProps = Readonly<{
+  server: ServerBookmark;
+  sessionToken: string | null;
+  needsBiometricUnlock: boolean;
+  working: boolean;
+  offline: boolean;
+  onOpenFiles: () => void;
+  onToggleBiometrics: () => void;
+  onLogout: () => void;
+  onUnlock: () => void;
+  onSignIn: () => void;
+}>;
+
+function ActiveServerActions({
+  server,
+  sessionToken,
+  needsBiometricUnlock,
+  working,
+  offline,
+  onOpenFiles,
+  onToggleBiometrics,
+  onLogout,
+  onUnlock,
+  onSignIn,
+}: ActiveServerActionsProps) {
+  if (sessionToken) {
+    return (
+      <>
+        <Text style={styles.connected}>Signed in securely</Text>
+        <Pressable
+          style={styles.primaryButton}
+          disabled={working || offline}
+          onPress={onOpenFiles}
+        >
+          <Text style={styles.primaryButtonText}>Browse files</Text>
+        </Pressable>
+        <Pressable
+          style={styles.secondaryButton}
+          disabled={working}
+          onPress={onToggleBiometrics}
+        >
+          <Text style={styles.secondaryButtonText}>
+            {server.biometricsEnabled
+              ? "Turn off biometric unlock"
+              : "Enable biometric unlock"}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={styles.secondaryButton}
+          disabled={working}
+          onPress={onLogout}
+        >
+          <Text style={styles.secondaryButtonText}>
+            Sign out of this server
+          </Text>
+        </Pressable>
+      </>
+    );
+  }
+
+  if (needsBiometricUnlock) {
+    return (
+      <Pressable
+        style={styles.primaryButton}
+        disabled={working}
+        onPress={onUnlock}
+      >
+        <Text style={styles.primaryButtonText}>
+          {working ? "Unlocking…" : "Unlock this server"}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      style={styles.primaryButton}
+      disabled={working || offline}
+      onPress={onSignIn}
+    >
+      <Text style={styles.primaryButtonText}>
+        {working ? "Opening secure sign-in…" : "Continue with Google"}
+      </Text>
+    </Pressable>
+  );
+}
+
+type ServerSelectionSetters = Readonly<{
+  setServers: Dispatch<SetStateAction<ServerBookmark[]>>;
+  setActiveId: Dispatch<SetStateAction<string | null>>;
+  setSessionToken: Dispatch<SetStateAction<string | null>>;
+  setNeedsBiometricUnlock: Dispatch<SetStateAction<boolean>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+}>;
+
+async function loadSavedServerState(
+  setters: ServerSelectionSetters,
+): Promise<void> {
+  const [nextServers, selected] = await Promise.all([
+    preferencesStore.getServers(),
+    getActiveServer(preferencesStore),
+  ]);
+  const nextActive = selected ?? null;
+  if (nextActive && !(await preferencesStore.getActiveId())) {
+    await switchActiveServer(preferencesStore, nextActive.id);
+  }
+  setters.setServers(nextServers);
+  setters.setActiveId(nextActive?.id ?? null);
+  setters.setSessionToken(null);
+  setters.setNeedsBiometricUnlock(false);
+  if (!nextActive) return;
+
+  const access = await loadBiometricServerSession(nextActive);
+  if (access.status === "biometrics-unavailable") {
+    setters.setNeedsBiometricUnlock(true);
+    setters.setError(
+      "Biometrics are unavailable. Sign in again or enable them in device settings.",
+    );
+    return;
+  }
+  if (access.status === "biometrics-denied") {
+    setters.setNeedsBiometricUnlock(true);
+    setters.setError(
+      "Biometric unlock did not succeed. Try again or sign in again.",
+    );
+    return;
+  }
+  if (access.status !== "authenticated") return;
+  setters.setSessionToken(access.token);
+  setters.setNeedsBiometricUnlock(false);
+}
+
+type ServerOperationOptions = Readonly<{
+  action: () => Promise<void>;
+  fallbackError: string;
+  errorMessage?: (cause: unknown) => string;
+  setWorking: Dispatch<SetStateAction<boolean>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+}>;
+
+async function runServerOperation(
+  options: ServerOperationOptions,
+): Promise<void> {
+  options.setWorking(true);
+  options.setError(null);
+  try {
+    await options.action();
+  } catch (cause) {
+    options.setError(options.errorMessage?.(cause) ?? options.fallbackError);
+  } finally {
+    options.setWorking(false);
+  }
+}
+
+type BookmarkOperationOptions = Omit<ServerOperationOptions, "action"> &
+  Readonly<{ action: (server: ServerBookmark) => Promise<void> }>;
+
+function runBookmarkOperation(
+  server: ServerBookmark | null,
+  options: BookmarkOperationOptions,
+): Promise<void> {
+  if (!server) return Promise.resolve();
+  return runServerOperation({
+    ...options,
+    action: () => options.action(server),
+  });
+}
+
+async function signInAndReload(
+  server: ServerBookmark,
+  reload: () => Promise<void>,
+): Promise<void> {
+  const completed = await startGoogleOAuth(server.url);
+  if (completed) await reload();
+}
+
+async function toggleSavedServerBiometrics(options: {
+  activeServer: ServerBookmark;
+  servers: ServerBookmark[];
+  setServers: Dispatch<SetStateAction<ServerBookmark[]>>;
+}): Promise<void> {
+  const nextValue = !options.activeServer.biometricsEnabled;
+  if (nextValue) {
+    if (!(await isBiometricAvailable())) {
+      throw new Error("biometrics_unavailable");
+    }
+    if (!(await promptBiometricUnlock("Confirm biometric unlock"))) {
+      throw new Error("biometrics_denied");
+    }
+  }
+  const updated = options.servers.map((server) =>
+    server.id === options.activeServer.id
+      ? { ...server, biometricsEnabled: nextValue }
+      : server,
+  );
+  await preferencesStore.setServers(updated);
+  options.setServers(updated);
+}
+
+function serverAddError(cause: unknown): string {
+  return cause instanceof Error && cause.message === "unreachable"
+    ? "The server could not be reached. Check the address and try again."
+    : "Enter a valid HTTPS server address.";
+}
+
+function biometricSettingError(cause: unknown): string {
+  return cause instanceof Error && cause.message === "biometrics_unavailable"
+    ? "Set up Face ID or fingerprint unlock on this device first."
+    : "Biometric settings were not changed.";
+}
 
 export default function ServerSelectionRoute() {
   const router = useRouter();
@@ -67,38 +289,23 @@ export default function ServerSelectionRoute() {
     }
   }, []);
 
-  const loadServerState = useCallback(async () => {
-    const [nextServers, selected] = await Promise.all([
-      preferencesStore.getServers(),
-      getActiveServer(preferencesStore),
-    ]);
-    const nextActive = selected ?? null;
-    if (nextActive && !(await preferencesStore.getActiveId())) {
-      await switchActiveServer(preferencesStore, nextActive.id);
-    }
-    setServers(nextServers);
-    setActiveId(nextActive?.id ?? null);
-    setSessionToken(null);
-    setNeedsBiometricUnlock(false);
-
-    if (!nextActive) return;
-    const access = await loadBiometricServerSession(nextActive);
-    if (access.status === "biometrics-unavailable") {
-      setNeedsBiometricUnlock(true);
-      setError(
-        "Biometrics are unavailable. Sign in again or enable them in device settings.",
-      );
-      return;
-    }
-    if (access.status === "biometrics-denied") {
-      setNeedsBiometricUnlock(true);
-      setError("Biometric unlock did not succeed. Try again or sign in again.");
-      return;
-    }
-    if (access.status !== "authenticated") return;
-    setSessionToken(access.token);
-    setNeedsBiometricUnlock(false);
-  }, []);
+  const loadServerState = useCallback(
+    () =>
+      loadSavedServerState({
+        setServers,
+        setActiveId,
+        setSessionToken,
+        setNeedsBiometricUnlock,
+        setError,
+      }),
+    [
+      setActiveId,
+      setError,
+      setNeedsBiometricUnlock,
+      setServers,
+      setSessionToken,
+    ],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -141,124 +348,78 @@ export default function ServerSelectionRoute() {
     params.sharePath,
   ]);
 
-  const chooseServer = async (server: ServerBookmark) => {
-    setWorking(true);
-    setError(null);
-    try {
-      await switchActiveServer(preferencesStore, server.id);
-      await loadServerState();
-    } catch {
-      setError("Could not switch servers. Please try again.");
-    } finally {
-      setWorking(false);
-    }
-  };
+  const chooseServer = (server: ServerBookmark) =>
+    runServerOperation({
+      action: async () => {
+        await switchActiveServer(preferencesStore, server.id);
+        await loadServerState();
+      },
+      fallbackError: "Could not switch servers. Please try again.",
+      setWorking,
+      setError,
+    });
 
-  const handleAddServer = async () => {
-    setWorking(true);
-    setError(null);
-    try {
-      await addServer(preferencesStore, {
-        url: originInput,
-        label: labelInput,
-      });
-      setOriginInput("");
-      setLabelInput("");
-      await loadServerState();
-    } catch (cause) {
-      const code = cause instanceof Error ? cause.message : "invalid_url";
-      setError(
-        code === "unreachable"
-          ? "The server could not be reached. Check the address and try again."
-          : "Enter a valid HTTPS server address.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleAddServer = () =>
+    runServerOperation({
+      action: async () => {
+        await addServer(preferencesStore, {
+          url: originInput,
+          label: labelInput,
+        });
+        setOriginInput("");
+        setLabelInput("");
+        await loadServerState();
+      },
+      fallbackError: "Enter a valid HTTPS server address.",
+      errorMessage: serverAddError,
+      setWorking,
+      setError,
+    });
 
-  const handleSignIn = async () => {
-    if (!activeServer) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const completed = await startGoogleOAuth(activeServer.url);
-      if (!completed) return;
-      await loadServerState();
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "";
-      setError(
-        message.includes("oauth_state")
-          ? "Could not start sign-in with this server. Please retry."
-          : message.includes("timeout") || message.includes("AbortError")
-            ? "The server took too long to respond. Check your connection and retry."
-            : "Sign-in failed. Check the server address and try again.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleSignIn = () =>
+    runBookmarkOperation(activeServer, {
+      action: (server) => signInAndReload(server, loadServerState),
+      fallbackError: "Sign-in failed. Check the server address and try again.",
+      errorMessage: (cause) =>
+        signInFailureMessage(cause instanceof Error ? cause.message : ""),
+      setWorking,
+      setError,
+    });
 
-  const handleUnlock = async () => {
-    if (!activeServer) return;
-    setWorking(true);
-    setError(null);
-    try {
-      await loadServerState();
-    } catch {
-      setError("Could not unlock this server. Please try again.");
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleUnlock = () =>
+    runBookmarkOperation(activeServer, {
+      action: () => loadServerState(),
+      fallbackError: "Could not unlock this server. Please try again.",
+      setWorking,
+      setError,
+    });
 
-  const handleToggleBiometrics = async () => {
-    if (!activeServer) return;
-    setWorking(true);
-    setError(null);
-    try {
-      const nextValue = !activeServer.biometricsEnabled;
-      if (nextValue) {
-        if (!(await isBiometricAvailable())) {
-          throw new Error("biometrics_unavailable");
-        }
-        if (!(await promptBiometricUnlock("Confirm biometric unlock"))) {
-          throw new Error("biometrics_denied");
-        }
-      }
-      const updated = servers.map((server) =>
-        server.id === activeServer.id
-          ? { ...server, biometricsEnabled: nextValue }
-          : server,
-      );
-      await preferencesStore.setServers(updated);
-      setServers(updated);
-    } catch (cause) {
-      setError(
-        cause instanceof Error && cause.message === "biometrics_unavailable"
-          ? "Set up Face ID or fingerprint unlock on this device first."
-          : "Biometric settings were not changed.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleToggleBiometrics = () =>
+    runBookmarkOperation(activeServer, {
+      action: (server) =>
+        toggleSavedServerBiometrics({
+          activeServer: server,
+          servers,
+          setServers,
+        }),
+      fallbackError: "Biometric settings were not changed.",
+      errorMessage: biometricSettingError,
+      setWorking,
+      setError,
+    });
 
-  const handleLogout = async () => {
-    if (!activeServer) return;
-    setWorking(true);
-    setError(null);
-    try {
-      await clearSessionForServer(activeServer.url);
-      await clearLocalStorageAccessTokenForServer(activeServer.url);
-      setSessionToken(null);
-      setNeedsBiometricUnlock(false);
-    } catch {
-      setError("Could not sign out. Please try again.");
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleLogout = () =>
+    runBookmarkOperation(activeServer, {
+      action: async (server) => {
+        await clearSessionForServer(server.url);
+        await clearLocalStorageAccessTokenForServer(server.url);
+        setSessionToken(null);
+        setNeedsBiometricUnlock(false);
+      },
+      fallbackError: "Could not sign out. Please try again.",
+      setWorking,
+      setError,
+    });
 
   const confirmRemoveServer = (server: ServerBookmark) => {
     Alert.alert(
@@ -275,19 +436,17 @@ export default function ServerSelectionRoute() {
     );
   };
 
-  const handleRemoveServer = async (server: ServerBookmark) => {
-    setWorking(true);
-    setError(null);
-    try {
-      await clearLocalStorageAccessTokenForServer(server.url);
-      await removeServer(preferencesStore, server.id);
-      await loadServerState();
-    } catch {
-      setError("Could not remove this server. Please try again.");
-    } finally {
-      setWorking(false);
-    }
-  };
+  const handleRemoveServer = (server: ServerBookmark) =>
+    runServerOperation({
+      action: async () => {
+        await clearLocalStorageAccessTokenForServer(server.url);
+        await removeServer(preferencesStore, server.id);
+        await loadServerState();
+      },
+      fallbackError: "Could not remove this server. Please try again.",
+      setWorking,
+      setError,
+    });
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -411,60 +570,18 @@ export default function ServerSelectionRoute() {
                 <Text style={[styles.serverUrl, { color: colors.muted }]}>
                   {activeServer.url}
                 </Text>
-                {sessionToken ? (
-                  <>
-                    <Text style={styles.connected}>Signed in securely</Text>
-                    <Pressable
-                      style={styles.primaryButton}
-                      disabled={working || offline}
-                      onPress={() => router.push("/files")}
-                    >
-                      <Text style={styles.primaryButtonText}>Browse files</Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.secondaryButton}
-                      disabled={working}
-                      onPress={() => void handleToggleBiometrics()}
-                    >
-                      <Text style={styles.secondaryButtonText}>
-                        {activeServer.biometricsEnabled
-                          ? "Turn off biometric unlock"
-                          : "Enable biometric unlock"}
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.secondaryButton}
-                      disabled={working}
-                      onPress={() => void handleLogout()}
-                    >
-                      <Text style={styles.secondaryButtonText}>
-                        Sign out of this server
-                      </Text>
-                    </Pressable>
-                  </>
-                ) : needsBiometricUnlock ? (
-                  <Pressable
-                    style={styles.primaryButton}
-                    disabled={working}
-                    onPress={() => void handleUnlock()}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {working ? "Unlocking…" : "Unlock this server"}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    style={styles.primaryButton}
-                    disabled={working || offline}
-                    onPress={() => void handleSignIn()}
-                  >
-                    <Text style={styles.primaryButtonText}>
-                      {working
-                        ? "Opening secure sign-in…"
-                        : "Continue with Google"}
-                    </Text>
-                  </Pressable>
-                )}
+                <ActiveServerActions
+                  server={activeServer}
+                  sessionToken={sessionToken}
+                  needsBiometricUnlock={needsBiometricUnlock}
+                  working={working}
+                  offline={offline}
+                  onOpenFiles={() => router.push("/files")}
+                  onToggleBiometrics={() => void handleToggleBiometrics()}
+                  onLogout={() => void handleLogout()}
+                  onUnlock={() => void handleUnlock()}
+                  onSignIn={() => void handleSignIn()}
+                />
               </View>
             ) : null}
 

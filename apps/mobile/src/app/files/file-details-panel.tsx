@@ -19,7 +19,7 @@ type FilePanelColors = {
   border: string;
 };
 
-type FileDetailsPanelProps = {
+type FileDetailsPanelProps = Readonly<{
   selectedDetails: MobileFile | null;
   colors: FilePanelColors;
   fileError: string | null;
@@ -47,7 +47,7 @@ type FileDetailsPanelProps = {
   handleDownload: () => Promise<void>;
   loadSubtitle: (subtitle: SubtitleFile) => Promise<string>;
   handleCloseDetails: () => void;
-};
+}>;
 
 export function FileDetailsPanel({
   selectedDetails,
@@ -78,216 +78,363 @@ export function FileDetailsPanel({
   loadSubtitle,
   handleCloseDetails,
 }: FileDetailsPanelProps) {
+  if (!selectedDetails) return null;
+  const role = userRole.toUpperCase();
+  const canEditTags =
+    role === "ADMIN" &&
+    Boolean(selectedDetails.id) &&
+    !selectedDetails.id?.startsWith("local-storage:");
+
+  return (
+    <View
+      style={[
+        styles.detailCard,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+      ]}
+    >
+      <FileMetadata
+        file={selectedDetails}
+        colors={colors}
+        fileError={fileError}
+        formatSize={formatSize}
+      />
+      <FileTagsSection
+        colors={colors}
+        tags={tags}
+        tagsLoading={tagsLoading}
+        canEditTags={canEditTags}
+        working={working}
+        tagDraft={tagDraft}
+        setTagDraft={setTagDraft}
+        handleRemoveTag={handleRemoveTag}
+        handleAddTag={handleAddTag}
+      />
+      <FilePermissionActions
+        file={selectedDetails}
+        userRole={role}
+        favoriteIds={favoriteIds}
+        working={working}
+        toggleFavorite={toggleFavorite}
+        openMovePicker={openMovePicker}
+        handleCreateShare={handleCreateShare}
+        requestDelete={requestDelete}
+      />
+      <FileTransferSection
+        file={selectedDetails}
+        colors={colors}
+        working={working}
+        downloadPercent={downloadPercent}
+        downloadedUri={downloadedUri}
+        previewText={previewText}
+        previewKind={previewKind}
+        serverUrl={serverUrl}
+        subtitleFiles={subtitleFiles}
+        handleShareDownloaded={handleShareDownloaded}
+        handleDownload={handleDownload}
+        loadSubtitle={loadSubtitle}
+      />
+      <Pressable
+        accessibilityRole="button"
+        style={styles.closeButton}
+        onPress={handleCloseDetails}
+      >
+        <Text style={[styles.actionText, { color: colors.muted }]}>
+          Close details
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+type FileMetadataProps = Readonly<{
+  file: MobileFile;
+  colors: FilePanelColors;
+  fileError: string | null;
+  formatSize: (value: string) => string;
+}>;
+
+function FileMetadata({
+  file,
+  colors,
+  fileError,
+  formatSize,
+}: FileMetadataProps) {
   return (
     <>
-      {selectedDetails ? (
-        <View
-          style={[
-            styles.detailCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <Text
-            style={[styles.detailTitle, { color: colors.foreground }]}
-            numberOfLines={2}
+      <Text
+        style={[styles.detailTitle, { color: colors.foreground }]}
+        numberOfLines={2}
+      >
+        {file.name ?? "File details"}
+      </Text>
+      <Text style={[styles.fileMeta, { color: colors.muted }]}>
+        {file.mimeType ?? "Unknown type"}
+      </Text>
+      {file.size ? (
+        <Text style={[styles.fileMeta, { color: colors.muted }]}>
+          {formatSize(file.size)}
+        </Text>
+      ) : null}
+      {fileError ? (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {fileError}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
+type FileTagsSectionProps = Readonly<{
+  colors: FilePanelColors;
+  tags: string[];
+  tagsLoading: boolean;
+  canEditTags: boolean;
+  working: boolean;
+  tagDraft: string;
+  setTagDraft: (value: string) => void;
+  handleRemoveTag: (tag: string) => Promise<void>;
+  handleAddTag: () => Promise<void>;
+}>;
+
+function FileTagsSection({
+  colors,
+  tags,
+  tagsLoading,
+  canEditTags,
+  working,
+  tagDraft,
+  setTagDraft,
+  handleRemoveTag,
+  handleAddTag,
+}: FileTagsSectionProps) {
+  return (
+    <>
+      <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+        Tags
+      </Text>
+      {tagsLoading ? <ActivityIndicator color="#1f6f78" /> : null}
+      {!tagsLoading && tags.length === 0 ? (
+        <Text style={[styles.fileMeta, { color: colors.muted }]}>No tags</Text>
+      ) : null}
+      <View style={styles.tagList}>
+        {tags.map((tag) => (
+          <View
+            key={tag}
+            style={[
+              styles.tagChip,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            {selectedDetails.name ?? "File details"}
-          </Text>
-          <Text style={[styles.fileMeta, { color: colors.muted }]}>
-            {selectedDetails.mimeType ?? "Unknown type"}
-          </Text>
-          {selectedDetails.size ? (
-            <Text style={[styles.fileMeta, { color: colors.muted }]}>
-              {formatSize(selectedDetails.size)}
+            <Text style={[styles.fileMeta, { color: colors.foreground }]}>
+              {tag}
             </Text>
-          ) : null}
-          {fileError ? (
-            <Text accessibilityRole="alert" style={styles.error}>
-              {fileError}
-            </Text>
-          ) : null}
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            Tags
-          </Text>
-          {tagsLoading ? <ActivityIndicator color="#1f6f78" /> : null}
-          {!tagsLoading && tags.length === 0 ? (
-            <Text style={[styles.fileMeta, { color: colors.muted }]}>
-              No tags
-            </Text>
-          ) : null}
-          <View style={styles.tagList}>
-            {tags.map((tag) => (
-              <View
-                key={tag}
-                style={[
-                  styles.tagChip,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Text style={[styles.fileMeta, { color: colors.foreground }]}>
-                  {tag}
-                </Text>
-                {userRole.toUpperCase() === "ADMIN" ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remove tag ${tag}`}
-                    disabled={working}
-                    onPress={() => void handleRemoveTag(tag)}
-                  >
-                    <Text style={[styles.actionText, { color: colors.muted }]}>
-                      ×
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ))}
-          </View>
-          {userRole.toUpperCase() === "ADMIN" &&
-          selectedDetails.id &&
-          !selectedDetails.id.startsWith("local-storage:") ? (
-            <View style={styles.tagInputRow}>
-              <TextInput
-                accessibilityLabel="Add tag"
-                autoCapitalize="none"
-                autoCorrect={false}
-                maxLength={80}
-                placeholder="Add a tag"
-                placeholderTextColor={colors.muted}
-                value={tagDraft}
-                onChangeText={setTagDraft}
-                onSubmitEditing={() => void handleAddTag()}
-                style={[
-                  styles.input,
-                  styles.tagInput,
-                  {
-                    color: colors.foreground,
-                    borderColor: colors.border,
-                  },
-                ]}
-              />
+            {canEditTags ? (
               <Pressable
                 accessibilityRole="button"
-                disabled={working || !tagDraft.trim()}
-                onPress={() => void handleAddTag()}
-                style={[
-                  styles.secondaryButton,
-                  styles.tagAddButton,
-                  (working || !tagDraft.trim()) && styles.disabled,
-                ]}
+                accessibilityLabel={`Remove tag ${tag}`}
+                disabled={working}
+                onPress={() => void handleRemoveTag(tag)}
               >
-                <Text style={styles.secondaryButtonText}>Add</Text>
+                <Text style={[styles.actionText, { color: colors.muted }]}>
+                  ×
+                </Text>
               </Pressable>
-            </View>
-          ) : null}
+            ) : null}
+          </View>
+        ))}
+      </View>
+      {canEditTags ? (
+        <View style={styles.tagInputRow}>
+          <TextInput
+            accessibilityLabel="Add tag"
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={80}
+            placeholder="Add a tag"
+            placeholderTextColor={colors.muted}
+            value={tagDraft}
+            onChangeText={setTagDraft}
+            onSubmitEditing={() => void handleAddTag()}
+            style={[
+              styles.input,
+              styles.tagInput,
+              { color: colors.foreground, borderColor: colors.border },
+            ]}
+          />
           <Pressable
             accessibilityRole="button"
-            style={styles.secondaryButton}
-            disabled={working || !selectedDetails.id}
-            onPress={() => void toggleFavorite()}
+            disabled={working || !tagDraft.trim()}
+            onPress={() => void handleAddTag()}
+            style={[
+              styles.secondaryButton,
+              styles.tagAddButton,
+              (working || !tagDraft.trim()) && styles.disabled,
+            ]}
           >
-            <Text style={styles.secondaryButtonText}>
-              {selectedDetails.id && favoriteIds.has(selectedDetails.id)
-                ? "Remove from favorites"
-                : "Add to favorites"}
-            </Text>
-          </Pressable>
-          {["ADMIN", "EDITOR"].includes(userRole.toUpperCase()) &&
-          selectedDetails.id &&
-          !selectedDetails.id.startsWith("local-storage:") ? (
-            <Pressable
-              accessibilityRole="button"
-              style={styles.secondaryButton}
-              disabled={working}
-              onPress={openMovePicker}
-            >
-              <Text style={styles.secondaryButtonText}>Move to…</Text>
-            </Pressable>
-          ) : null}
-          {userRole.toUpperCase() === "ADMIN" ? (
-            <Pressable
-              accessibilityRole="button"
-              style={styles.secondaryButton}
-              disabled={!selectedDetails.id}
-              onPress={handleCreateShare}
-            >
-              <Text style={styles.secondaryButtonText}>Create share link</Text>
-            </Pressable>
-          ) : null}
-          {userRole.toUpperCase() === "ADMIN" ? (
-            <Pressable
-              accessibilityRole="button"
-              style={styles.secondaryButton}
-              disabled={working}
-              onPress={requestDelete}
-            >
-              <Text style={[styles.secondaryButtonText, { color: "#b42318" }]}>
-                Delete
-              </Text>
-            </Pressable>
-          ) : null}
-          {downloadPercent !== null && working ? (
-            <Text style={[styles.fileMeta, { color: colors.muted }]}>
-              {downloadPercent === 0
-                ? "Downloading…"
-                : `Downloading ${downloadPercent}%`}
-            </Text>
-          ) : null}
-          {downloadedUri ? (
-            <>
-              <View style={styles.buttonRow}>
-                <Text style={styles.success}>Downloaded to this device</Text>
-                <Pressable
-                  style={styles.secondaryButton}
-                  onPress={() => void handleShareDownloaded()}
-                >
-                  <Text style={styles.secondaryButtonText}>Save or share…</Text>
-                </Pressable>
-              </View>
-              <NativePreview
-                key={
-                  selectedDetails.id ?? selectedDetails.name ?? downloadedUri
-                }
-                uri={downloadedUri}
-                kind={previewKind}
-                text={previewText}
-                title={selectedDetails.name ?? "Audio preview"}
-                resumeKey={
-                  serverUrl && selectedDetails.id && previewKind === "video"
-                    ? createVideoProgressId(serverUrl, selectedDetails.id)
-                    : undefined
-                }
-                subtitleFiles={subtitleFiles}
-                onLoadSubtitle={loadSubtitle}
-              />
-            </>
-          ) : (
-            <Pressable
-              style={styles.primaryButton}
-              disabled={working || selectedDetails.isFolder}
-              onPress={() => void handleDownload()}
-            >
-              <Text style={styles.primaryButtonText}>
-                {working ? "Downloading…" : "Download file"}
-              </Text>
-            </Pressable>
-          )}
-          <Pressable
-            accessibilityRole="button"
-            style={styles.closeButton}
-            onPress={handleCloseDetails}
-          >
-            <Text style={[styles.actionText, { color: colors.muted }]}>
-              Close details
-            </Text>
+            <Text style={styles.secondaryButtonText}>Add</Text>
           </Pressable>
         </View>
       ) : null}
+    </>
+  );
+}
+
+type FilePermissionActionsProps = Readonly<{
+  file: MobileFile;
+  userRole: string;
+  favoriteIds: ReadonlySet<string>;
+  working: boolean;
+  toggleFavorite: () => Promise<void>;
+  openMovePicker: () => void;
+  handleCreateShare: () => void;
+  requestDelete: () => void;
+}>;
+
+function FilePermissionActions({
+  file,
+  userRole,
+  favoriteIds,
+  working,
+  toggleFavorite,
+  openMovePicker,
+  handleCreateShare,
+  requestDelete,
+}: FilePermissionActionsProps) {
+  const fileId = file.id;
+  const isAdmin = userRole === "ADMIN";
+  const canMove =
+    ["ADMIN", "EDITOR"].includes(userRole) &&
+    Boolean(fileId) &&
+    !fileId?.startsWith("local-storage:");
+  const favoriteLabel =
+    fileId && favoriteIds.has(fileId)
+      ? "Remove from favorites"
+      : "Add to favorites";
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        style={styles.secondaryButton}
+        disabled={working || !fileId}
+        onPress={() => void toggleFavorite()}
+      >
+        <Text style={styles.secondaryButtonText}>{favoriteLabel}</Text>
+      </Pressable>
+      {canMove ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.secondaryButton}
+          disabled={working}
+          onPress={openMovePicker}
+        >
+          <Text style={styles.secondaryButtonText}>Move to…</Text>
+        </Pressable>
+      ) : null}
+      {isAdmin ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.secondaryButton}
+          disabled={!fileId}
+          onPress={handleCreateShare}
+        >
+          <Text style={styles.secondaryButtonText}>Create share link</Text>
+        </Pressable>
+      ) : null}
+      {isAdmin ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.secondaryButton}
+          disabled={working}
+          onPress={requestDelete}
+        >
+          <Text style={[styles.secondaryButtonText, { color: "#b42318" }]}>
+            Delete
+          </Text>
+        </Pressable>
+      ) : null}
+    </>
+  );
+}
+
+type FileTransferSectionProps = Readonly<{
+  file: MobileFile;
+  colors: FilePanelColors;
+  working: boolean;
+  downloadPercent: number | null;
+  downloadedUri: string | null;
+  previewText: string | null;
+  previewKind: NativePreviewKind;
+  serverUrl?: string;
+  subtitleFiles: SubtitleFile[];
+  handleShareDownloaded: () => Promise<void>;
+  handleDownload: () => Promise<void>;
+  loadSubtitle: (subtitle: SubtitleFile) => Promise<string>;
+}>;
+
+function FileTransferSection({
+  file,
+  colors,
+  working,
+  downloadPercent,
+  downloadedUri,
+  previewText,
+  previewKind,
+  serverUrl,
+  subtitleFiles,
+  handleShareDownloaded,
+  handleDownload,
+  loadSubtitle,
+}: FileTransferSectionProps) {
+  const resumeKey =
+    serverUrl && file.id && previewKind === "video"
+      ? createVideoProgressId(serverUrl, file.id)
+      : undefined;
+  let progressLabel = "Downloading…";
+  if (downloadPercent !== null && downloadPercent > 0) {
+    progressLabel = `Downloading ${downloadPercent}%`;
+  }
+
+  return (
+    <>
+      {downloadPercent !== null && working ? (
+        <Text style={[styles.fileMeta, { color: colors.muted }]}>
+          {progressLabel}
+        </Text>
+      ) : null}
+      {downloadedUri ? (
+        <>
+          <View style={styles.buttonRow}>
+            <Text style={styles.success}>Downloaded to this device</Text>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => void handleShareDownloaded()}
+            >
+              <Text style={styles.secondaryButtonText}>Save or share…</Text>
+            </Pressable>
+          </View>
+          <NativePreview
+            key={file.id ?? file.name ?? downloadedUri}
+            uri={downloadedUri}
+            kind={previewKind}
+            text={previewText}
+            title={file.name ?? "Audio preview"}
+            resumeKey={resumeKey}
+            subtitleFiles={subtitleFiles}
+            onLoadSubtitle={loadSubtitle}
+          />
+        </>
+      ) : (
+        <Pressable
+          style={styles.primaryButton}
+          disabled={working || file.isFolder}
+          onPress={() => void handleDownload()}
+        >
+          <Text style={styles.primaryButtonText}>
+            {working ? "Downloading…" : "Download file"}
+          </Text>
+        </Pressable>
+      )}
     </>
   );
 }

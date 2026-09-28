@@ -34,12 +34,9 @@ export async function readMobileBearerSession(
   }
 
   const token = authState.token;
-  const id =
-    typeof token.id === "string"
-      ? token.id
-      : typeof token.sub === "string"
-        ? token.sub
-        : null;
+  let id: string | null = null;
+  if (typeof token.id === "string") id = token.id;
+  else if (typeof token.sub === "string") id = token.sub;
   const expiresAt = typeof token.exp === "number" ? token.exp : null;
   if (!id || expiresAt === null || expiresAt * 1000 <= Date.now()) return null;
 

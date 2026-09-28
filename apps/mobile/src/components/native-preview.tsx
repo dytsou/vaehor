@@ -29,7 +29,7 @@ import {
   type SubtitleFile,
 } from "../lib/subtitles";
 
-type NativePreviewProps = {
+type NativePreviewProps = Readonly<{
   uri: string;
   kind: NativePreviewKind;
   text?: string | null;
@@ -37,7 +37,7 @@ type NativePreviewProps = {
   resumeKey?: string;
   subtitleFiles?: SubtitleFile[];
   onLoadSubtitle?: (file: SubtitleFile) => Promise<string>;
-};
+}>;
 
 export function NativePreview({
   uri,
@@ -83,7 +83,7 @@ export function NativePreview({
   );
 }
 
-function ImagePreview({ uri }: { uri: string }) {
+function ImagePreview({ uri }: Readonly<{ uri: string }>) {
   return (
     <Image
       alt="File preview"
@@ -100,12 +100,12 @@ function VideoPreview({
   resumeKey,
   subtitleFiles,
   onLoadSubtitle,
-}: {
+}: Readonly<{
   uri: string;
   resumeKey?: string;
   subtitleFiles: SubtitleFile[];
   onLoadSubtitle?: (file: SubtitleFile) => Promise<string>;
-}) {
+}>) {
   const player = useVideoPlayer(uri, (instance) => {
     instance.loop = false;
     instance.timeUpdateEventInterval = 2;
@@ -367,12 +367,12 @@ function SubtitleOption({
   active,
   disabled,
   onPress,
-}: {
+}: Readonly<{
   label: string;
   active: boolean;
   disabled?: boolean;
   onPress: () => void;
-}) {
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -393,7 +393,10 @@ function SubtitleOption({
   );
 }
 
-function AudioPreview({ uri, title }: { uri: string; title: string }) {
+function AudioPreview({
+  uri,
+  title,
+}: Readonly<{ uri: string; title: string }>) {
   const { activeTrack, currentTime, duration, isPlaying, play, toggle } =
     useMobileAudioPlayback();
   const isCurrentTrack = activeTrack?.uri === uri;
@@ -419,7 +422,7 @@ function AudioPreview({ uri, title }: { uri: string; title: string }) {
   );
 }
 
-function TextPreview({ text }: { text?: string | null }) {
+function TextPreview({ text }: Readonly<{ text?: string | null }>) {
   const [content, setContent] = useState(text ?? "Loading preview…");
 
   useEffect(() => {

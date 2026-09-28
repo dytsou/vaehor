@@ -94,7 +94,7 @@ export const defaultSessionStoreDeps: SessionStoreDeps = {
 function normalizedOriginHex(origin: string): string {
   const normalizedOrigin = normalizeServerOrigin(origin);
   return Array.from(normalizedOrigin, (character) =>
-    character.charCodeAt(0).toString(16).padStart(2, "0"),
+    character.codePointAt(0)!.toString(16).padStart(2, "0"),
   ).join("");
 }
 

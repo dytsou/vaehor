@@ -17,11 +17,11 @@ import {
 } from "../lib/document-preview";
 import { formatMobileFileSize } from "../lib/mobile-formatters";
 
-type Props = {
+type Props = Readonly<{
   kind: DocumentPreviewKind;
   title: string;
   uri: string;
-};
+}>;
 
 type PreviewState =
   | { status: "loading" }

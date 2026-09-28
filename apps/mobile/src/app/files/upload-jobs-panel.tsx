@@ -2,7 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import { styles } from "./styles";
 import type { UploadJob } from "./use-native-upload-queue";
 
-type UploadJobsPanelProps = {
+type UploadJobsPanelProps = Readonly<{
   jobs: UploadJob[];
   activeJob: boolean;
   colors: {
@@ -13,7 +13,13 @@ type UploadJobsPanelProps = {
   };
   onCancel: () => void;
   onRetry: (id: string) => void;
-};
+}>;
+
+function uploadStatusLabel(job: UploadJob): string {
+  if (job.status === "success") return "Uploaded";
+  if (job.status === "uploading") return `Uploading ${job.percent}%`;
+  return job.errorMessage ?? "";
+}
 
 export function UploadJobsPanel({
   jobs,
@@ -51,11 +57,7 @@ export function UploadJobsPanel({
               {job.fileName}
             </Text>
             <Text style={[styles.fileMeta, { color: colors.muted }]}>
-              {job.status === "success"
-                ? "Uploaded"
-                : job.status === "uploading"
-                  ? `Uploading ${job.percent}%`
-                  : job.errorMessage}
+              {uploadStatusLabel(job)}
             </Text>
           </View>
           {job.status === "error" ? (

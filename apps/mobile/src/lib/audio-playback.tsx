@@ -33,9 +33,9 @@ const AudioPlaybackContext = createContext<AudioPlaybackContextValue | null>(
 
 export function MobileAudioPlaybackProvider({
   children,
-}: {
+}: Readonly<{
   children: ReactNode;
-}) {
+}>) {
   const player = useAudioPlayer(null, { updateInterval: 500 });
   const status = useAudioPlayerStatus(player);
   const { theme } = useMobilePreferences();

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,22 +11,17 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { adminJsonRequest, adminRequest } from "../lib/admin-api";
-import { createServerFetch, type ServerFetch } from "../lib/api-client";
+import type { ServerFetch } from "../lib/api-client";
 import { mobileThemeColors } from "../lib/mobile-theme";
 import { useMobilePreferences } from "../lib/mobile-preferences";
-import { listMobileDrives } from "../lib/file-api";
-import {
-  getActiveServer,
-  preferencesStore,
-  type ServerBookmark,
-} from "../lib/servers";
-import { loadBiometricServerSession } from "../lib/biometric-session";
+import type { ServerBookmark } from "../lib/servers";
 import {
   AdminSectionContent,
   type AdminSection,
   type ConfigDraft,
 } from "./admin-section-content";
 import { styles } from "./admin-styles";
+import { loadActiveRouteSession } from "./route-session";
 
 const adminSections: { id: AdminSection; label: string; path: string }[] = [
   { id: "overview", label: "Overview", path: "/api/admin/stats" },
@@ -83,6 +79,151 @@ function asRecord(value: unknown): AdminRecord {
     : {};
 }
 
+function isAdminEmail(value: string): boolean {
+  if (/\s/.test(value)) return false;
+  const atIndex = value.indexOf("@");
+  if (atIndex <= 0 || atIndex !== value.lastIndexOf("@")) return false;
+  const domainDot = value.indexOf(".", atIndex + 2);
+  return domainDot > atIndex + 1 && domainDot < value.length - 1;
+}
+
+function adminErrorMessage(cause: unknown, fallback: string): string {
+  return cause instanceof Error ? cause.message : fallback;
+}
+
+function readConfigDraft(value: unknown): ConfigDraft {
+  const config = asRecord(value);
+  return {
+    appName: typeof config.appName === "string" ? config.appName : "",
+    logoUrl: typeof config.logoUrl === "string" ? config.logoUrl : "",
+    faviconUrl: typeof config.faviconUrl === "string" ? config.faviconUrl : "",
+    primaryColor:
+      typeof config.primaryColor === "string" ? config.primaryColor : "",
+    hideAuthor: config.hideAuthor === true,
+    disableGuestLogin: config.disableGuestLogin === true,
+    localStorageAuthEnabled: config.localStorageAuthEnabled === true,
+  };
+}
+
+async function refreshAdminSection(options: {
+  fetchImpl: ServerFetch | null;
+  section: AdminSection;
+  setData: Dispatch<SetStateAction<unknown>>;
+  setConfigDraft: Dispatch<SetStateAction<ConfigDraft>>;
+  setLoading: Dispatch<SetStateAction<boolean>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+}): Promise<void> {
+  if (!options.fetchImpl) return;
+  options.setLoading(true);
+  options.setError(null);
+  try {
+    const next = await loadAdminSection(options.section, options.fetchImpl);
+    options.setData(next);
+    if (options.section === "config") {
+      options.setConfigDraft(readConfigDraft(next));
+    }
+  } catch (cause) {
+    options.setError(
+      adminErrorMessage(cause, "Could not load this admin section."),
+    );
+  } finally {
+    options.setLoading(false);
+  }
+}
+
+async function executeAdminAction(options: {
+  fetchImpl: ServerFetch | null;
+  section: AdminSection;
+  path: string;
+  init: RequestInit;
+  after?: () => void;
+  reload: boolean;
+  setData: Dispatch<SetStateAction<unknown>>;
+  setWorking: Dispatch<SetStateAction<boolean>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+}): Promise<void> {
+  if (!options.fetchImpl) return;
+  options.setWorking(true);
+  options.setError(null);
+  try {
+    await adminRequest(options.fetchImpl, options.path, options.init);
+    options.after?.();
+    if (options.reload) {
+      options.setData(
+        await loadAdminSection(options.section, options.fetchImpl),
+      );
+    }
+  } catch (cause) {
+    options.setError(
+      adminErrorMessage(cause, "The server could not complete this operation."),
+    );
+  } finally {
+    options.setWorking(false);
+  }
+}
+
+async function scanAdminDrives(options: {
+  fetchImpl: ServerFetch | null;
+  setScanResults: Dispatch<SetStateAction<AdminRecord[]>>;
+  setWorking: Dispatch<SetStateAction<boolean>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+}): Promise<void> {
+  if (!options.fetchImpl) return;
+  options.setWorking(true);
+  options.setError(null);
+  try {
+    options.setScanResults(
+      await adminRequest(options.fetchImpl, "/api/admin/drives/scan"),
+    );
+  } catch (cause) {
+    options.setError(adminErrorMessage(cause, "Could not scan drives."));
+  } finally {
+    options.setWorking(false);
+  }
+}
+
+function beginAdminSession(options: {
+  redirectToServer: () => void;
+  setServer: Dispatch<SetStateAction<ServerBookmark | null>>;
+  setRole: Dispatch<SetStateAction<string>>;
+  setAdminFetch: Dispatch<SetStateAction<ServerFetch | null>>;
+  setData: Dispatch<SetStateAction<unknown>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+  setLoading: Dispatch<SetStateAction<boolean>>;
+}): () => void {
+  let active = true;
+  void loadActiveRouteSession({
+    isActive: () => active,
+    redirectToServer: options.redirectToServer,
+    setError: options.setError,
+  })
+    .then(async (routeSession) => {
+      if (!active || !routeSession) return;
+      options.setServer(routeSession.server);
+      options.setRole(routeSession.role);
+      if (routeSession.role !== "ADMIN") return;
+      options.setAdminFetch(() => routeSession.fetchImpl);
+      const overview = await loadAdminSection(
+        "overview",
+        routeSession.fetchImpl,
+      );
+      if (active) options.setData(overview);
+    })
+    .catch((cause: unknown) => {
+      if (active) {
+        options.setError(
+          adminErrorMessage(cause, "Could not connect to the server."),
+        );
+      }
+    })
+    .finally(() => {
+      if (active) options.setLoading(false);
+    });
+  return () => {
+    active = false;
+  };
+}
+
 export default function AdminRoute() {
   const router = useRouter();
   const { theme } = useMobilePreferences();
@@ -113,113 +254,47 @@ export default function AdminRoute() {
     localStorageAuthEnabled: false,
   });
 
-  const refresh = async (selected: AdminSection = section) => {
-    if (!adminFetch) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const next = await loadAdminSection(selected, adminFetch);
-      setData(next);
-      if (selected === "config") {
-        const config = asRecord(next);
-        setConfigDraft({
-          appName: typeof config.appName === "string" ? config.appName : "",
-          logoUrl: typeof config.logoUrl === "string" ? config.logoUrl : "",
-          faviconUrl:
-            typeof config.faviconUrl === "string" ? config.faviconUrl : "",
-          primaryColor:
-            typeof config.primaryColor === "string" ? config.primaryColor : "",
-          hideAuthor: config.hideAuthor === true,
-          disableGuestLogin: config.disableGuestLogin === true,
-          localStorageAuthEnabled: config.localStorageAuthEnabled === true,
-        });
-      }
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not load this admin section.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refresh = (selected: AdminSection = section) =>
+    refreshAdminSection({
+      fetchImpl: adminFetch,
+      section: selected,
+      setData,
+      setConfigDraft,
+      setLoading,
+      setError,
+    });
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const selected = await getActiveServer(preferencesStore);
-        if (!active) return;
-        if (!selected) {
-          router.replace("/");
-          return;
-        }
-        const session = await loadBiometricServerSession(selected);
-        if (!active) return;
-        if (session.status !== "authenticated") {
-          if (session.status === "missing") {
-            router.replace("/");
-          } else {
-            setError(
-              session.status === "biometrics-unavailable"
-                ? "Biometric unlock is unavailable on this device. Return to the server screen to continue."
-                : "Biometric unlock was not completed. Return to the server screen to continue.",
-            );
-          }
-          return;
-        }
-        const fetchImpl = createServerFetch(selected.url, session.token);
-        const driveResult = await listMobileDrives(fetchImpl);
-        if (!active) return;
-        setServer(selected);
-        setRole(driveResult.role.toUpperCase());
-        if (driveResult.role.toUpperCase() !== "ADMIN") {
-          setLoading(false);
-          return;
-        }
-        setAdminFetch(() => fetchImpl);
-        const overview = await loadAdminSection("overview", fetchImpl);
-        if (active) setData(overview);
-      } catch (cause) {
-        if (active)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Could not connect to the server.",
-          );
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [router]);
+  useEffect(
+    () =>
+      beginAdminSession({
+        redirectToServer: () => router.replace("/"),
+        setServer,
+        setRole,
+        setAdminFetch,
+        setData,
+        setError,
+        setLoading,
+      }),
+    [router],
+  );
 
-  const execute = async (
+  const execute = (
     path: string,
     init: RequestInit,
     after?: () => void,
     reload = true,
-  ) => {
-    if (!adminFetch) return;
-    setWorking(true);
-    setError(null);
-    try {
-      await adminRequest(adminFetch, path, init);
-      after?.();
-      if (reload) setData(await loadAdminSection(section, adminFetch));
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "The server could not complete this operation.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  ) =>
+    executeAdminAction({
+      fetchImpl: adminFetch,
+      section,
+      path,
+      init,
+      after,
+      reload,
+      setData,
+      setWorking,
+      setError,
+    });
 
   const chooseSection = async (next: AdminSection) => {
     setSection(next);
@@ -235,7 +310,7 @@ export default function AdminRoute() {
 
   const saveEmail = async (kind: "users" | "editors") => {
     const value = email.trim();
-    if (!/^\S+@\S+\.\S+$/.test(value)) {
+    if (!isAdminEmail(value)) {
       setError("Enter a valid email address.");
       return;
     }
@@ -246,20 +321,13 @@ export default function AdminRoute() {
     );
   };
 
-  const scanDrives = async () => {
-    if (!adminFetch) return;
-    setWorking(true);
-    setError(null);
-    try {
-      setScanResults(await adminRequest(adminFetch, "/api/admin/drives/scan"));
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Could not scan drives.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  const scanDrives = () =>
+    scanAdminDrives({
+      fetchImpl: adminFetch,
+      setScanResults,
+      setWorking,
+      setError,
+    });
 
   const button = (
     title: string,

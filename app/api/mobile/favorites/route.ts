@@ -93,7 +93,7 @@ export const GET = createUserRoute(
               isPrivateFolder,
               getCachedFolderDetails,
             )
-          : undefined,
+          : Promise.resolve(undefined),
       ),
     );
     const files = entries.flatMap(({ file }, index) => {

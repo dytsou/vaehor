@@ -27,6 +27,52 @@ export type UploadApiSession = {
 
 export type UploadJob = NativeUploadProgress & { id: string };
 
+type UploadFailureOptions = Readonly<{
+  id: string;
+  cause: unknown;
+  signal: AbortSignal;
+  api: UploadApiSession;
+  localStorageAccessTokenRef: MutableRefObject<string | null>;
+  apiRef: MutableRefObject<UploadApiSession | null>;
+  setJobs: Dispatch<SetStateAction<UploadJob[]>>;
+  onLocalAuthRequired: () => void;
+  onSessionExpired: () => void;
+}>;
+
+async function handleUploadFailure({
+  id,
+  cause,
+  signal,
+  api,
+  localStorageAccessTokenRef,
+  apiRef,
+  setJobs,
+  onLocalAuthRequired,
+  onSessionExpired,
+}: UploadFailureOptions): Promise<boolean> {
+  const message = uploadErrorMessage(cause, signal.aborted);
+  setJobs((current) =>
+    current.map((job) =>
+      job.id === id ? { ...job, status: "error", errorMessage: message } : job,
+    ),
+  );
+  if (cause instanceof UploadLocalStorageAuthError) {
+    localStorageAccessTokenRef.current = null;
+    onLocalAuthRequired();
+    await clearLocalStorageAccessTokenForServer(api.origin);
+    return true;
+  }
+  if (cause instanceof UploadAuthError) {
+    await clearSessionForServer(api.origin);
+    await clearLocalStorageAccessTokenForServer(api.origin);
+    localStorageAccessTokenRef.current = null;
+    apiRef.current = null;
+    onSessionExpired();
+    return true;
+  }
+  return signal.aborted;
+}
+
 type UseNativeUploadQueueOptions = {
   apiRef: MutableRefObject<UploadApiSession | null>;
   localStorageAccessTokenRef: MutableRefObject<string | null>;
@@ -39,6 +85,91 @@ type UseNativeUploadQueueOptions = {
   onLocalAuthRequired: () => void;
   onSessionExpired: () => void;
 };
+
+type UploadAssetsOptions = Readonly<{
+  api: UploadApiSession;
+  apiRef: MutableRefObject<UploadApiSession | null>;
+  localStorageAccessTokenRef: MutableRefObject<string | null>;
+  items: { id: string; asset: DocumentPicker.DocumentPickerAsset }[];
+  destinationId: string;
+  signal: AbortSignal;
+  retryAssets: Map<string, DocumentPicker.DocumentPickerAsset>;
+  fetchForFolder: (folderId: string) => ServerFetch | null;
+  setJobs: Dispatch<SetStateAction<UploadJob[]>>;
+  onLocalAuthRequired: () => void;
+  onSessionExpired: () => void;
+}>;
+
+function updateUploadJob(
+  setJobs: Dispatch<SetStateAction<UploadJob[]>>,
+  id: string,
+  update: (job: UploadJob) => UploadJob,
+): void {
+  setJobs((current) =>
+    current.map((job) => (job.id === id ? update(job) : job)),
+  );
+}
+
+async function uploadQueueItem(
+  options: UploadAssetsOptions,
+  item: { id: string; asset: DocumentPicker.DocumentPickerAsset },
+): Promise<boolean> {
+  const { id, asset } = item;
+  try {
+    await runNativeChunkedUpload({
+      fetchImpl:
+        options.fetchForFolder(options.destinationId) ?? options.api.fetchImpl,
+      parentId: options.destinationId,
+      file: openDocumentPickerUploadFile(asset, sanitizeFileName(asset.name)),
+      signal: options.signal,
+      onProgress: (percent) =>
+        updateUploadJob(options.setJobs, id, (job) => ({
+          ...job,
+          percent,
+          status: "uploading",
+        })),
+    });
+    options.retryAssets.delete(id);
+    deletePickedCacheFile(asset.uri);
+    updateUploadJob(options.setJobs, id, (job) => ({
+      ...job,
+      percent: 100,
+      status: "success",
+    }));
+    return false;
+  } catch (cause) {
+    return handleUploadFailure({
+      id,
+      cause,
+      signal: options.signal,
+      api: options.api,
+      localStorageAccessTokenRef: options.localStorageAccessTokenRef,
+      apiRef: options.apiRef,
+      setJobs: options.setJobs,
+      onLocalAuthRequired: options.onLocalAuthRequired,
+      onSessionExpired: options.onSessionExpired,
+    });
+  }
+}
+
+async function processUploadAssets(
+  options: UploadAssetsOptions,
+): Promise<void> {
+  for (const item of options.items) {
+    if (options.signal.aborted) break;
+    options.retryAssets.set(item.id, item.asset);
+    options.setJobs((current) => [
+      ...current.filter((job) => job.id !== item.id),
+      {
+        id: item.id,
+        fileName: item.asset.name,
+        percent: 0,
+        status: "uploading",
+      },
+    ]);
+    if (await uploadQueueItem(options, item)) break;
+  }
+}
 
 export function useNativeUploadQueue({
   apiRef,
@@ -73,71 +204,19 @@ export function useNativeUploadQueue({
       setError(null);
 
       try {
-        for (const { id, asset } of items) {
-          if (controller.signal.aborted) break;
-          retryAssetsRef.current.set(id, asset);
-          setJobs((current) => [
-            ...current.filter((job) => job.id !== id),
-            { id, fileName: asset.name, percent: 0, status: "uploading" },
-          ]);
-
-          try {
-            await runNativeChunkedUpload({
-              fetchImpl: fetchForFolder(destinationId) ?? api.fetchImpl,
-              parentId: destinationId,
-              file: openDocumentPickerUploadFile(
-                asset,
-                sanitizeFileName(asset.name),
-              ),
-              signal: controller.signal,
-              onProgress: (percent) => {
-                setJobs((current) =>
-                  current.map((job) =>
-                    job.id === id
-                      ? { ...job, percent, status: "uploading" }
-                      : job,
-                  ),
-                );
-              },
-            });
-            retryAssetsRef.current.delete(id);
-            deletePickedCacheFile(asset.uri);
-            setJobs((current) =>
-              current.map((job) =>
-                job.id === id
-                  ? { ...job, percent: 100, status: "success" }
-                  : job,
-              ),
-            );
-          } catch (cause) {
-            const message = uploadErrorMessage(
-              cause,
-              controller.signal.aborted,
-            );
-            setJobs((current) =>
-              current.map((job) =>
-                job.id === id
-                  ? { ...job, status: "error", errorMessage: message }
-                  : job,
-              ),
-            );
-            if (cause instanceof UploadLocalStorageAuthError) {
-              localStorageAccessTokenRef.current = null;
-              onLocalAuthRequired();
-              await clearLocalStorageAccessTokenForServer(api.origin);
-              break;
-            }
-            if (cause instanceof UploadAuthError) {
-              await clearSessionForServer(api.origin);
-              await clearLocalStorageAccessTokenForServer(api.origin);
-              localStorageAccessTokenRef.current = null;
-              apiRef.current = null;
-              onSessionExpired();
-              break;
-            }
-            if (controller.signal.aborted) break;
-          }
-        }
+        await processUploadAssets({
+          api,
+          apiRef,
+          localStorageAccessTokenRef,
+          items,
+          destinationId,
+          signal: controller.signal,
+          retryAssets: retryAssetsRef.current,
+          fetchForFolder,
+          setJobs,
+          onLocalAuthRequired,
+          onSessionExpired,
+        });
 
         if (!controller.signal.aborted)
           void loadContents(destinationId, activeQuery);

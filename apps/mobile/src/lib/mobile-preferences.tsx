@@ -71,12 +71,8 @@ export function MobilePreferencesProvider({ children }: PropsWithChildren) {
     [preferences],
   );
 
-  const theme: MobileTheme =
-    preferences.appearance === "system"
-      ? deviceScheme === "dark"
-        ? "dark"
-        : "light"
-      : preferences.appearance;
+  let theme: MobileTheme = deviceScheme === "dark" ? "dark" : "light";
+  if (preferences.appearance !== "system") theme = preferences.appearance;
   const locale: Locale =
     preferences.language === "system"
       ? getDeviceLocale()

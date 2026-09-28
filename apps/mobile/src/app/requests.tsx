@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChoicePill } from "../components/choice-pill";
 import { createServerFetch } from "../lib/api-client";
-import { listMobileDrives } from "../lib/file-api";
 import { mobileThemeColors } from "../lib/mobile-theme";
 import { useMobilePreferences } from "../lib/mobile-preferences";
 import {
@@ -24,12 +23,8 @@ import {
   listMobileFileRequests,
   type MobileFileRequest,
 } from "../lib/request-api";
-import {
-  getActiveServer,
-  preferencesStore,
-  type ServerBookmark,
-} from "../lib/servers";
-import { loadBiometricServerSession } from "../lib/biometric-session";
+import type { ServerBookmark } from "../lib/servers";
+import { loadActiveRouteSession } from "./route-session";
 
 const expirationOptions = [
   { label: "1 hour", hours: 1 },
@@ -37,6 +32,348 @@ const expirationOptions = [
   { label: "7 days", hours: 168 },
   { label: "30 days", hours: 720 },
 ] as const;
+
+type RequestsFetch = ReturnType<typeof createServerFetch>;
+
+async function refreshRequests(
+  fetchImpl: RequestsFetch,
+  setRequests: (requests: MobileFileRequest[]) => void,
+): Promise<void> {
+  const result = await listMobileFileRequests(fetchImpl);
+  const sortedRequests = [...result].sort((a, b) => b.createdAt - a.createdAt);
+  setRequests(sortedRequests);
+}
+
+async function createUploadRequestAction(options: {
+  fetchImpl: RequestsFetch | null;
+  folderId: string;
+  folderName: string;
+  title: string;
+  expiresIn: (typeof expirationOptions)[number]["hours"];
+  setRequests: (requests: MobileFileRequest[]) => void;
+  setWorking: (working: boolean) => void;
+  setError: (error: string | null) => void;
+}): Promise<void> {
+  const { fetchImpl, folderId, folderName, title, expiresIn } = options;
+  if (!fetchImpl || !folderId || !folderName || !title.trim()) return;
+  options.setWorking(true);
+  options.setError(null);
+  try {
+    await createMobileFileRequest(fetchImpl, {
+      folderId,
+      folderName,
+      title: title.trim(),
+      expiresIn,
+    });
+    await refreshRequests(fetchImpl, options.setRequests);
+  } catch (cause) {
+    options.setError(
+      cause instanceof Error
+        ? cause.message
+        : "Could not create this upload request.",
+    );
+  } finally {
+    options.setWorking(false);
+  }
+}
+
+async function removeUploadRequestAction(options: {
+  fetchImpl: RequestsFetch | null;
+  request: MobileFileRequest;
+  setRequests: (
+    update: (requests: MobileFileRequest[]) => MobileFileRequest[],
+  ) => void;
+  setWorking: (working: boolean) => void;
+  setError: (error: string | null) => void;
+}): Promise<void> {
+  const { fetchImpl, request } = options;
+  if (!fetchImpl) return;
+  options.setWorking(true);
+  options.setError(null);
+  try {
+    await deleteMobileFileRequest(fetchImpl, request.token);
+    options.setRequests((current) =>
+      current.filter((entry) => entry.token !== request.token),
+    );
+  } catch (cause) {
+    options.setError(
+      cause instanceof Error ? cause.message : "Could not delete this request.",
+    );
+  } finally {
+    options.setWorking(false);
+  }
+}
+
+type RequestsColors = ReturnType<typeof mobileThemeColors>;
+
+function RequestsAdminPanel(
+  props: Readonly<{
+    colors: RequestsColors;
+    folderId: string;
+    folderName: string;
+    title: string;
+    setTitle: (title: string) => void;
+    expiresIn: (typeof expirationOptions)[number]["hours"];
+    setExpiresIn: (
+      expiresIn: (typeof expirationOptions)[number]["hours"],
+    ) => void;
+    working: boolean;
+    onCreate: () => void;
+    requests: MobileFileRequest[];
+    onShare: (request: MobileFileRequest) => void;
+    onConfirmRemove: (request: MobileFileRequest) => void;
+  }>,
+) {
+  return (
+    <>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: props.colors.surface,
+            borderColor: props.colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: props.colors.foreground }]}>
+          Create an upload request
+        </Text>
+        {props.folderId && props.folderName ? (
+          <Text style={[styles.cardText, { color: props.colors.muted }]}>
+            Uploads will go to {props.folderName}.
+          </Text>
+        ) : (
+          <Text style={[styles.cardText, { color: props.colors.muted }]}>
+            Open the destination folder in Files, then choose File requests.
+          </Text>
+        )}
+        <TextInput
+          accessibilityLabel="Request title"
+          value={props.title}
+          onChangeText={props.setTitle}
+          placeholder="Request title"
+          placeholderTextColor={props.colors.muted}
+          style={[
+            styles.input,
+            {
+              color: props.colors.foreground,
+              borderColor: props.colors.border,
+            },
+          ]}
+        />
+        <Text style={[styles.label, { color: props.colors.foreground }]}>
+          Link expires in
+        </Text>
+        <View style={styles.choiceRow}>
+          {expirationOptions.map((option) => (
+            <ChoicePill
+              key={option.hours}
+              label={option.label}
+              selected={props.expiresIn === option.hours}
+              onPress={() => props.setExpiresIn(option.hours)}
+            />
+          ))}
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          style={[
+            styles.primaryButton,
+            (props.working ||
+              !props.folderId ||
+              !props.folderName ||
+              !props.title.trim()) &&
+              styles.disabled,
+          ]}
+          disabled={
+            props.working ||
+            !props.folderId ||
+            !props.folderName ||
+            !props.title.trim()
+          }
+          onPress={props.onCreate}
+        >
+          <Text style={styles.primaryButtonText}>
+            {props.working ? "Creating…" : "Create upload request"}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: props.colors.surface,
+            borderColor: props.colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { color: props.colors.foreground }]}>
+          Active requests
+        </Text>
+        {props.requests.map((request) => (
+          <View
+            key={request.token}
+            style={[styles.requestCard, { borderColor: props.colors.border }]}
+          >
+            <Text
+              style={[styles.requestTitle, { color: props.colors.foreground }]}
+            >
+              {request.title}
+            </Text>
+            <Text style={[styles.cardText, { color: props.colors.muted }]}>
+              Destination: {request.folderName}
+            </Text>
+            <Text style={[styles.cardText, { color: props.colors.muted }]}>
+              Expires {new Date(request.expiresAt).toLocaleString()}
+            </Text>
+            <View style={styles.choiceRow}>
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() => props.onShare(request)}
+              >
+                <Text style={styles.secondaryButtonText}>Share…</Text>
+              </Pressable>
+              <Pressable
+                style={styles.secondaryButton}
+                disabled={props.working}
+                onPress={() => props.onConfirmRemove(request)}
+              >
+                <Text
+                  style={[styles.secondaryButtonText, { color: "#b42318" }]}
+                >
+                  Delete
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ))}
+        {!props.requests.length ? (
+          <Text style={[styles.cardText, { color: props.colors.muted }]}>
+            No active file requests.
+          </Text>
+        ) : null}
+      </View>
+    </>
+  );
+}
+
+function RequestsRouteContent(
+  props: Readonly<{
+    colors: RequestsColors;
+    error: string | null;
+    loading: boolean;
+    role: string;
+    folderId: string;
+    folderName: string;
+    title: string;
+    setTitle: (title: string) => void;
+    expiresIn: (typeof expirationOptions)[number]["hours"];
+    setExpiresIn: (
+      expiresIn: (typeof expirationOptions)[number]["hours"],
+    ) => void;
+    working: boolean;
+    onCreate: () => void;
+    requests: MobileFileRequest[];
+    onShare: (request: MobileFileRequest) => void;
+    onConfirmRemove: (request: MobileFileRequest) => void;
+  }>,
+) {
+  return (
+    <>
+      {props.error ? (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {props.error}
+        </Text>
+      ) : null}
+      {props.loading ? <ActivityIndicator color="#1f6f78" /> : null}
+      {!props.loading && props.role !== "ADMIN" ? (
+        <Text style={[styles.cardText, { color: props.colors.muted }]}>
+          File request management requires an administrator account.
+        </Text>
+      ) : null}
+      {!props.loading && props.role === "ADMIN" ? (
+        <RequestsAdminPanel
+          colors={props.colors}
+          folderId={props.folderId}
+          folderName={props.folderName}
+          title={props.title}
+          setTitle={props.setTitle}
+          expiresIn={props.expiresIn}
+          setExpiresIn={props.setExpiresIn}
+          working={props.working}
+          onCreate={props.onCreate}
+          requests={props.requests}
+          onShare={props.onShare}
+          onConfirmRemove={props.onConfirmRemove}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function useRequestsRouteSession(options: {
+  router: ReturnType<typeof useRouter>;
+  apiRef: { current: RequestsFetch | null };
+  setApiReady: (ready: boolean) => void;
+  setServer: (server: ServerBookmark | null) => void;
+  setRole: (role: string) => void;
+  setRequests: (requests: MobileFileRequest[]) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+}): void {
+  const {
+    router,
+    apiRef,
+    setApiReady,
+    setServer,
+    setRole,
+    setRequests,
+    setLoading,
+    setError,
+  } = options;
+  useEffect(() => {
+    let active = true;
+    void loadActiveRouteSession({
+      isActive: () => active,
+      redirectToServer: () => router.replace("/"),
+      setError,
+    })
+      .then(async (routeSession) => {
+        if (!active || !routeSession) return;
+        apiRef.current = routeSession.fetchImpl;
+        setApiReady(true);
+        setServer(routeSession.server);
+        setRole(routeSession.role);
+        if (routeSession.role === "ADMIN") {
+          await refreshRequests(routeSession.fetchImpl, setRequests);
+        }
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Could not load file requests.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    apiRef,
+    router,
+    setApiReady,
+    setError,
+    setLoading,
+    setRequests,
+    setRole,
+    setServer,
+  ]);
+}
 
 export default function RequestsRoute() {
   const router = useRouter();
@@ -62,106 +399,37 @@ export default function RequestsRoute() {
   const folderName =
     typeof params.folderName === "string" ? params.folderName : "";
 
-  const refreshRequests = async (
-    fetchImpl: ReturnType<typeof createServerFetch>,
-  ) => {
-    const result = await listMobileFileRequests(fetchImpl);
-    setRequests(result.sort((a, b) => b.createdAt - a.createdAt));
-  };
+  useRequestsRouteSession({
+    router,
+    apiRef,
+    setApiReady,
+    setServer,
+    setRole,
+    setRequests,
+    setLoading,
+    setError,
+  });
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const selected = await getActiveServer(preferencesStore);
-        if (!active) return;
-        if (!selected) {
-          router.replace("/");
-          return;
-        }
-        const session = await loadBiometricServerSession(selected);
-        if (!active) return;
-        if (session.status !== "authenticated") {
-          if (session.status === "missing") {
-            router.replace("/");
-          } else {
-            setError(
-              session.status === "biometrics-unavailable"
-                ? "Biometric unlock is unavailable on this device. Return to the server screen to continue."
-                : "Biometric unlock was not completed. Return to the server screen to continue.",
-            );
-          }
-          return;
-        }
-        const fetchImpl = createServerFetch(selected.url, session.token);
-        apiRef.current = fetchImpl;
-        setApiReady(true);
-        const drives = await listMobileDrives(fetchImpl);
-        if (!active) return;
-        setServer(selected);
-        setRole(drives.role.toUpperCase());
-        if (drives.role.toUpperCase() === "ADMIN")
-          await refreshRequests(fetchImpl);
-      } catch (cause) {
-        if (active)
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Could not load file requests.",
-          );
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [router]);
+  const handleCreate = () =>
+    createUploadRequestAction({
+      fetchImpl: apiRef.current,
+      folderId,
+      folderName,
+      title,
+      expiresIn,
+      setRequests,
+      setWorking,
+      setError,
+    });
 
-  const handleCreate = async () => {
-    const fetchImpl = apiRef.current;
-    if (!fetchImpl || !folderId || !folderName || !title.trim()) return;
-    setWorking(true);
-    setError(null);
-    try {
-      await createMobileFileRequest(fetchImpl, {
-        folderId,
-        folderName,
-        title: title.trim(),
-        expiresIn,
-      });
-      await refreshRequests(fetchImpl);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not create this upload request.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const remove = async (request: MobileFileRequest) => {
-    const fetchImpl = apiRef.current;
-    if (!fetchImpl) return;
-    setWorking(true);
-    setError(null);
-    try {
-      await deleteMobileFileRequest(fetchImpl, request.token);
-      setRequests((current) =>
-        current.filter((entry) => entry.token !== request.token),
-      );
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Could not delete this request.",
-      );
-    } finally {
-      setWorking(false);
-    }
-  };
+  const remove = (request: MobileFileRequest) =>
+    removeUploadRequestAction({
+      fetchImpl: apiRef.current,
+      request,
+      setRequests,
+      setWorking,
+      setError,
+    });
 
   const confirmRemove = (request: MobileFileRequest) => {
     Alert.alert(
@@ -213,143 +481,31 @@ export default function RequestsRoute() {
             accessibilityRole="button"
             disabled={working || loading || !apiReady}
             onPress={() =>
-              apiRef.current && void refreshRequests(apiRef.current)
+              apiRef.current &&
+              void refreshRequests(apiRef.current, setRequests)
             }
           >
             <Text style={styles.action}>Refresh</Text>
           </Pressable>
         </View>
 
-        {error ? (
-          <Text accessibilityRole="alert" style={styles.error}>
-            {error}
-          </Text>
-        ) : null}
-        {loading ? <ActivityIndicator color="#1f6f78" /> : null}
-        {!loading && role !== "ADMIN" ? (
-          <Text style={[styles.cardText, { color: colors.muted }]}>
-            File request management requires an administrator account.
-          </Text>
-        ) : null}
-
-        {!loading && role === "ADMIN" ? (
-          <>
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Create an upload request
-              </Text>
-              {folderId && folderName ? (
-                <Text style={[styles.cardText, { color: colors.muted }]}>
-                  Uploads will go to {folderName}.
-                </Text>
-              ) : (
-                <Text style={[styles.cardText, { color: colors.muted }]}>
-                  Open the destination folder in Files, then choose File
-                  requests.
-                </Text>
-              )}
-              <TextInput
-                accessibilityLabel="Request title"
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Request title"
-                placeholderTextColor={colors.muted}
-                style={[
-                  styles.input,
-                  { color: colors.foreground, borderColor: colors.border },
-                ]}
-              />
-              <Text style={[styles.label, { color: colors.foreground }]}>
-                Link expires in
-              </Text>
-              <View style={styles.choiceRow}>
-                {expirationOptions.map((option) => (
-                  <ChoicePill
-                    key={option.hours}
-                    label={option.label}
-                    selected={expiresIn === option.hours}
-                    onPress={() => setExpiresIn(option.hours)}
-                  />
-                ))}
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                style={[
-                  styles.primaryButton,
-                  (working || !folderId || !folderName || !title.trim()) &&
-                    styles.disabled,
-                ]}
-                disabled={working || !folderId || !folderName || !title.trim()}
-                onPress={() => void handleCreate()}
-              >
-                <Text style={styles.primaryButtonText}>
-                  {working ? "Creating…" : "Create upload request"}
-                </Text>
-              </Pressable>
-            </View>
-
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                Active requests
-              </Text>
-              {requests.map((request) => (
-                <View
-                  key={request.token}
-                  style={[styles.requestCard, { borderColor: colors.border }]}
-                >
-                  <Text
-                    style={[styles.requestTitle, { color: colors.foreground }]}
-                  >
-                    {request.title}
-                  </Text>
-                  <Text style={[styles.cardText, { color: colors.muted }]}>
-                    Destination: {request.folderName}
-                  </Text>
-                  <Text style={[styles.cardText, { color: colors.muted }]}>
-                    Expires {new Date(request.expiresAt).toLocaleString()}
-                  </Text>
-                  <View style={styles.choiceRow}>
-                    <Pressable
-                      style={styles.secondaryButton}
-                      onPress={() => void shareRequest(request)}
-                    >
-                      <Text style={styles.secondaryButtonText}>Share…</Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.secondaryButton}
-                      disabled={working}
-                      onPress={() => confirmRemove(request)}
-                    >
-                      <Text
-                        style={[
-                          styles.secondaryButtonText,
-                          { color: "#b42318" },
-                        ]}
-                      >
-                        Delete
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-              {!requests.length ? (
-                <Text style={[styles.cardText, { color: colors.muted }]}>
-                  No active file requests.
-                </Text>
-              ) : null}
-            </View>
-          </>
-        ) : null}
+        <RequestsRouteContent
+          colors={colors}
+          error={error}
+          loading={loading}
+          role={role}
+          folderId={folderId}
+          folderName={folderName}
+          title={title}
+          setTitle={setTitle}
+          expiresIn={expiresIn}
+          setExpiresIn={setExpiresIn}
+          working={working}
+          onCreate={handleCreate}
+          requests={requests}
+          onShare={shareRequest}
+          onConfirmRemove={confirmRemove}
+        />
       </ScrollView>
     </SafeAreaView>
   );

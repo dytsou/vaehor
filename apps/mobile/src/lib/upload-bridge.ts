@@ -80,6 +80,58 @@ function waitBeforeRetry(signal?: AbortSignal): Promise<void> {
   });
 }
 
+async function classifyUploadAuthentication(
+  response: Response,
+  enabled: boolean,
+): Promise<void> {
+  if (!enabled) return;
+  if (response.status === 401) {
+    const payload = (await response.json().catch(() => null)) as {
+      isLocalAuthNeeded?: unknown;
+    } | null;
+    if (payload?.isLocalAuthNeeded === true) {
+      throw new UploadLocalStorageAuthError();
+    }
+    throw new UploadAuthError();
+  }
+  if (response.status === 403) throw new UploadAuthError();
+}
+
+function shouldRethrowUploadError(
+  error: unknown,
+  signal: AbortSignal | undefined,
+  attempt: number,
+): boolean {
+  return (
+    error instanceof UploadAuthError ||
+    error instanceof UploadLocalStorageAuthError ||
+    error instanceof UploadHttpError ||
+    isAbortError(error, signal) ||
+    attempt === MAX_RETRIES
+  );
+}
+
+async function tryUploadRequest(
+  fetchImpl: ServerFetch,
+  path: string,
+  options: RequestInit,
+  signal?: AbortSignal,
+  attempt = 0,
+  classifyAuthentication = true,
+): Promise<Response | null> {
+  try {
+    const response = await fetchImpl(path, { ...options, signal });
+    await classifyUploadAuthentication(response, classifyAuthentication);
+    if (response.ok) return response;
+    if (response.status < 500 || attempt === MAX_RETRIES) {
+      throw new UploadHttpError(response.status);
+    }
+  } catch (error) {
+    if (shouldRethrowUploadError(error, signal, attempt)) throw error;
+  }
+  return null;
+}
+
 async function retryFetch(
   fetchImpl: ServerFetch,
   path: string,
@@ -89,39 +141,15 @@ async function retryFetch(
 ): Promise<Response> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     if (signal?.aborted) throw new Error("Upload cancelled");
-
-    try {
-      const response = await fetchImpl(path, {
-        ...options,
-        signal,
-      });
-      if (classifyAuthentication && response.status === 401) {
-        const payload = (await response.json().catch(() => null)) as {
-          isLocalAuthNeeded?: unknown;
-        } | null;
-        if (payload?.isLocalAuthNeeded === true) {
-          throw new UploadLocalStorageAuthError();
-        }
-        throw new UploadAuthError();
-      }
-      if (classifyAuthentication && response.status === 403) {
-        throw new UploadAuthError();
-      }
-      if (response.ok) return response;
-      if (response.status < 500 || attempt === MAX_RETRIES) {
-        throw new UploadHttpError(response.status);
-      }
-    } catch (error) {
-      if (
-        error instanceof UploadAuthError ||
-        error instanceof UploadLocalStorageAuthError ||
-        error instanceof UploadHttpError ||
-        isAbortError(error, signal) ||
-        attempt === MAX_RETRIES
-      ) {
-        throw error;
-      }
-    }
+    const response = await tryUploadRequest(
+      fetchImpl,
+      path,
+      options,
+      signal,
+      attempt,
+      classifyAuthentication,
+    );
+    if (response) return response;
 
     await waitBeforeRetry(signal);
   }
@@ -186,16 +214,27 @@ function asRequestBody(bytes: Uint8Array): Blob {
   });
 }
 
-async function postUploadChunk(
-  fetchImpl: ServerFetch,
-  path: string,
-  start: number,
-  end: number,
-  total: number,
-  bytes: Uint8Array,
-  signal?: AbortSignal,
+type UploadChunkOptions = Readonly<{
+  fetchImpl: ServerFetch;
+  path: string;
+  start: number;
+  end: number;
+  total: number;
+  bytes: Uint8Array;
+  signal?: AbortSignal;
+  classifyAuthentication?: boolean;
+}>;
+
+async function postUploadChunk({
+  fetchImpl,
+  path,
+  start,
+  end,
+  total,
+  bytes,
+  signal,
   classifyAuthentication = true,
-): Promise<{ status: string }> {
+}: UploadChunkOptions): Promise<{ status: string }> {
   // The server endpoint expects the raw binary body; the generated SDK JSON-encodes it.
   const chunkResponse = await retryFetch(
     fetchImpl,
@@ -220,24 +259,21 @@ async function postUploadChunk(
 }
 
 async function uploadSingleChunk(
-  fetchImpl: ServerFetch,
-  uploadUrl: string,
-  parentId: string,
-  start: number,
-  end: number,
-  total: number,
-  bytes: Uint8Array,
-  signal?: AbortSignal,
+  options: Readonly<{
+    fetchImpl: ServerFetch;
+    uploadUrl: string;
+    parentId: string;
+    start: number;
+    end: number;
+    total: number;
+    bytes: Uint8Array;
+    signal?: AbortSignal;
+  }>,
 ): Promise<{ status: string }> {
-  return postUploadChunk(
-    fetchImpl,
-    buildChunkUploadPath(uploadUrl, parentId),
-    start,
-    end,
-    total,
-    bytes,
-    signal,
-  );
+  return postUploadChunk({
+    ...options,
+    path: buildChunkUploadPath(options.uploadUrl, options.parentId),
+  });
 }
 
 export async function runNativeChunkedUpload(options: {
@@ -254,61 +290,90 @@ export async function runNativeChunkedUpload(options: {
     }
     onProgress(0);
     const uploadUrl = await initializeUpload(fetchImpl, file, parentId, signal);
-
     if (file.size === 0) {
-      const response = await retryFetch(
-        fetchImpl,
-        buildChunkUploadPath(uploadUrl, parentId),
-        {
-          method: "POST",
-          headers: buildZeroByteHeaders(uploadUrl),
-          body: asRequestBody(new Uint8Array(0)),
-        },
-        signal,
-      );
-      const data = (await response.json()) as { status?: string };
-      if (data.status !== "completed") {
-        throw new Error("The server did not finish this upload.");
-      }
-      onProgress(100);
-      return;
-    }
-
-    let start = 0;
-    while (start < file.size) {
-      if (signal?.aborted) throw new Error("Upload cancelled");
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const bytes = await file.readChunk(start, end, signal);
-      if (bytes.byteLength !== end - start) {
-        throw new Error("Could not read the selected file completely.");
-      }
-
-      const chunk = await uploadSingleChunk(
+      await uploadEmptyNativeFile({
         fetchImpl,
         uploadUrl,
         parentId,
-        start,
-        end,
-        file.size,
-        bytes,
         signal,
-      );
-      if (chunk.status !== "completed" && chunk.status !== "partial") {
-        throw new Error("The server did not finish this upload.");
-      }
-
-      start = end;
-      onProgress(Math.floor((start / file.size) * 100));
-      if (chunk.status === "completed") {
-        onProgress(100);
-        return;
-      }
+        onProgress,
+      });
+      return;
     }
-
-    throw new Error("The server did not confirm that this upload completed.");
+    await uploadNativeFileChunks({
+      fetchImpl,
+      file,
+      uploadUrl,
+      parentId,
+      signal,
+      onProgress,
+    });
   } finally {
     await file.close?.();
   }
+}
+
+async function uploadEmptyNativeFile(options: {
+  fetchImpl: ServerFetch;
+  uploadUrl: string;
+  parentId: string;
+  signal?: AbortSignal;
+  onProgress: (percent: number) => void;
+}): Promise<void> {
+  const response = await retryFetch(
+    options.fetchImpl,
+    buildChunkUploadPath(options.uploadUrl, options.parentId),
+    {
+      method: "POST",
+      headers: buildZeroByteHeaders(options.uploadUrl),
+      body: asRequestBody(new Uint8Array(0)),
+    },
+    options.signal,
+  );
+  const data = (await response.json()) as { status?: string };
+  if (data.status !== "completed") {
+    throw new Error("The server did not finish this upload.");
+  }
+  options.onProgress(100);
+}
+
+async function uploadNativeFileChunks(options: {
+  fetchImpl: ServerFetch;
+  file: NativeUploadFile;
+  uploadUrl: string;
+  parentId: string;
+  signal?: AbortSignal;
+  onProgress: (percent: number) => void;
+}): Promise<void> {
+  let start = 0;
+  while (start < options.file.size) {
+    if (options.signal?.aborted) throw new Error("Upload cancelled");
+    const end = Math.min(start + CHUNK_SIZE, options.file.size);
+    const bytes = await options.file.readChunk(start, end, options.signal);
+    if (bytes.byteLength !== end - start) {
+      throw new Error("Could not read the selected file completely.");
+    }
+    const chunk = await uploadSingleChunk({
+      fetchImpl: options.fetchImpl,
+      uploadUrl: options.uploadUrl,
+      parentId: options.parentId,
+      start,
+      end,
+      total: options.file.size,
+      bytes,
+      signal: options.signal,
+    });
+    if (chunk.status !== "completed" && chunk.status !== "partial") {
+      throw new Error("The server did not finish this upload.");
+    }
+    start = end;
+    options.onProgress(Math.floor((start / options.file.size) * 100));
+    if (chunk.status === "completed") {
+      options.onProgress(100);
+      return;
+    }
+  }
+  throw new Error("The server did not confirm that this upload completed.");
 }
 
 function buildFileRequestUploadPath(
@@ -319,6 +384,137 @@ function buildFileRequestUploadPath(
   const params = new URLSearchParams({ type, token });
   if (uploadUrl) params.set("uploadUrl", uploadUrl);
   return `/api/file-request/upload?${params.toString()}`;
+}
+
+async function uploadEmptyRequestFile(
+  fetchImpl: ServerFetch,
+  token: string,
+  uploadUrl: string,
+  signal: AbortSignal | undefined,
+  onProgress: (percent: number) => void,
+): Promise<void> {
+  const response = await retryFetch(
+    fetchImpl,
+    buildFileRequestUploadPath("chunk", token, uploadUrl),
+    {
+      method: "POST",
+      headers: {
+        "Content-Range": "bytes 0-0/0",
+        "Content-Type": "application/octet-stream",
+      },
+      body: asRequestBody(new Uint8Array(0)),
+    },
+    signal,
+    false,
+  );
+  const data = (await response.json()) as { status?: string };
+  if (data.status !== "completed") {
+    throw new Error("The server did not finish this upload.");
+  }
+  onProgress(100);
+}
+
+type RequestUploadChunkOptions = {
+  fetchImpl: ServerFetch;
+  file: NativeUploadFile;
+  token: string;
+  uploadUrl: string;
+  signal?: AbortSignal;
+};
+
+async function initializeRequestUpload(
+  fetchImpl: ServerFetch,
+  file: NativeUploadFile,
+  token: string,
+  signal?: AbortSignal,
+): Promise<string> {
+  const response = await retryFetch(
+    fetchImpl,
+    buildFileRequestUploadPath("init", token),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: file.name,
+        mimeType: file.mimeType || "application/octet-stream",
+        size: file.size,
+      }),
+    },
+    signal,
+    false,
+  );
+  const data = (await response.json()) as { uploadUrl?: unknown };
+  if (typeof data.uploadUrl !== "string" || !data.uploadUrl) {
+    throw new Error("The server did not start this upload.");
+  }
+  return data.uploadUrl;
+}
+
+async function uploadRequestChunk(
+  options: RequestUploadChunkOptions & {
+    start: number;
+    end: number;
+  },
+): Promise<{ status: string }> {
+  const { fetchImpl, file, token, uploadUrl, signal, start, end } = options;
+  const bytes = await file.readChunk(start, end, signal);
+  if (bytes.byteLength !== end - start) {
+    throw new Error("Could not read the selected file completely.");
+  }
+  const result = await postUploadChunk({
+    fetchImpl,
+    path: buildFileRequestUploadPath("chunk", token, uploadUrl),
+    start,
+    end,
+    total: file.size,
+    bytes,
+    signal,
+    classifyAuthentication: false,
+  });
+  if (result.status !== "partial" && result.status !== "completed") {
+    throw new Error("The server did not finish this upload.");
+  }
+  return result;
+}
+
+async function uploadRequestChunks(
+  options: RequestUploadChunkOptions & {
+    onProgress: (percent: number) => void;
+  },
+): Promise<void> {
+  const { fetchImpl, file, token, uploadUrl, signal, onProgress } = options;
+  if (file.size === 0) {
+    await uploadEmptyRequestFile(
+      fetchImpl,
+      token,
+      uploadUrl,
+      signal,
+      onProgress,
+    );
+    return;
+  }
+
+  let start = 0;
+  while (start < file.size) {
+    if (signal?.aborted) throw new Error("Upload cancelled");
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const result = await uploadRequestChunk({
+      fetchImpl,
+      file,
+      token,
+      uploadUrl,
+      signal,
+      start,
+      end,
+    });
+    start = end;
+    onProgress(Math.floor((start / file.size) * 100));
+    if (result.status === "completed") {
+      onProgress(100);
+      return;
+    }
+  }
+  throw new Error("The server did not confirm that this upload completed.");
 }
 
 export async function runNativeFileRequestUpload(options: {
@@ -335,89 +531,20 @@ export async function runNativeFileRequestUpload(options: {
       throw new Error("The selected file has an invalid size.");
     }
     onProgress(0);
-
-    const initResponse = await retryFetch(
+    const uploadUrl = await initializeRequestUpload(
       fetchImpl,
-      buildFileRequestUploadPath("init", token),
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: file.name,
-          mimeType: file.mimeType || "application/octet-stream",
-          size: file.size,
-        }),
-      },
+      file,
+      token,
       signal,
-      false,
     );
-    const initData = (await initResponse.json()) as { uploadUrl?: unknown };
-    if (typeof initData.uploadUrl !== "string" || !initData.uploadUrl) {
-      throw new Error("The server did not start this upload.");
-    }
-    const uploadUrl = initData.uploadUrl;
-
-    const uploadChunk = async (
-      start: number,
-      end: number,
-      bytes: Uint8Array,
-    ) => {
-      return postUploadChunk(
-        fetchImpl,
-        buildFileRequestUploadPath("chunk", token, uploadUrl),
-        start,
-        end,
-        file.size,
-        bytes,
-        signal,
-        false,
-      );
-    };
-
-    if (file.size === 0) {
-      const response = await retryFetch(
-        fetchImpl,
-        buildFileRequestUploadPath("chunk", token, uploadUrl),
-        {
-          method: "POST",
-          headers: {
-            "Content-Range": "bytes 0-0/0",
-            "Content-Type": "application/octet-stream",
-          },
-          body: asRequestBody(new Uint8Array(0)),
-        },
-        signal,
-        false,
-      );
-      const data = (await response.json()) as { status?: string };
-      if (data.status !== "completed") {
-        throw new Error("The server did not finish this upload.");
-      }
-      onProgress(100);
-      return;
-    }
-
-    let start = 0;
-    while (start < file.size) {
-      if (signal?.aborted) throw new Error("Upload cancelled");
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const bytes = await file.readChunk(start, end, signal);
-      if (bytes.byteLength !== end - start) {
-        throw new Error("Could not read the selected file completely.");
-      }
-
-      const chunk = await uploadChunk(start, end, bytes);
-      if (chunk.status !== "partial" && chunk.status !== "completed") {
-        throw new Error("The server did not finish this upload.");
-      }
-      start = end;
-      onProgress(Math.floor((start / file.size) * 100));
-      if (chunk.status === "completed") {
-        onProgress(100);
-        return;
-      }
-    }
-    throw new Error("The server did not confirm that this upload completed.");
+    await uploadRequestChunks({
+      fetchImpl,
+      file,
+      token,
+      uploadUrl,
+      signal,
+      onProgress,
+    });
   } finally {
     await file.close?.();
   }
