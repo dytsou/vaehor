@@ -69,4 +69,69 @@ describe("api-client", () => {
 
     vi.unstubAllGlobals();
   });
+
+  it("applies the configured request deadline and keeps caller cancellation", async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+          if (signal?.aborted) {
+            reject(signal.reason);
+            return;
+          }
+          signal?.addEventListener("abort", () => reject(signal.reason), {
+            once: true,
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const serverFetch = createServerFetch(
+      "https://files.example.com",
+      "server-session-token",
+      { requestTimeoutMs: 5, uploadTimeoutMs: 50 },
+    );
+    await expect(serverFetch("/api/auth/me")).rejects.toThrow(
+      "server_request_timeout",
+    );
+    const [, timedInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(timedInit.signal?.aborted).toBe(true);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("uses the longer upload deadline and still honors a caller abort", async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          const signal = init?.signal;
+          if (signal?.aborted) {
+            reject(signal.reason);
+            return;
+          }
+          signal?.addEventListener("abort", () => reject(signal.reason), {
+            once: true,
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const serverFetch = createServerFetch(
+      "https://files.example.com",
+      "server-session-token",
+      { requestTimeoutMs: 5, uploadTimeoutMs: 100 },
+    );
+    const caller = new AbortController();
+    const upload = serverFetch("/api/file/upload", {
+      method: "POST",
+      signal: caller.signal,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 15));
+    const [, uploadInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(uploadInit.signal?.aborted).toBe(false);
+
+    caller.abort(new Error("caller_cancelled"));
+    await expect(upload).rejects.toThrow("caller_cancelled");
+    vi.unstubAllGlobals();
+  });
 });

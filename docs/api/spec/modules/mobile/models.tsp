@@ -65,6 +65,8 @@ namespace VaehorApi {
     createdTime?: string;
     isFolder?: boolean;
     isProtected?: boolean;
+    @doc("The nearest protected folder that gates access to this favorite, when applicable.")
+    protectedFolderId?: string;
     parents?: string[];
     trashed?: boolean;
   }

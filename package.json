@@ -36,7 +36,7 @@
     "ci:playwright:browsers": "playwright install chromium",
     "ci:playwright:browser-deps": "playwright install-deps chromium",
     "compile:openapi": "tsp compile docs/api/spec/entry.tsp --config docs/api/spec/tspconfig.yaml",
-    "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js && biome format --write ./packages/sdk/src/orval/index.ts",
+    "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js && biome format --write ./packages/sdk/src/orval/index.ts && node scripts/normalize-orval-upload-bodies.mjs",
     "compile:sdk": "pnpm --filter @vaehor/sdk build",
     "mcp:build": "pnpm --filter @vaehor/mcp build",
     "mcp:dev": "pnpm --filter @vaehor/mcp dev",

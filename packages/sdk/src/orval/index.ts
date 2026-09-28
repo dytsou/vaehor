@@ -4,6 +4,13 @@
  * vaehor API
  * OpenAPI spec version: 0.0.0
  */
+
+function toSdkUploadBody(body: string | Blob | object): BodyInit {
+  if (typeof body === "string") return body;
+  if (typeof Blob !== "undefined" && body instanceof Blob) return body;
+  return JSON.stringify(body) ?? "";
+}
+
 export interface AccessRequestCreateRequest {
   folderId: string;
   folderName: string;
@@ -275,6 +282,8 @@ export interface MobileFavoriteFile {
   createdTime?: string;
   isFolder?: boolean;
   isProtected?: boolean;
+  /** The nearest protected folder that gates access to this favorite, when applicable. */
+  protectedFolderId?: string;
   parents?: string[];
   trashed?: boolean;
 }
@@ -539,6 +548,12 @@ export type SearchFilesParams = {
 
 export type GlobalSearchParams = {
   q: string;
+};
+
+export type NativeSetupOAuthCallbackParams = {
+  state: string;
+  code?: string;
+  error?: string;
 };
 
 export type GetSharedCollectionItemsParams = {
@@ -2892,10 +2907,17 @@ export type bulkDownloadResponse401 = {
   status: 401;
 };
 
+export type bulkDownloadResponse413 = {
+  data: Error;
+  status: 413;
+};
+
 export type bulkDownloadResponseSuccess = bulkDownloadResponse200 & {
   headers: Headers;
 };
-export type bulkDownloadResponseError = bulkDownloadResponse401 & {
+export type bulkDownloadResponseError = (
+  bulkDownloadResponse401 | bulkDownloadResponse413
+) & {
   headers: Headers;
 };
 
@@ -2906,6 +2928,9 @@ export const getBulkDownloadUrl = () => {
   return `/api/bulk-download`;
 };
 
+/**
+ * Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.
+ */
 export const bulkDownload = async (
   bulkDownloadBody: unknown,
   options?: RequestInit,
@@ -3485,11 +3510,7 @@ export const uploadToFileRequest = async (
   const res = await fetch(getUploadToFileRequestUrl(params), {
     ...options,
     method: "POST",
-    body:
-      typeof uploadToFileRequestBody === "string" ||
-      (typeof Blob !== "undefined" && uploadToFileRequestBody instanceof Blob)
-        ? uploadToFileRequestBody
-        : JSON.stringify(uploadToFileRequestBody),
+    body: toSdkUploadBody(uploadToFileRequestBody),
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
@@ -4270,11 +4291,7 @@ export const uploadFile = async (
   const res = await fetch(getUploadFileUrl(params), {
     ...options,
     method: "POST",
-    body:
-      typeof uploadFileBody === "string" ||
-      (typeof Blob !== "undefined" && uploadFileBody instanceof Blob)
-        ? uploadFileBody
-        : JSON.stringify(uploadFileBody),
+    body: toSdkUploadBody(uploadFileBody),
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
@@ -5984,22 +6001,43 @@ export type nativeSetupOAuthCallbackResponse302 = {
   status: 302;
 };
 
-export type nativeSetupOAuthCallbackResponseError =
-  nativeSetupOAuthCallbackResponse302 & {
-    headers: Headers;
-  };
+export type nativeSetupOAuthCallbackResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+
+export type nativeSetupOAuthCallbackResponseError = (
+  nativeSetupOAuthCallbackResponse302 | nativeSetupOAuthCallbackResponse400
+) & {
+  headers: Headers;
+};
 
 export type nativeSetupOAuthCallbackResponse =
   nativeSetupOAuthCallbackResponseError;
 
-export const getNativeSetupOAuthCallbackUrl = () => {
-  return `/api/setup/native-callback`;
+export const getNativeSetupOAuthCallbackUrl = (
+  params: NativeSetupOAuthCallbackParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/setup/native-callback?${stringifiedParams}`
+    : `/api/setup/native-callback`;
 };
 
 export const nativeSetupOAuthCallback = async (
+  params: NativeSetupOAuthCallbackParams,
   options?: RequestInit,
 ): Promise<nativeSetupOAuthCallbackResponse> => {
-  const res = await fetch(getNativeSetupOAuthCallbackUrl(), {
+  const res = await fetch(getNativeSetupOAuthCallbackUrl(params), {
     ...options,
     method: "GET",
   });

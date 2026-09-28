@@ -15,9 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   clearSessionForServer,
   clearLocalStorageAccessTokenForServer,
-  loadSessionForServer,
-  recordBiometricFailure,
-  resetBiometricFailures,
 } from "../lib/session-store";
 import {
   addServer,
@@ -29,6 +26,7 @@ import {
   type ServerBookmark,
 } from "../lib/servers";
 import { isBiometricAvailable, promptBiometricUnlock } from "../lib/biometrics";
+import { loadBiometricServerSession } from "../lib/biometric-session";
 import { startGoogleOAuth } from "../lib/oauth";
 import { useMobilePreferences } from "../lib/mobile-preferences";
 
@@ -69,7 +67,7 @@ export default function ServerSelectionRoute() {
     }
   }, []);
 
-  const loadServerState = useCallback(async (promptForBiometrics: boolean) => {
+  const loadServerState = useCallback(async () => {
     const [nextServers, selected] = await Promise.all([
       preferencesStore.getServers(),
       getActiveServer(preferencesStore),
@@ -84,31 +82,21 @@ export default function ServerSelectionRoute() {
     setNeedsBiometricUnlock(false);
 
     if (!nextActive) return;
-    const token = await loadSessionForServer(nextActive.url);
-    if (!token) return;
-    if (nextActive.biometricsEnabled && promptForBiometrics) {
-      const available = await isBiometricAvailable();
-      if (!available) {
-        setNeedsBiometricUnlock(true);
-        setError(
-          "Biometrics are unavailable. Sign in again or enable them in device settings.",
-        );
-        return;
-      }
-      const unlocked = await promptBiometricUnlock(
-        `Unlock ${nextActive.label}`,
+    const access = await loadBiometricServerSession(nextActive);
+    if (access.status === "biometrics-unavailable") {
+      setNeedsBiometricUnlock(true);
+      setError(
+        "Biometrics are unavailable. Sign in again or enable them in device settings.",
       );
-      if (!unlocked) {
-        await recordBiometricFailure(nextActive.url);
-        setNeedsBiometricUnlock(true);
-        setError(
-          "Biometric unlock did not succeed. Try again or sign in again.",
-        );
-        return;
-      }
-      await resetBiometricFailures(nextActive.url);
+      return;
     }
-    setSessionToken(token);
+    if (access.status === "biometrics-denied") {
+      setNeedsBiometricUnlock(true);
+      setError("Biometric unlock did not succeed. Try again or sign in again.");
+      return;
+    }
+    if (access.status !== "authenticated") return;
+    setSessionToken(access.token);
     setNeedsBiometricUnlock(false);
   }, []);
 
@@ -117,7 +105,7 @@ export default function ServerSelectionRoute() {
     void (async () => {
       await refreshNetwork();
       try {
-        await loadServerState(true);
+        await loadServerState();
       } catch {
         if (mounted) setError("Could not load saved servers. Please retry.");
       } finally {
@@ -138,7 +126,7 @@ export default function ServerSelectionRoute() {
   useEffect(() => {
     if (params.connected) {
       setError(null);
-      void loadServerState(false);
+      void loadServerState();
     }
     if (params.authError)
       setError("Sign-in could not be completed. Please try again.");
@@ -158,7 +146,7 @@ export default function ServerSelectionRoute() {
     setError(null);
     try {
       await switchActiveServer(preferencesStore, server.id);
-      await loadServerState(true);
+      await loadServerState();
     } catch {
       setError("Could not switch servers. Please try again.");
     } finally {
@@ -176,7 +164,7 @@ export default function ServerSelectionRoute() {
       });
       setOriginInput("");
       setLabelInput("");
-      await loadServerState(false);
+      await loadServerState();
     } catch (cause) {
       const code = cause instanceof Error ? cause.message : "invalid_url";
       setError(
@@ -196,7 +184,7 @@ export default function ServerSelectionRoute() {
     try {
       const completed = await startGoogleOAuth(activeServer.url);
       if (!completed) return;
-      await loadServerState(false);
+      await loadServerState();
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "";
       setError(
@@ -216,7 +204,7 @@ export default function ServerSelectionRoute() {
     setWorking(true);
     setError(null);
     try {
-      await loadServerState(true);
+      await loadServerState();
     } catch {
       setError("Could not unlock this server. Please try again.");
     } finally {
@@ -293,7 +281,7 @@ export default function ServerSelectionRoute() {
     try {
       await clearLocalStorageAccessTokenForServer(server.url);
       await removeServer(preferencesStore, server.id);
-      await loadServerState(false);
+      await loadServerState();
     } catch {
       setError("Could not remove this server. Please try again.");
     } finally {

@@ -29,7 +29,7 @@ import {
   preferencesStore,
   type ServerBookmark,
 } from "../lib/servers";
-import { loadSessionForServer } from "../lib/session-store";
+import { loadBiometricServerSession } from "../lib/biometric-session";
 
 const expirationOptions = [
   { label: "1 hour", hours: 1 },
@@ -79,13 +79,21 @@ export default function RequestsRoute() {
           router.replace("/");
           return;
         }
-        const token = await loadSessionForServer(selected.url);
+        const session = await loadBiometricServerSession(selected);
         if (!active) return;
-        if (!token) {
-          router.replace("/");
+        if (session.status !== "authenticated") {
+          if (session.status === "missing") {
+            router.replace("/");
+          } else {
+            setError(
+              session.status === "biometrics-unavailable"
+                ? "Biometric unlock is unavailable on this device. Return to the server screen to continue."
+                : "Biometric unlock was not completed. Return to the server screen to continue.",
+            );
+          }
           return;
         }
-        const fetchImpl = createServerFetch(selected.url, token);
+        const fetchImpl = createServerFetch(selected.url, session.token);
         apiRef.current = fetchImpl;
         setApiReady(true);
         const drives = await listMobileDrives(fetchImpl);

@@ -435,4 +435,6 @@ export async function downloadMobileArchive(
   }
 }
 
-export type MobileFile = DriveFile;
+export type MobileFile = DriveFile & {
+  protectedFolderId?: string;
+};

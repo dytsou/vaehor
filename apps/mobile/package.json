@@ -15,7 +15,7 @@
     "export:ios": "expo export --platform ios",
     "test": "pnpm run test:utility && pnpm run test:shell",
     "test:utility": "cd ../.. && pnpm compile:sdk && pnpm exec vitest run apps/mobile/__tests__",
-    "test:shell": "jest __tests__/app-shell.test.tsx --runInBand"
+    "test:shell": "jest --runInBand"
   },
   "dependencies": {
     "@kishannareshpal/expo-pdf": "^0.3.2",
@@ -38,6 +38,7 @@
     "expo-system-ui": "~57.0.4",
     "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
+    "jszip": "^3.10.2",
     "react": "^19.2.3",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0"
@@ -57,7 +58,8 @@
   "jest": {
     "preset": "jest-expo",
     "testMatch": [
-      "**/__tests__/app-shell.test.tsx"
+      "**/__tests__/app-shell.test.tsx",
+      "**/__tests__/container-preview.test.tsx"
     ]
   }
 }

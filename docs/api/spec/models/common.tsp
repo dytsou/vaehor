@@ -79,6 +79,11 @@ namespace VaehorApi {
     @body body: Error;
   }
 
+  model PayloadTooLargeErrorResponse {
+    @statusCode statusCode: 413;
+    @body body: Error;
+  }
+
   model ServiceUnavailableErrorResponse {
     @statusCode statusCode: 503;
     @body body: Error;

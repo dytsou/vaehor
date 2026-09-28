@@ -15,7 +15,7 @@ import { createServerFetch } from "../lib/api-client";
 import { listMobileDrives } from "../lib/file-api";
 import { getActiveServer, preferencesStore } from "../lib/servers";
 import { useMobilePreferences } from "../lib/mobile-preferences";
-import { loadSessionForServer } from "../lib/session-store";
+import { loadBiometricServerSession } from "../lib/biometric-session";
 import { formatMobileFileSize } from "../lib/mobile-formatters";
 
 type TrashedFile = {
@@ -60,13 +60,21 @@ export default function TrashRoute() {
           router.replace("/");
           return;
         }
-        const token = await loadSessionForServer(server.url);
+        const session = await loadBiometricServerSession(server);
         if (!active) return;
-        if (!token) {
-          router.replace("/");
+        if (session.status !== "authenticated") {
+          if (session.status === "missing") {
+            router.replace("/");
+          } else {
+            setError(
+              session.status === "biometrics-unavailable"
+                ? "Biometric unlock is unavailable on this device. Return to the server screen to continue."
+                : "Biometric unlock was not completed. Return to the server screen to continue.",
+            );
+          }
           return;
         }
-        const fetchImpl = createServerFetch(server.url, token);
+        const fetchImpl = createServerFetch(server.url, session.token);
         const drives = await listMobileDrives(fetchImpl);
         if (!active) return;
         if (drives.role.toUpperCase() !== "ADMIN") {

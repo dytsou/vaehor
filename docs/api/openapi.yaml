@@ -962,6 +962,7 @@ paths:
   /api/bulk-download:
     post:
       operationId: bulkDownload
+      description: Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.
       parameters: []
       responses:
         '200':
@@ -971,6 +972,12 @@ paths:
               schema: {}
         '401':
           description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Client error
           content:
             application/json:
               schema:
@@ -2456,7 +2463,25 @@ paths:
   /api/setup/native-callback:
     get:
       operationId: nativeSetupOAuthCallback
-      parameters: []
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
       responses:
         '302':
           description: Redirection
@@ -2465,6 +2490,12 @@ paths:
               required: true
               schema:
                 type: string
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
       tags:
         - Setup
   /api/setup/status:
@@ -3103,6 +3134,9 @@ components:
           type: boolean
         isProtected:
           type: boolean
+        protectedFolderId:
+          type: string
+          description: The nearest protected folder that gates access to this favorite, when applicable.
         parents:
           type: array
           items:

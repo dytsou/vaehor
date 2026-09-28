@@ -6,6 +6,11 @@ import { getAccessToken } from "@/lib/drive";
 import JSZip from "jszip";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { z } from "zod";
+import {
+  BulkDownloadLimitError,
+  MAX_BULK_DOWNLOAD_BYTES,
+  readResponseWithinByteLimit,
+} from "@/lib/bulk-download-limits";
 
 const bulkDownloadSchema = z.object({
   fileIds: z
@@ -29,6 +34,7 @@ export const POST = createPublicRoute(
       const accessToken = await getAccessToken();
       const zip = new JSZip();
       let addedCount = 0;
+      let totalBytes = 0;
 
       for (const fileId of fileIds) {
         if (session?.user?.role !== "ADMIN") {
@@ -57,8 +63,12 @@ export const POST = createPublicRoute(
         });
 
         if (fileResponse.ok) {
-          const fileBuffer = await fileResponse.arrayBuffer();
+          const fileBuffer = await readResponseWithinByteLimit(
+            fileResponse,
+            MAX_BULK_DOWNLOAD_BYTES - totalBytes,
+          );
           zip.file(fileName, fileBuffer);
+          totalBytes += fileBuffer.byteLength;
           addedCount += 1;
         }
       }
@@ -78,6 +88,9 @@ export const POST = createPublicRoute(
 
       return new NextResponse(zipBlob, { status: 200, headers });
     } catch (error: unknown) {
+      if (error instanceof BulkDownloadLimitError) {
+        return NextResponse.json({ error: error.message }, { status: 413 });
+      }
       const errorMessage =
         error instanceof Error
           ? error.message

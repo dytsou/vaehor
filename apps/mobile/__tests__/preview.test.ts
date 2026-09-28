@@ -15,11 +15,26 @@ describe("native preview classification", () => {
     ).toBe("text");
   });
 
-  it("uses the native PDF viewer and keeps other formats on the system open path", () => {
+  it("uses a native PDF viewer and classifies container formats for in-app preview", () => {
     expect(getNativePreviewKind("application/pdf", "report.pdf")).toBe("pdf");
     expect(getNativePreviewKind(undefined, "report.pdf")).toBe("pdf");
     expect(
       getNativePreviewKind("application/vnd.ms-excel", "report.xlsx"),
-    ).toBe("unsupported");
+    ).toBe("office");
+    expect(
+      getNativePreviewKind(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "report.docx",
+      ),
+    ).toBe("office");
+    expect(getNativePreviewKind("application/epub+zip", "book.epub")).toBe(
+      "epub",
+    );
+    expect(getNativePreviewKind("application/zip", "backup.zip")).toBe(
+      "archive",
+    );
+    expect(getNativePreviewKind("application/msword", "legacy.doc")).toBe(
+      "unsupported",
+    );
   });
 });

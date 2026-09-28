@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { getFileDetailsFromDrive } from "@/lib/drive";
 import { kv } from "@/lib/kv";
 import { isPrivateFolder } from "@/lib/auth";
+import { findProtectedFolderAncestorId } from "@/lib/protected-folder-ancestor";
 
 const favoriteSchema = z.object({
   fileId: z.string().min(1),
@@ -71,13 +72,39 @@ export const GET = createUserRoute(
     const protectedIds = new Set(
       protectedFolders.map(({ folderId }) => folderId),
     );
-    const files = entries.flatMap(({ file }) => {
+    const folderDetailsById = new Map<
+      string,
+      ReturnType<typeof getFileDetailsFromDrive>
+    >();
+    const getCachedFolderDetails = (folderId: string) => {
+      let details = folderDetailsById.get(folderId);
+      if (!details) {
+        details = getFileDetailsFromDrive(folderId);
+        folderDetailsById.set(folderId, details);
+      }
+      return details;
+    };
+    const protectedAncestorIds = await Promise.all(
+      entries.map(({ file }) =>
+        file && !file.trashed
+          ? findProtectedFolderAncestorId(
+              file,
+              protectedIds,
+              isPrivateFolder,
+              getCachedFolderDetails,
+            )
+          : undefined,
+      ),
+    );
+    const files = entries.flatMap(({ file }, index) => {
       if (!file || file.trashed) return [];
+      const protectedFolderId = protectedAncestorIds[index];
       return [
         {
           ...file,
           isFolder: file.mimeType === "application/vnd.google-apps.folder",
-          isProtected: protectedIds.has(file.id) || isPrivateFolder(file.id),
+          isProtected: protectedFolderId !== undefined,
+          ...(protectedFolderId ? { protectedFolderId } : {}),
         },
       ];
     });

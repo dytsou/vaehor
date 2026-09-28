@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import type { NativePreviewKind } from "../lib/preview";
+import { createAsyncRequestEpoch } from "../lib/async-request-epoch";
 import { useMobileAudioPlayback } from "../lib/audio-playback";
 import { formatMediaTime } from "../lib/mobile-formatters";
 import {
@@ -19,6 +20,7 @@ import {
   getVideoProgress,
   saveVideoProgress,
 } from "../lib/video-progress";
+import { ContainerPreview } from "./container-preview";
 import {
   findSubtitleCue,
   parseSubtitleCues,
@@ -35,7 +37,6 @@ type NativePreviewProps = {
   resumeKey?: string;
   subtitleFiles?: SubtitleFile[];
   onLoadSubtitle?: (file: SubtitleFile) => Promise<string>;
-  onOpenExternally: () => void;
 };
 
 export function NativePreview({
@@ -46,7 +47,6 @@ export function NativePreview({
   resumeKey,
   subtitleFiles,
   onLoadSubtitle,
-  onOpenExternally,
 }: NativePreviewProps) {
   if (kind === "image") return <ImagePreview uri={uri} />;
   if (kind === "video") {
@@ -65,6 +65,11 @@ export function NativePreview({
   if (kind === "text") return <TextPreview text={text} />;
   if (kind === "pdf")
     return <PdfView fitMode="width" style={styles.pdf} uri={uri} />;
+  if (kind === "archive" || kind === "office" || kind === "epub") {
+    return (
+      <ContainerPreview kind={kind} title={title ?? "Document"} uri={uri} />
+    );
+  }
 
   return (
     <View style={styles.unsupported}>
@@ -72,11 +77,8 @@ export function NativePreview({
         Native preview is unavailable for this format.
       </Text>
       <Text style={styles.unsupportedText}>
-        Use the system share sheet to open this file with an installed viewer.
+        You can still use the file download and save controls above.
       </Text>
-      <Pressable style={styles.openButton} onPress={onOpenExternally}>
-        <Text style={styles.openButtonText}>Open with…</Text>
-      </Pressable>
     </View>
   );
 }
@@ -123,7 +125,10 @@ function VideoPreview({
   );
   const [subtitleError, setSubtitleError] = useState<string | null>(null);
   const subtitleCuesRef = useRef<SubtitleCue[]>([]);
+  const subtitleRequestEpochRef = useRef(createAsyncRequestEpoch());
   const lastSavedSecondRef = useRef(0);
+
+  useEffect(() => () => subtitleRequestEpochRef.current.invalidate(), []);
 
   useEffect(() => {
     let active = true;
@@ -209,6 +214,8 @@ function VideoPreview({
   const selectEmbeddedTrack = (
     track: (typeof subtitleTracks)[number] | null,
   ) => {
+    subtitleRequestEpochRef.current.invalidate();
+    setSubtitleLoadingId(null);
     player.subtitleTrack = track;
     setSelectedTrack(track);
     setExternalSubtitleId(null);
@@ -219,26 +226,32 @@ function VideoPreview({
 
   const selectExternalSubtitle = async (file: SubtitleFile) => {
     if (!onLoadSubtitle) return;
+    const requestEpoch = subtitleRequestEpochRef.current.begin();
     setSubtitleLoadingId(file.id);
     setSubtitleError(null);
     try {
       const source = await onLoadSubtitle(file);
+      if (!subtitleRequestEpochRef.current.isCurrent(requestEpoch)) return;
       const cues = parseSubtitleCues(source);
       if (cues.length === 0)
         throw new Error("No SRT or WebVTT captions were found in this file.");
+      if (!subtitleRequestEpochRef.current.isCurrent(requestEpoch)) return;
       player.subtitleTrack = null;
       setSelectedTrack(null);
       setExternalSubtitleId(file.id);
       subtitleCuesRef.current = cues;
       setCaption(findSubtitleCue(cues, player.currentTime)?.text ?? "");
     } catch (cause) {
+      if (!subtitleRequestEpochRef.current.isCurrent(requestEpoch)) return;
       setSubtitleError(
         cause instanceof Error
           ? cause.message
           : "Could not load this subtitle file.",
       );
     } finally {
-      setSubtitleLoadingId(null);
+      if (subtitleRequestEpochRef.current.isCurrent(requestEpoch)) {
+        setSubtitleLoadingId(null);
+      }
     }
   };
 

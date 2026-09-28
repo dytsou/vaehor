@@ -2,7 +2,7 @@ import { Stack, type ErrorBoundaryProps, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
+import { AppState, useColorScheme } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppShellScreen } from "../app-shell/AppShellScreen";
 import { getDeviceLocale } from "../app-shell/locale";
@@ -17,9 +17,17 @@ import {
 } from "../lib/oauth";
 import { parseDeepLink, resolveShareDestination } from "../lib/deep-link";
 import { preferencesStore } from "../lib/servers";
+import { clearBiometricSessionCache } from "../lib/biometric-session";
 
 export default function RootLayout() {
   const router = useRouter();
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") clearBiometricSessionCache();
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     let mounted = true;

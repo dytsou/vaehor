@@ -16,7 +16,13 @@ namespace VaehorApi {
   @tag("Setup")
   @get
   @route("/setup/native-callback")
-  op nativeSetupOAuthCallback(): NativeSetupCallbackRedirectResponse;
+  op nativeSetupOAuthCallback(
+    @query state: string,
+    @query code?: string,
+    @query error?: string,
+  ):
+    NativeSetupCallbackRedirectResponse
+    | NativeSetupCallbackBadRequestResponse;
 
   @tag("Setup")
   @post
