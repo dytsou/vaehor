@@ -61,7 +61,7 @@ export default function TrashRoute() {
       setError,
     })
       .then(async (routeSession) => {
-        if (!active || !routeSession || routeSession.role !== "ADMIN") return;
+        if (!active || routeSession?.role !== "ADMIN") return;
         setAuthorized(true);
         apiRef.current = routeSession.fetchImpl;
         await refresh(routeSession.fetchImpl);
