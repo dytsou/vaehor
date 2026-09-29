@@ -1,4 +1,4 @@
-import { normalizeServerOrigin } from "./api-client";
+import { requireSecureServerOrigin } from "./api-client";
 import type { ServerBookmark } from "./servers";
 
 const LOCALES = ["en", "id", "zh-TW"] as const;
@@ -48,25 +48,27 @@ function parseCustomShareLink(url: URL): ParseDeepLinkResult {
   }
 
   try {
-    const origin = normalizeServerOrigin(originParam);
+    const origin = requireSecureServerOrigin(originParam);
     const path = pathParam.startsWith("/") ? pathParam : `/${pathParam}`;
+    const parsedPath = new URL(path, `${origin}/`);
+    if (parsedPath.origin !== origin) {
+      return { kind: "invalid", error: "malformed" };
+    }
     const shareToken = url.searchParams.get("share_token");
-    const pathOnly = path.split("?")[0] ?? path;
-    const fullPath =
-      shareToken && !path.includes("share_token=")
-        ? `${pathOnly}?share_token=${encodeURIComponent(shareToken)}`
-        : path;
+    if (shareToken && !parsedPath.searchParams.has("share_token")) {
+      parsedPath.searchParams.set("share_token", shareToken);
+    }
+    const pathOnly = parsedPath.pathname;
+    const search = parsedPath.search;
 
-    if (
-      !isShareWebPath(
-        pathOnly,
-        fullPath.includes("?") ? fullPath.slice(fullPath.indexOf("?")) : "",
-      )
-    ) {
+    if (!isShareWebPath(pathOnly, search)) {
       return { kind: "invalid", error: "malformed" };
     }
 
-    return { kind: "share", target: { origin, path: fullPath } };
+    return {
+      kind: "share",
+      target: { origin, path: `${pathOnly}${search}` },
+    };
   } catch {
     return { kind: "invalid", error: "malformed" };
   }
@@ -80,13 +82,17 @@ function parseHttpsShareLink(url: URL): ParseDeepLinkResult {
     return { kind: "ignored" };
   }
 
-  return {
-    kind: "share",
-    target: {
-      origin: url.origin,
-      path: `${url.pathname}${url.search}`,
-    },
-  };
+  try {
+    return {
+      kind: "share",
+      target: {
+        origin: requireSecureServerOrigin(url.origin),
+        path: `${url.pathname}${url.search}`,
+      },
+    };
+  } catch {
+    return { kind: "invalid", error: "malformed" };
+  }
 }
 
 export function parseDeepLink(rawUrl: string): ParseDeepLinkResult {
@@ -104,22 +110,45 @@ export function findBookmarkForOrigin(
   origin: string,
   servers: ServerBookmark[],
 ): ServerBookmark | null {
-  const normalized = normalizeServerOrigin(origin);
-  return servers.find((server) => server.url === normalized) ?? null;
+  let normalized: string;
+  try {
+    normalized = requireSecureServerOrigin(origin);
+  } catch {
+    return null;
+  }
+  return (
+    servers.find((server) => {
+      try {
+        return requireSecureServerOrigin(server.url) === normalized;
+      } catch {
+        return false;
+      }
+    }) ?? null
+  );
 }
 
-export function appendBootstrapRedirect(
-  bootstrapPath: string,
-  redirectPath: string,
-): string {
-  const separator = bootstrapPath.includes("?") ? "&" : "?";
-  return `${bootstrapPath}${separator}redirect=${encodeURIComponent(redirectPath)}`;
+export function resolveShareDestination(
+  target: DeepLinkTarget,
+  servers: ServerBookmark[],
+):
+  | { kind: "bookmark"; bookmark: ServerBookmark }
+  | { kind: "setup"; origin: string } {
+  const origin = requireSecureServerOrigin(target.origin);
+  const bookmark = findBookmarkForOrigin(origin, servers);
+  return bookmark ? { kind: "bookmark", bookmark } : { kind: "setup", origin };
 }
 
 export function buildShareCustomSchemeUrl(target: DeepLinkTarget): string {
   const url = new URL("vaehor://share");
-  const parsed = new URL(target.path, target.origin);
-  url.searchParams.set("origin", target.origin);
+  const origin = requireSecureServerOrigin(target.origin);
+  const parsed = new URL(target.path, `${origin}/`);
+  if (
+    parsed.origin !== origin ||
+    !isShareWebPath(parsed.pathname, parsed.search)
+  ) {
+    throw new Error("invalid_share_target");
+  }
+  url.searchParams.set("origin", origin);
   url.searchParams.set("path", parsed.pathname);
   const shareToken = parsed.searchParams.get("share_token");
   if (shareToken) {

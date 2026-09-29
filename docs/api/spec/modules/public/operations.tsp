@@ -21,8 +21,12 @@ namespace VaehorApi {
   @tag("Public")
   @post
   @route("/bulk-download")
+  @doc("Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.")
   @useAuth(SessionAuth)
   op bulkDownload(
     @body body: unknown,
-  ): OkResponse<unknown> | UnauthorizedErrorResponse;
+  ):
+    OkResponse<unknown>
+    | UnauthorizedErrorResponse
+    | PayloadTooLargeErrorResponse;
 }

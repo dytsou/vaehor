@@ -1,4 +1,4 @@
-import { NativeBiometric } from "@capgo/capacitor-native-biometric";
+import * as LocalAuthentication from "expo-local-authentication";
 
 export type BiometricDeps = {
   isAvailable: () => Promise<{ isAvailable: boolean }>;
@@ -7,15 +7,19 @@ export type BiometricDeps = {
 
 export const defaultBiometricDeps: BiometricDeps = {
   async isAvailable() {
-    return NativeBiometric.isAvailable();
+    const [hasHardware, isEnrolled] = await Promise.all([
+      LocalAuthentication.hasHardwareAsync(),
+      LocalAuthentication.isEnrolledAsync(),
+    ]);
+    return { isAvailable: hasHardware && isEnrolled };
   },
   async verifyIdentity(reason) {
-    await NativeBiometric.verifyIdentity({
-      reason,
-      title: "Unlock vaehor",
-      subtitle: reason,
-      description: reason,
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: reason,
+      cancelLabel: "Cancel",
+      disableDeviceFallback: true,
     });
+    if (!result.success) throw new Error("biometric_authentication_failed");
   },
 };
 

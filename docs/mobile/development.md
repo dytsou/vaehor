@@ -1,78 +1,83 @@
 # Mobile development
 
-Native shell lives in `apps/mobile/`. It wraps the self-hosted vaehor web UI in a WebView and adds OAuth, biometrics, file upload, and deep links.
+`apps/mobile/` is an Expo SDK 57 and React Native 0.86 development-build app. Its UI, navigation, and task screens run natively on iOS and Android. Product tasks do not load the self-hosted website in a WebView. The selected server remains the authority for user accounts, permissions, file data, and administrative changes.
+
+The native routes include server selection and authentication, file browsing and management, native previews, shares and file requests, settings, setup, and an initial admin area. Current source coverage and remaining device or feature gaps are tracked in [`parity-inventory.md`](./parity-inventory.md).
 
 ## Prerequisites
 
-- Node 24 + pnpm 11 (same as the monorepo root)
-- Android Studio (Android) or Xcode + CocoaPods (iOS)
-- A reachable vaehor instance for OAuth and WebView testing (local `pnpm dev`, Docker dev stack, or staging HTTPS)
+- Node 26 and pnpm 11, matching the monorepo root engines
+- Android Studio and Android SDK for Android development
+- Xcode and CocoaPods for iOS development (macOS only)
+- A reachable self-hosted vaehor instance for end-to-end feature work
 
-## Shell-only development
+Install the workspace from the repository root:
 
-Run the Vite dev server for native screens (bookmarks, settings, upload overlay):
+```bash
+pnpm install --frozen-lockfile
+```
+
+## Run the development build
+
+Start the Expo development server:
 
 ```bash
 pnpm mobile:dev
 ```
 
-Build and sync into native projects:
+Build and install the native development client on a connected device or simulator:
 
 ```bash
+pnpm mobile:android
+pnpm mobile:ios       # macOS with Xcode
+```
+
+Metro hot reload serves the React Native bundle to the installed development client. The configured self-hosted server is a separate backend origin; the client does not display that server's website as an app screen.
+
+The platform directories are generated from [`apps/mobile/app.config.ts`](../../apps/mobile/app.config.ts). Regenerate them after changing Expo native configuration:
+
+```bash
+pnpm mobile:prebuild
+```
+
+For a clean regeneration, which recreates the native project directories, run:
+
+```bash
+pnpm --filter @vaehor/mobile run prebuild:clean
+```
+
+## Test and typecheck
+
+The mobile test command runs the Vitest utility suite and the focused Jest/React Native shell suite:
+
+```bash
+pnpm mobile:test
+pnpm typecheck
 pnpm mobile:build
-pnpm mobile:sync
 ```
 
-Open the native IDE:
+The shell test covers server selection, loading, offline retry, recoverable errors, locale, and theme. The Vitest suite covers mobile API and utility behavior. These checks do not replace iOS and Android simulator or physical-device acceptance; consult the inventory for those open flows.
 
-```bash
-cd apps/mobile && pnpm exec cap open android
-# iOS (macOS): brew install cocoapods && pnpm exec cap add ios && pnpm exec cap open ios
-```
+## Local backend
 
-## Live reload on a physical device (R18)
-
-Point the WebView at your dev machine on the LAN instead of bundled `dist/` assets.
-
-1. Start the shell dev server (default Vite port **5173**):
-
-   ```bash
-   pnpm mobile:dev
-   ```
-
-2. Find your machine's LAN address (example: `192.168.1.42`).
-
-3. Export the URL and sync:
-
-   ```bash
-   export CAPACITOR_SERVER_URL="http://192.168.1.42:5173"
-   cd apps/mobile && CAPACITOR_SERVER_URL="$CAPACITOR_SERVER_URL" pnpm exec cap sync
-   ```
-
-4. Run on device from Android Studio or Xcode. The app loads the dev server; edits to `apps/mobile/src` hot-reload.
-
-5. **WebView content** still targets the operator server URL you configure in the app (your `pnpm dev` or staging host). Test against `http://YOUR_LAN_IP:3000` only if that origin is in the backend mobile CORS allowlist.
-
-Unset `CAPACITOR_SERVER_URL` (or omit it) before release builds so release bundles ship static assets from `dist/`.
-
-## Backend on the same network
-
-For end-to-end OAuth and upload tests against a local Next.js app:
+For backend work on a local network, bind Next.js to the LAN and use a reachable HTTPS development origin when testing device authentication:
 
 ```bash
 pnpm dev --hostname 0.0.0.0
 ```
 
-Use `http://YOUR_LAN_IP:3000` as the server bookmark. Production builds require HTTPS.
+Production servers must use HTTPS. Native product screens call the selected server's API; they do not display the hosted product website.
 
-## Tests
+## App identity
 
-```bash
-pnpm exec vitest run apps/mobile/__tests__
-```
+- Display name: `vaehor`
+- Bundle/application ID: `com.vaehor.mobile` on iOS and Android
+- URL scheme: `vaehor`
+- Version: `1.0.0` foundation version; increment the platform build numbers for release artifacts
 
 ## Related docs
 
+- [Parity inventory](./parity-inventory.md)
 - [Artifact release](./artifact-release.md)
 - [Operator Universal Links](./operator-universal-links.md)
-- [Deployment](../deployment.md) — Traefik TLS for staging/production
+- [Deployment](../deployment.md)

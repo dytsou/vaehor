@@ -68,6 +68,17 @@ async function loadAuth() {
   return authModule.auth;
 }
 
+async function loadRequestSession(
+  request: NextRequest,
+): Promise<Session | null> {
+  if (request.headers.has("authorization")) {
+    const { readMobileBearerSession } = await import("@/lib/mobile-auth");
+    return readMobileBearerSession(request);
+  }
+
+  return (await loadAuth())();
+}
+
 async function loadLogger() {
   const loggerModule = await import("@/lib/logger");
   return loggerModule.logger;
@@ -221,7 +232,7 @@ export function createRouteHandler<
     try {
       const session =
         role !== "public" || options.includeSession
-          ? await (await loadAuth())()
+          ? await loadRequestSession(request)
           : null;
 
       if (role !== "public" && !session?.user) {

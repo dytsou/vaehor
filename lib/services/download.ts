@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import path from "node:path";
 import type { ShareLink as DbShareLink } from "@/generated/prisma/client";
 import type { Session } from "next-auth";
-import { jwtVerify } from "jose";
 import { auth } from "@/auth";
 import { logActivity } from "@/lib/activityLogger";
 import { trackBandwidth } from "@/lib/analyticsTracker";
@@ -24,6 +23,7 @@ import {
   GOOGLE_DRIVE_API_BASE_URL,
 } from "@/lib/constants";
 import { applyDownloadCorsHeaders } from "@/lib/mobile-origins";
+import { hasFolderAccessTokenAccess } from "@/lib/services/folder-access-token";
 
 export interface DownloadContext {
   fileId: string;
@@ -186,36 +186,12 @@ async function tryGrantRestrictedAccessViaToken(
   accessTokenParam: string | null,
   session: Session | null,
 ): Promise<boolean> {
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.split(" ")[1] || accessTokenParam;
-
-  if (!token) {
-    return false;
-  }
-
-  try {
-    const secret = new TextEncoder().encode(process.env.SHARE_SECRET_KEY!);
-    const { payload } = await jwtVerify(token, secret);
-    const authorizedFolderId = payload.folderId as string;
-
-    if (!authorizedFolderId) {
-      return false;
-    }
-
-    const stillRestricted = await isAccessRestricted(
-      fileId,
-      [authorizedFolderId],
-      session?.user?.email,
-    );
-
-    return !stillRestricted;
-  } catch (error) {
-    logger.error(
-      { err: error },
-      "[Download Service] Token verification failed",
-    );
-    return false;
-  }
+  return hasFolderAccessTokenAccess(
+    request,
+    fileId,
+    session?.user?.email,
+    accessTokenParam,
+  );
 }
 
 async function validateLocalStorageDownloadAccess(

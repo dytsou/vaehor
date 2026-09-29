@@ -1,8 +1,15 @@
 /** Same-origin check for browser-initiated setup POSTs (Origin header). */
-export function isAllowedSetupRequestOrigin(request: Request): boolean {
+export function isAllowedSetupRequestOrigin(
+  request: Request,
+  options: { setupSecretVerified?: boolean } = {},
+): boolean {
   const origin = request.headers.get("origin");
   if (!origin) {
-    return false;
+    return (
+      options.setupSecretVerified === true &&
+      Boolean(process.env.SETUP_SECRET?.trim()) &&
+      Boolean(request.headers.get("x-setup-secret")?.trim())
+    );
   }
 
   try {

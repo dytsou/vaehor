@@ -1,0 +1,56 @@
+import type { ExpoConfig } from "expo/config";
+
+const config: ExpoConfig = {
+  name: "vaehor",
+  slug: "vaehor",
+  version: "1.0.0",
+  orientation: "portrait",
+  scheme: "vaehor",
+  platforms: ["ios", "android"],
+  userInterfaceStyle: "automatic",
+  icon: "./resources/icon.png",
+  plugins: [
+    "expo-router",
+    "expo-secure-store",
+    "expo-sharing",
+    "expo-video",
+    "expo-web-browser",
+    [
+      "expo-audio",
+      {
+        microphonePermission: false,
+        recordAudioAndroid: false,
+        enableBackgroundRecording: false,
+        enableBackgroundPlayback: true,
+      },
+    ],
+    [
+      "expo-local-authentication",
+      {
+        faceIDPermission:
+          "Allow Vaehor to use Face ID to unlock saved server sessions.",
+      },
+    ],
+  ],
+  ios: {
+    bundleIdentifier: "com.vaehor.mobile",
+    buildNumber: "1",
+    supportsTablet: true,
+    deploymentTarget: "16.4",
+    infoPlist: {
+      NSLocalNetworkUsageDescription:
+        "Vaehor connects to your chosen self-hosted server on your local network so you can browse, preview, download, and upload files.",
+    },
+  },
+  android: {
+    package: "com.vaehor.mobile",
+    versionCode: 1,
+    targetSdkVersion: 36,
+    adaptiveIcon: {
+      foregroundImage: "./resources/icon.png",
+      backgroundColor: "#f4f7f8",
+    },
+  },
+};
+
+export default config;

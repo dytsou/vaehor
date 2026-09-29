@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "next-auth";
-import { jwtVerify } from "jose";
 import { listAllFiles } from "@/lib/storage";
 import { ZeeFile } from "@/types/storage";
 import { isPrivateFolder } from "@/lib/auth";
@@ -9,6 +8,7 @@ import {
   getProtectedFolderIdsCached,
 } from "@/lib/securityUtils";
 import { RequestError, getErrorMessage } from "@/lib/errors";
+import { hasFolderAccessTokenAccess } from "@/lib/services/folder-access-token";
 import {
   authenticateShareRequest,
   shareGrantsAccessToFolder,
@@ -106,32 +106,6 @@ export async function resolveShareAccess(
   return { shareScoped: true, shareCtx: shareRes };
 }
 
-async function verifyFolderAccessToken(
-  token: string,
-  folderId: string,
-  userEmail: string | null | undefined,
-): Promise<boolean> {
-  try {
-    const secret = new TextEncoder().encode(process.env.SHARE_SECRET_KEY!);
-    const { payload } = await jwtVerify(token, secret);
-    const authorizedFolderId = payload.folderId as string;
-
-    if (!authorizedFolderId) {
-      return false;
-    }
-
-    const stillRestricted = await isAccessRestricted(
-      folderId,
-      [authorizedFolderId],
-      userEmail,
-    );
-    return !stillRestricted;
-  } catch (error) {
-    console.error("[Files API] Token verification failed:", error);
-    return false;
-  }
-}
-
 async function ensureLocalStorageAccess(
   request: NextRequest,
 ): Promise<NextResponse | null> {
@@ -156,11 +130,15 @@ async function ensureProtectedFolderAccess(
   folderId: string,
   userEmail: string | null | undefined,
 ): Promise<NextResponse | null> {
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.split(" ")[1];
-  const accessGranted = token
-    ? await verifyFolderAccessToken(token, folderId, userEmail)
-    : false;
+  const fallbackToken = request.cookies
+    .getAll()
+    .find(({ name }) => name.startsWith("folder_token_"))?.value;
+  const accessGranted = await hasFolderAccessTokenAccess(
+    request,
+    folderId,
+    userEmail,
+    fallbackToken,
+  );
 
   if (accessGranted || folderId.startsWith("local-storage:")) {
     return null;

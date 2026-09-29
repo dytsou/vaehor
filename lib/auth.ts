@@ -26,15 +26,17 @@ export async function checkLocalStorageAccess(
   const isProtected = config.localStorageAuthEnabled || !!dbProtected;
   if (!isProtected) return true;
 
-  const cookie = request.cookies.get("local_storage_token");
-  if (!cookie) return false;
+  const token =
+    request.headers.get("x-local-storage-token")?.trim() ||
+    request.cookies.get("local_storage_token")?.value;
+  if (!token) return false;
 
   const secret = getLocalStorageAuthSecret();
   if (!secret) return false;
 
   try {
-    await jwtVerify(cookie.value, secret);
-    return true;
+    const { payload } = await jwtVerify(token, secret);
+    return payload.unlocked === true;
   } catch {
     return false;
   }

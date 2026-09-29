@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "next-auth";
 import { getAnyFileDetails } from "@/lib/storage";
 import { isAccessRestricted } from "@/lib/securityUtils";
+import { hasFolderAccessTokenAccess } from "@/lib/services/folder-access-token";
 import {
   authenticateShareRequest,
   shareGrantsAccessToFile,
@@ -14,8 +15,7 @@ export type FileDetailsAuthResult = {
 };
 
 export type FileIdParseResult =
-  | { ok: true; fileId: string }
-  | { ok: false; error: NextResponse };
+  { ok: true; fileId: string } | { ok: false; error: NextResponse };
 
 export async function resolveFileDetailsAuth(
   request: NextRequest,
@@ -114,7 +114,10 @@ export async function ensureFileDetailsAccess(
 
   if (!isAdmin && !shareAuthOk) {
     const isRestricted = await isAccessRestricted(fileId);
-    if (isRestricted) {
+    const hasFolderTokenAccess = isRestricted
+      ? await hasFolderAccessTokenAccess(request, fileId, session?.user?.email)
+      : false;
+    if (isRestricted && !hasFolderTokenAccess) {
       return NextResponse.json({ error: "Access Denied" }, { status: 403 });
     }
   }
