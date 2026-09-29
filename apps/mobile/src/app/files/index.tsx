@@ -2102,58 +2102,56 @@ export default function FilesRoute() {
   );
 
   const renderSearchBox = () => (
-    <>
-      <View
-        style={[
-          styles.searchBox,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}
+    <View
+      style={[
+        styles.searchBox,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      <TextInput
+        accessibilityLabel="Search files in this folder"
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        placeholder={`Search in ${currentFolderName}`}
+        placeholderTextColor={colors.muted}
+        value={searchInput}
+        onChangeText={setSearchInput}
+        onSubmitEditing={() => {
+          cancelPendingListRequest();
+          selectedFileIdRef.current = null;
+          invalidateDownload();
+          leaveSelectionMode();
+          setShowingFavorites(false);
+          setActiveQuery(searchInput.trim());
+          setSelectedFile(null);
+          setFileDetails(null);
+          setDownloadedUri(null);
+          setPreviewText(null);
+        }}
+        style={[styles.searchInput, { color: colors.foreground }]}
+      />
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          cancelPendingListRequest();
+          selectedFileIdRef.current = null;
+          invalidateDownload();
+          leaveSelectionMode();
+          setShowingFavorites(false);
+          setActiveQuery(searchInput.trim());
+          setSelectedFile(null);
+          setFileDetails(null);
+          setDownloadedUri(null);
+          setPreviewText(null);
+        }}
       >
-        <TextInput
-          accessibilityLabel="Search files in this folder"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          placeholder={`Search in ${currentFolderName}`}
-          placeholderTextColor={colors.muted}
-          value={searchInput}
-          onChangeText={setSearchInput}
-          onSubmitEditing={() => {
-            cancelPendingListRequest();
-            selectedFileIdRef.current = null;
-            invalidateDownload();
-            leaveSelectionMode();
-            setShowingFavorites(false);
-            setActiveQuery(searchInput.trim());
-            setSelectedFile(null);
-            setFileDetails(null);
-            setDownloadedUri(null);
-            setPreviewText(null);
-          }}
-          style={[styles.searchInput, { color: colors.foreground }]}
-        />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            cancelPendingListRequest();
-            selectedFileIdRef.current = null;
-            invalidateDownload();
-            leaveSelectionMode();
-            setShowingFavorites(false);
-            setActiveQuery(searchInput.trim());
-            setSelectedFile(null);
-            setFileDetails(null);
-            setDownloadedUri(null);
-            setPreviewText(null);
-          }}
-        >
-          <Text style={styles.actionText}>Search</Text>
-        </Pressable>
-      </View>
-    </>
+        <Text style={styles.actionText}>Search</Text>
+      </Pressable>
+    </View>
   );
 
   const renderSelectionPanel = () => (
@@ -2247,38 +2245,36 @@ export default function FilesRoute() {
   );
 
   const renderBreadcrumbs = () => (
-    <>
-      <View style={styles.breadcrumbs}>
-        {shareActions.map((crumb, index) => (
-          <View key={`${crumb.id}-${index}`} style={styles.crumbPart}>
-            {index > 0 ? (
-              <Text style={[styles.crumbSeparator, { color: colors.muted }]}>
-                ›
-              </Text>
-            ) : null}
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => openCrumb(crumb.index)}
+    <View style={styles.breadcrumbs}>
+      {shareActions.map((crumb, index) => (
+        <View key={`${crumb.id}-${index}`} style={styles.crumbPart}>
+          {index > 0 ? (
+            <Text style={[styles.crumbSeparator, { color: colors.muted }]}>
+              ›
+            </Text>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => openCrumb(crumb.index)}
+          >
+            <Text
+              style={[
+                styles.crumbText,
+                {
+                  color:
+                    index === shareActions.length - 1
+                      ? colors.foreground
+                      : colors.accent,
+                },
+              ]}
+              numberOfLines={1}
             >
-              <Text
-                style={[
-                  styles.crumbText,
-                  {
-                    color:
-                      index === shareActions.length - 1
-                        ? colors.foreground
-                        : colors.accent,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {crumb.name}
-              </Text>
-            </Pressable>
-          </View>
-        ))}
-      </View>
-    </>
+              {crumb.name}
+            </Text>
+          </Pressable>
+        </View>
+      ))}
+    </View>
   );
 
   const renderCurrentFolderPin = () => (

@@ -37,10 +37,15 @@ export default function TrashRoute() {
   const [authorized, setAuthorized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = async (fetchImpl: ReturnType<typeof createServerFetch>) => {
-    const response = await fetchImpl("/api/trash");
+  const refresh = async (
+    fetchImpl: ReturnType<typeof createServerFetch> | null,
+  ) => {
+    const response = await fetchImpl?.("/api/trash");
+    if (!response) return;
     const payload = (await response.json().catch(() => null)) as
-      TrashedFile[] | { error?: unknown } | null;
+      | TrashedFile[]
+      | { error?: unknown }
+      | null;
     if (!response.ok || !Array.isArray(payload)) {
       throw new Error("Could not load the trash.");
     }
@@ -160,7 +165,7 @@ export default function TrashRoute() {
           <Pressable
             accessibilityRole="button"
             disabled={loading || working || !authorized}
-            onPress={() => apiRef.current && void refresh(apiRef.current)}
+            onPress={() => void refresh(apiRef.current)}
           >
             <Text style={styles.action}>Refresh</Text>
           </Pressable>
