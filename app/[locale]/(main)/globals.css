@@ -238,7 +238,7 @@ body.bulk-action-bar-visible {
 }
 
 media-player {
-  aspect-ratio: 16/9;
+  aspect-ratio: 16 / 9;
   background-color: black;
   border-radius: var(--radius);
   overflow: hidden;
@@ -247,7 +247,7 @@ media-player {
 
 @media (max-width: 768px) {
   media-player {
-    aspect-ratio: 16/9;
+    aspect-ratio: 16 / 9;
     height: auto;
     min-height: 200px;
 

@@ -4,7 +4,6 @@ packages:
 
 overrides:
   vite: 8.3.0
-  "@eslint/plugin-kit": 0.3.4
   "@auth/core": 0.41.3
   "@babel/core": 7.29.7
   "@babel/plugin-transform-modules-systemjs": 7.29.7

@@ -221,9 +221,7 @@ export function createRouteHandler<
     try {
       const session =
         role !== "public" || options.includeSession
-          ? await (
-              await loadAuth()
-            )()
+          ? await (await loadAuth())()
           : null;
 
       if (role !== "public" && !session?.user) {

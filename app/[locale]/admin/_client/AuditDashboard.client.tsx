@@ -45,11 +45,11 @@ export default function AuditDashboardClient(
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only fetch on the initial empty state.
   useEffect(() => {
     if (props.initialLogs.length === 0) {
       fetchLogs();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   let tbodyContent;

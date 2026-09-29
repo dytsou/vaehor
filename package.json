@@ -19,14 +19,15 @@
     "docker:prod": "docker compose up --build",
     "docker:stop": "docker compose down",
     "start": "dotenv -- next start",
-    "lint": "eslint .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
     "typecheck": "tsc --noEmit && tsc -p apps/mobile/tsconfig.json --noEmit",
     "typecheck:6": "tsc6 --noEmit",
-    "format:check": "prettier --check .",
-    "format:fix": "prettier --write .",
+    "format:check": "biome format . && prettier --check \"**/*.{html,md,mdx,yaml,yml}\"",
+    "format:fix": "biome format --write . && prettier --write \"**/*.{html,md,mdx,yaml,yml}\"",
     "check": "bash scripts/check-all.sh",
-    "check:all": "npm run typecheck && npm run format:check && npm run lint",
-    "fix:all": "npm run format:fix && npm run lint --fix",
+    "check:all": "pnpm typecheck && pnpm format:check && pnpm lint",
+    "fix:all": "pnpm format:fix && pnpm lint:fix",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:integration:entrypoint": "bash scripts/test-entrypoint-integration.sh",
@@ -35,7 +36,7 @@
     "ci:playwright:browsers": "playwright install chromium",
     "ci:playwright:browser-deps": "playwright install-deps chromium",
     "compile:openapi": "tsp compile docs/api/spec/entry.tsp --config docs/api/spec/tspconfig.yaml",
-    "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js",
+    "build:sdk": "pnpm compile:openapi && orval --config ./orval.config.js && biome format --write ./packages/sdk/src/orval/index.ts",
     "compile:sdk": "pnpm --filter @vaehor/sdk build",
     "mcp:build": "pnpm --filter @vaehor/mcp build",
     "mcp:dev": "pnpm --filter @vaehor/mcp dev",
@@ -53,10 +54,10 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "prettier --write"
+    "*.{js,jsx,mjs,ts,tsx,mts,cts,css,json,jsonc}": [
+      "biome check --write"
     ],
-    "*.{json,md}": [
+    "*.{html,md,mdx,yaml,yml}": [
       "prettier --write"
     ]
   },
@@ -120,7 +121,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.7",
+    "@biomejs/biome": "2.5.14",
     "@next/bundle-analyzer": "^16.3.5",
     "@playwright/test": "^1.63.0",
     "@redocly/cli": "^2.53.3",
@@ -132,8 +133,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@typescript-eslint/eslint-plugin": "^8.70.0",
-    "@typescript-eslint/parser": "^8.70.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@typespec/compiler": "^1.16.0",
     "@typespec/http": "^1.16.0",
     "@typespec/openapi": "^1.16.0",
@@ -145,15 +145,6 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "dotenv-cli": "^11.0.0",
-    "eslint": "^9.39.5",
-    "eslint-config-next": "^16.3.5",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-next": "^0.0.0",
-    "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
     "husky": "^9.1.7",
     "jsdom": "^30.1.0",
     "lint-staged": "^17.5.1",
@@ -162,9 +153,7 @@
     "prettier": "^3.9.8",
     "prisma": "^7.10.0",
     "tailwindcss": "^4.3.3",
-    "@typescript/native": "npm:typescript@^7.0.2",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.1"
   }
 }
