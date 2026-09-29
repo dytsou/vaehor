@@ -9,8 +9,7 @@ module.exports = {
       target: "./packages/sdk/src/orval/index.ts",
       client: "fetch",
       clean: true,
-      prettier: true,
+      prettier: false,
     },
   },
 };
-

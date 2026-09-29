@@ -34,12 +34,12 @@ export default function ActivityLogPageClient(
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only fetch on the initial empty state.
   useEffect(() => {
     // If server gave no logs (first load), try fetching once.
     if (props.initialLogs.length === 0) {
       refresh();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading && logs.length === 0) {

@@ -193,7 +193,7 @@ See [Deployment → Mobile app](#mobile-app-capacitor) and [docs/mobile/](docs/m
 <tr><td>Docker + Traefik</td><td>Containerization, auto-HTTPS reverse proxy</td></tr>
 <tr><td rowspan="4"><strong>Dev Tools</strong></td><td>TypeScript 7 (typecheck) / 6 (tooling API)</td><td>Type safety across the entire codebase</td></tr>
 <tr><td>Vitest + Playwright</td><td>Unit tests + end-to-end testing</td></tr>
-<tr><td>ESLint + Prettier + Husky</td><td>Linting, formatting, git hooks</td></tr>
+<tr><td>Biome + Prettier + Husky</td><td>Code linting and formatting, Markdown/YAML/HTML formatting, git hooks</td></tr>
 <tr><td>Capacitor 7</td><td>iOS/Android hybrid shell (`apps/mobile/`)</td></tr>
 </table>
 
@@ -340,8 +340,8 @@ pnpm dev:clean        # Delete .next cache
 pnpm dev:fresh        # Clean cache, then Turbopack
 pnpm build            # Production build
 pnpm typecheck        # TypeScript type checking
-pnpm lint             # ESLint
-pnpm format:check     # Prettier check
+pnpm lint             # Biome
+pnpm format:check     # Biome + Prettier for Markdown/YAML/HTML
 pnpm check:all        # Run all checks
 pnpm test             # Unit tests (Vitest)
 pnpm test:e2e         # E2E tests (Playwright)
@@ -828,6 +828,7 @@ docker compose logs vaehor --tail 50
 3. For bcrypt: ensure `ADMIN_PASSWORD_HASH` is a valid bcrypt hash
 4. Clear browser cookies and retry
 5. Check `docker compose logs vaehor` for `[Auth]` messages
+
 </details>
 
 <details>
@@ -867,6 +868,7 @@ pnpm exec prisma generate
 2. Check Google Drive API quota (default: 12,000 requests/min)
 3. Monitor with `docker compose exec vaehor sh -c "cat /proc/1/status | grep VmRSS"`
 4. Increase memory limit if needed: `NODE_OPTIONS=--max-old-space-size=512`
+
 </details>
 
 <details>
