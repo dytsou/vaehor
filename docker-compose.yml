@@ -65,10 +65,12 @@ services:
       - REDIS_URL=redis://redis:6379
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vaehor}?schema=public
       - NODE_OPTIONS=--max-old-space-size=384
+      - PRIVATE_SCHEDULED_UPLOADS_PATH=/app/.private-data/scheduled-uploads
     volumes:
       - .env:/app/.env
       - ./public/uploads:/app/public/uploads
       - ./storage:/app/storage
+      - scheduled_uploads_data:/app/.private-data/scheduled-uploads
     deploy:
       resources:
         limits:
@@ -122,6 +124,31 @@ services:
         limits:
           memory: 40M
 
+  scheduled-upload-poller:
+    image: curlimages/curl:8.10.1
+    container_name: vaehor-scheduled-upload-poller
+    restart: unless-stopped
+    environment:
+      - CRON_SECRET=${CRON_SECRET}
+      - SCHEDULED_UPLOAD_POLL_INTERVAL_SECONDS=${SCHEDULED_UPLOAD_POLL_INTERVAL_SECONDS:-10}
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      while true; do
+        if [ -n "$${CRON_SECRET}" ]; then
+          curl --fail --silent --show-error --max-time 20 -H "Authorization: Bearer $${CRON_SECRET}" http://vaehor:3000/api/cron/scheduled-uploads >/dev/null || echo "[scheduled-upload-poller] Worker tick failed."
+        else
+          echo "[scheduled-upload-poller] CRON_SECRET is empty. Skipping jobs."
+        fi
+        sleep "$${SCHEDULED_UPLOAD_POLL_INTERVAL_SECONDS:-10}"
+      done
+    depends_on:
+      vaehor:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 40M
+
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest
     container_name: duckdns
@@ -165,3 +192,4 @@ volumes:
   postgres_data:
   redis_data:
   traefik_data:
+  scheduled_uploads_data:

@@ -10,6 +10,22 @@ module.exports = {
       client: "fetch",
       clean: true,
       prettier: false,
+      override: {
+        operations: {
+          uploadToFileRequest: {
+            mutator: {
+              path: "./packages/sdk/src/mixed-upload-fetch.ts",
+              name: "mixedUploadFetch",
+            },
+          },
+          uploadFile: {
+            mutator: {
+              path: "./packages/sdk/src/mixed-upload-fetch.ts",
+              name: "mixedUploadFetch",
+            },
+          },
+        },
+      },
     },
   },
 };

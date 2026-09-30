@@ -18,6 +18,7 @@ import {
 } from "@/lib/activityLogger";
 import { REDIS_KEYS } from "@/lib/constants";
 import { db } from "@/lib/db";
+import { revokeEditorAccess } from "@/lib/services/auth-jwt";
 import { listSharedDrives, listSharedWithMeFolders } from "@/lib/drive";
 import { EVENT_PIPELINE_KEYS } from "@/lib/events/pipeline";
 import {
@@ -52,8 +53,9 @@ import { z } from "zod";
 const emailSchema = z.object({
   email: z
     .string()
+    .trim()
     .email("Invalid email format")
-    .transform((v) => v.trim()),
+    .transform((v) => v.toLowerCase()),
 });
 
 export async function getAdminStatsAction() {
@@ -115,9 +117,9 @@ export async function addEditorEmailAction(email: string) {
 export async function removeEditorEmailAction(email: string) {
   await requireAdminSession();
   const parsed = emailSchema.parse({ email });
-  await kv.srem(REDIS_KEYS.ADMIN_EDITORS, parsed.email);
+  const normalizedEmail = await revokeEditorAccess(parsed.email);
   revalidateTag("admin-editors", "max");
-  return { message: "Editor removed", email: parsed.email };
+  return { message: "Editor removed", email: normalizedEmail };
 }
 
 const activityLogQuerySchema = z.object({
