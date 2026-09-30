@@ -4,13 +4,7 @@
  * vaehor API
  * OpenAPI spec version: 0.0.0
  */
-
-function toSdkUploadBody(body: string | Blob | object): BodyInit {
-  if (typeof body === "string") return body;
-  if (typeof Blob !== "undefined" && body instanceof Blob) return body;
-  return JSON.stringify(body) ?? "";
-}
-
+import { mixedUploadFetch } from "../mixed-upload-fetch";
 export interface AccessRequestCreateRequest {
   folderId: string;
   folderName: string;
@@ -137,13 +131,40 @@ export interface AppConfig {
 
 export interface AuthenticateFolderRequest {
   folderId: string;
-  id: string;
+  id?: string;
   password: string;
 }
 
 export interface AuthenticateFolderResponse {
-  success: boolean;
-  token: string;
+  token?: string;
+}
+
+export interface CancelScheduledUploadAsAdminRequest {
+  scheduleId: string;
+}
+
+export type ScheduledUploadManifestItemKind =
+  (typeof ScheduledUploadManifestItemKind)[keyof typeof ScheduledUploadManifestItemKind];
+
+export const ScheduledUploadManifestItemKind = {
+  file: "file",
+  folder: "folder",
+} as const;
+
+export interface ScheduledUploadManifestItem {
+  path: string;
+  kind: ScheduledUploadManifestItemKind;
+  size: number;
+  sha256?: string;
+  contentType?: string;
+}
+
+export interface CreateScheduledUploadRequest {
+  destinationId: string;
+  scheduledLocalTime: string;
+  timeZone: string;
+  utcOffset: string;
+  items: ScheduledUploadManifestItem[];
 }
 
 export type ShareType = (typeof ShareType)[keyof typeof ShareType];
@@ -261,62 +282,6 @@ export interface HealthResponse {
   services?: HealthServices;
 }
 
-export interface MobileDrive {
-  id: string;
-  name: string;
-  isProtected: boolean;
-}
-
-export interface MobileDrivesResponse {
-  rootFolderId: string;
-  drives: MobileDrive[];
-  role: string;
-}
-
-export interface MobileFavoriteFile {
-  id: string;
-  name?: string;
-  mimeType?: string;
-  size?: string;
-  modifiedTime?: string;
-  createdTime?: string;
-  isFolder?: boolean;
-  isProtected?: boolean;
-  /** The nearest protected folder that gates access to this favorite, when applicable. */
-  protectedFolderId?: string;
-  parents?: string[];
-  trashed?: boolean;
-}
-
-export interface MobileFavoriteIdsResponse {
-  favoriteIds: string[];
-}
-
-export interface MobileFavoriteUpdateBody {
-  fileId: string;
-  isFavorite: boolean;
-}
-
-export interface MobileFavoriteUpdateResponse {
-  success: boolean;
-  isFavorite: boolean;
-}
-
-export interface MobileFavoritesResponse {
-  files: MobileFavoriteFile[];
-  nextPageToken?: string;
-}
-
-export interface MobileLocalStorageUnlockBody {
-  password: string;
-}
-
-export interface MobileLocalStorageUnlockResponse {
-  success: boolean;
-  protected: boolean;
-  token?: string;
-}
-
 export interface MobileOAuthCompleteBody {
   token: string;
 }
@@ -328,26 +293,6 @@ export interface MobileOAuthCompleteResponse {
 
 export interface MobileOAuthStateResponse {
   state: string;
-}
-
-export interface MobilePinBody {
-  folderId: string;
-}
-
-export interface MobilePinMutationResponse {
-  success: boolean;
-  isPinned: boolean;
-}
-
-export interface MobilePinnedFolder {
-  id: string;
-  name?: string;
-  mimeType?: string;
-  parents?: string[];
-}
-
-export interface MobilePinnedFoldersResponse {
-  folders: MobilePinnedFolder[];
 }
 
 export interface MobileSessionBootstrapMintBody {
@@ -366,19 +311,6 @@ export interface MobileSessionBootstrapRedeemResponse {
   sessionToken: string;
 }
 
-export interface MobileTagBody {
-  fileId: string;
-  tag: string;
-}
-
-export interface MobileTagMutationResponse {
-  success: boolean;
-}
-
-export interface MobileTagsResponse {
-  tags: string[];
-}
-
 export interface NotFoundResponse {
   [key: string]: unknown;
 }
@@ -395,6 +327,179 @@ export interface ResumableUploadInitBody {
   size: number;
 }
 
+export type ScheduledUploadCleanupStatus =
+  (typeof ScheduledUploadCleanupStatus)[keyof typeof ScheduledUploadCleanupStatus];
+
+export const ScheduledUploadCleanupStatus = {
+  NONE: "NONE",
+  PENDING: "PENDING",
+  COMPLETE: "COMPLETE",
+} as const;
+
+export type ScheduledUploadStatus =
+  (typeof ScheduledUploadStatus)[keyof typeof ScheduledUploadStatus];
+
+export const ScheduledUploadStatus = {
+  STAGING: "STAGING",
+  WAITING: "WAITING",
+  RELEASING: "RELEASING",
+  PARTIAL: "PARTIAL",
+  NEEDS_ATTENTION: "NEEDS_ATTENTION",
+  COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
+  ABANDONED: "ABANDONED",
+} as const;
+
+export type ScheduledUploadItemKind =
+  (typeof ScheduledUploadItemKind)[keyof typeof ScheduledUploadItemKind];
+
+export const ScheduledUploadItemKind = {
+  FILE: "FILE",
+  FOLDER: "FOLDER",
+} as const;
+
+export type ScheduledUploadItemStatus =
+  (typeof ScheduledUploadItemStatus)[keyof typeof ScheduledUploadItemStatus];
+
+export const ScheduledUploadItemStatus = {
+  PENDING: "PENDING",
+  STAGING: "STAGING",
+  STAGED: "STAGED",
+  UPLOADING: "UPLOADING",
+  COMPLETE: "COMPLETE",
+  FAILED: "FAILED",
+} as const;
+
+export interface ScheduledUploadItem {
+  id: string;
+  path: string;
+  kind: ScheduledUploadItemKind;
+  size: string;
+  uploadedBytes: string;
+  status: ScheduledUploadItemStatus;
+  /** @nullable */
+  contentType?: string | null;
+  /** @nullable */
+  stagedAt?: string | null;
+}
+
+export interface ScheduledUpload {
+  id: string;
+  creatorEmail: string;
+  destinationId: string;
+  scheduledAt: string;
+  scheduledLocalTime: string;
+  timeZone: string;
+  utcOffset: string;
+  status: ScheduledUploadStatus;
+  itemCount: number;
+  totalBytes: string;
+  stagedBytes: string;
+  /** @nullable */
+  stageCompleteAt?: string | null;
+  /** @nullable */
+  firstWriteAt?: string | null;
+  /** @nullable */
+  retryAfter?: string | null;
+  /** @nullable */
+  lastErrorCode?: string | null;
+  /** @nullable */
+  lastErrorMessage?: string | null;
+  cleanupStatus: ScheduledUploadCleanupStatus;
+  createdAt: string;
+  updatedAt: string;
+  items: ScheduledUploadItem[];
+}
+
+export type ScheduledUploadAdminAlertStatus =
+  (typeof ScheduledUploadAdminAlertStatus)[keyof typeof ScheduledUploadAdminAlertStatus];
+
+export const ScheduledUploadAdminAlertStatus = {
+  OPEN: "OPEN",
+  ACKNOWLEDGED: "ACKNOWLEDGED",
+  RESOLVED: "RESOLVED",
+} as const;
+
+export type ScheduledUploadAdminEmailStatus =
+  (typeof ScheduledUploadAdminEmailStatus)[keyof typeof ScheduledUploadAdminEmailStatus];
+
+export const ScheduledUploadAdminEmailStatus = {
+  PENDING: "PENDING",
+  SENDING: "SENDING",
+  SENT: "SENT",
+  FAILED: "FAILED",
+} as const;
+
+export interface ScheduledUploadAdminAlertSchedule {
+  id: string;
+  creatorEmail: string;
+  scheduledAt: string;
+  status: ScheduledUploadStatus;
+}
+
+export interface ScheduledUploadAdminAlert {
+  id: string;
+  scheduleId: string;
+  occurrence: number;
+  reasonCode: string;
+  status: ScheduledUploadAdminAlertStatus;
+  emailStatus: ScheduledUploadAdminEmailStatus;
+  emailAttempts: number;
+  /** @nullable */
+  emailRetryAfter?: string | null;
+  /** @nullable */
+  emailLastError?: string | null;
+  /** @nullable */
+  acknowledgedAt?: string | null;
+  /** @nullable */
+  acknowledgedByEmail?: string | null;
+  /** @nullable */
+  resolvedAt?: string | null;
+  /** @nullable */
+  resolvedByEmail?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  schedule: ScheduledUploadAdminAlertSchedule;
+}
+
+export interface ScheduledUploadAdminAlertsResponse {
+  alerts: ScheduledUploadAdminAlert[];
+}
+
+export interface ScheduledUploadLimits {
+  maxFileBytes: string;
+  maxPackageBytes: string;
+  maxItems: number;
+  reserveFreeBytes: string;
+}
+
+export interface ScheduledUploadCreateResponse {
+  schedule: ScheduledUpload;
+  limits: ScheduledUploadLimits;
+}
+
+export type ScheduledUploadItemStageResponseItem = {
+  itemId: string;
+  path: string;
+  status: ScheduledUploadItemStatus;
+  uploadedBytes: string;
+  size: string;
+  sha256: string;
+};
+
+export interface ScheduledUploadItemStageResponse {
+  item: ScheduledUploadItemStageResponseItem;
+}
+
+export interface ScheduledUploadListResponse {
+  items: ScheduledUpload[];
+  limits: ScheduledUploadLimits;
+}
+
+export interface ScheduledUploadResponse {
+  schedule: ScheduledUpload;
+}
+
 export type SearchType = (typeof SearchType)[keyof typeof SearchType];
 
 export const SearchType = {
@@ -405,8 +510,8 @@ export const SearchType = {
   all: "all",
 } as const;
 
-export interface SetupStatusResponse {
-  requiresSetupToken: boolean;
+export interface ServiceUnavailableErrorResponse {
+  body: Error;
 }
 
 export interface ShareDeleteRequest {
@@ -438,6 +543,29 @@ export interface UnauthorizedResponse {
   [key: string]: unknown;
 }
 
+export type UpdateScheduledUploadAdminAlertRequestStatus =
+  (typeof UpdateScheduledUploadAdminAlertRequestStatus)[keyof typeof UpdateScheduledUploadAdminAlertRequestStatus];
+
+export const UpdateScheduledUploadAdminAlertRequestStatus = {
+  ACKNOWLEDGED: "ACKNOWLEDGED",
+  RESOLVED: "RESOLVED",
+} as const;
+
+export interface UpdateScheduledUploadAdminAlertRequest {
+  alertId: string;
+  status: UpdateScheduledUploadAdminAlertRequestStatus;
+}
+
+export interface UpdateScheduledUploadAdminAlertResponse {
+  alert: ScheduledUploadAdminAlert;
+}
+
+export interface UpdateScheduledUploadTimeRequest {
+  scheduledLocalTime: string;
+  timeZone: string;
+  utcOffset: string;
+}
+
 export type UploadMode = (typeof UploadMode)[keyof typeof UploadMode];
 
 export const UploadMode = {
@@ -466,6 +594,10 @@ export type GetActivityLogsParams = {
   offset?: number;
 };
 
+export type ListScheduledUploadAdminAlertsParams = {
+  status?: ScheduledUploadAdminAlertStatus;
+};
+
 export type GetUserAccessParams = {
   email?: string;
 };
@@ -488,7 +620,6 @@ export type UploadToFileRequestParams = {
 
 export type GetFileDetailsParams = {
   fileId: string;
-  share_token?: string;
 };
 
 export type ListFilesParams = {
@@ -513,11 +644,6 @@ export type GetMetadataParams = {
   id?: string;
 };
 
-export type ListMobileFavoritesParams = {
-  idsOnly?: boolean;
-  pageToken?: string;
-};
-
 export type CompleteMobileOAuthGetParams = {
   state: string;
 };
@@ -525,10 +651,6 @@ export type CompleteMobileOAuthGetParams = {
 export type BootstrapMobileSessionGetParams = {
   token: string;
   redirect?: string;
-};
-
-export type ListMobileTagsParams = {
-  fileId: string;
 };
 
 export type GetOpenGraphImageParams = {
@@ -543,17 +665,10 @@ export type SearchFilesParams = {
   q: string;
   folderId: string;
   type?: SearchType;
-  share_token?: string;
 };
 
 export type GlobalSearchParams = {
   q: string;
-};
-
-export type NativeSetupOAuthCallbackParams = {
-  state: string;
-  code?: string;
-  error?: string;
 };
 
 export type GetSharedCollectionItemsParams = {
@@ -579,7 +694,8 @@ export type listAccessRequestsResponseError = listAccessRequestsResponse401 & {
 };
 
 export type listAccessRequestsResponse =
-  listAccessRequestsResponseSuccess | listAccessRequestsResponseError;
+  | listAccessRequestsResponseSuccess
+  | listAccessRequestsResponseError;
 
 export const getListAccessRequestsUrl = () => {
   return `/api/admin/access-requests`;
@@ -621,7 +737,8 @@ export type getActivityLogsResponseError = getActivityLogsResponse401 & {
 };
 
 export type getActivityLogsResponse =
-  getActivityLogsResponseSuccess | getActivityLogsResponseError;
+  | getActivityLogsResponseSuccess
+  | getActivityLogsResponseError;
 
 export const getGetActivityLogsUrl = (params?: GetActivityLogsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -679,7 +796,8 @@ export type getAdminAnalyticsResponseError = getAdminAnalyticsResponse401 & {
 };
 
 export type getAdminAnalyticsResponse =
-  getAdminAnalyticsResponseSuccess | getAdminAnalyticsResponseError;
+  | getAdminAnalyticsResponseSuccess
+  | getAdminAnalyticsResponseError;
 
 export const getGetAdminAnalyticsUrl = () => {
   return `/api/admin/analytics`;
@@ -759,6 +877,7 @@ export type trackAdminAnalyticsResponseSuccess =
   trackAdminAnalyticsResponse200 & {
     headers: Headers;
   };
+
 export type trackAdminAnalyticsResponse = trackAdminAnalyticsResponseSuccess;
 
 export const getTrackAdminAnalyticsUrl = () => {
@@ -830,7 +949,8 @@ export type getAdminAuditResponseError = getAdminAuditResponse401 & {
 };
 
 export type getAdminAuditResponse =
-  getAdminAuditResponseSuccess | getAdminAuditResponseError;
+  | getAdminAuditResponseSuccess
+  | getAdminAuditResponseError;
 
 export const getGetAdminAuditUrl = () => {
   return `/api/admin/audit`;
@@ -872,7 +992,8 @@ export type clearAdminAuditResponseError = clearAdminAuditResponse401 & {
 };
 
 export type clearAdminAuditResponse =
-  clearAdminAuditResponseSuccess | clearAdminAuditResponseError;
+  | clearAdminAuditResponseSuccess
+  | clearAdminAuditResponseError;
 
 export const getClearAdminAuditUrl = () => {
   return `/api/admin/audit`;
@@ -917,7 +1038,8 @@ export type getAdminCacheStatsResponseError = getAdminCacheStatsResponse401 & {
 };
 
 export type getAdminCacheStatsResponse =
-  getAdminCacheStatsResponseSuccess | getAdminCacheStatsResponseError;
+  | getAdminCacheStatsResponseSuccess
+  | getAdminCacheStatsResponseError;
 
 export const getGetAdminCacheStatsUrl = () => {
   return `/api/admin/cache-stats`;
@@ -959,7 +1081,8 @@ export type getConfigResponseError = getConfigResponse401 & {
 };
 
 export type getConfigResponse =
-  getConfigResponseSuccess | getConfigResponseError;
+  | getConfigResponseSuccess
+  | getConfigResponseError;
 
 export const getGetConfigUrl = () => {
   return `/api/admin/config`;
@@ -1004,7 +1127,8 @@ export type updateConfigResponseError = updateConfigResponse401 & {
 };
 
 export type updateConfigResponse =
-  updateConfigResponseSuccess | updateConfigResponseError;
+  | updateConfigResponseSuccess
+  | updateConfigResponseError;
 
 export const getUpdateConfigUrl = () => {
   return `/api/admin/config`;
@@ -1076,7 +1200,8 @@ export type scanAdminDrivesResponseError = scanAdminDrivesResponse401 & {
 };
 
 export type scanAdminDrivesResponse =
-  scanAdminDrivesResponseSuccess | scanAdminDrivesResponseError;
+  | scanAdminDrivesResponseSuccess
+  | scanAdminDrivesResponseError;
 
 export const getScanAdminDrivesUrl = () => {
   return `/api/admin/drives/scan`;
@@ -1118,7 +1243,8 @@ export type listEditorsResponseError = listEditorsResponse401 & {
 };
 
 export type listEditorsResponse =
-  listEditorsResponseSuccess | listEditorsResponseError;
+  | listEditorsResponseSuccess
+  | listEditorsResponseError;
 
 export const getListEditorsUrl = () => {
   return `/api/admin/editors`;
@@ -1163,7 +1289,8 @@ export type addEditorResponseError = addEditorResponse401 & {
 };
 
 export type addEditorResponse =
-  addEditorResponseSuccess | addEditorResponseError;
+  | addEditorResponseSuccess
+  | addEditorResponseError;
 
 export const getAddEditorUrl = () => {
   return `/api/admin/editors`;
@@ -1235,7 +1362,8 @@ export type removeEditorResponseError = removeEditorResponse401 & {
 };
 
 export type removeEditorResponse =
-  removeEditorResponseSuccess | removeEditorResponseError;
+  | removeEditorResponseSuccess
+  | removeEditorResponseError;
 
 export const getRemoveEditorUrl = () => {
   return `/api/admin/editors`;
@@ -1309,7 +1437,8 @@ export type getAdminIncidentsResponseError = getAdminIncidentsResponse401 & {
 };
 
 export type getAdminIncidentsResponse =
-  getAdminIncidentsResponseSuccess | getAdminIncidentsResponseError;
+  | getAdminIncidentsResponseSuccess
+  | getAdminIncidentsResponseError;
 
 export const getGetAdminIncidentsUrl = () => {
   return `/api/admin/incidents`;
@@ -1353,7 +1482,8 @@ export type evaluateAdminIncidentsResponseError =
   };
 
 export type evaluateAdminIncidentsResponse =
-  evaluateAdminIncidentsResponseSuccess | evaluateAdminIncidentsResponseError;
+  | evaluateAdminIncidentsResponseSuccess
+  | evaluateAdminIncidentsResponseError;
 
 export const getEvaluateAdminIncidentsUrl = () => {
   return `/api/admin/incidents/evaluate`;
@@ -1424,7 +1554,8 @@ export type getAdminLogsResponseError = getAdminLogsResponse401 & {
 };
 
 export type getAdminLogsResponse =
-  getAdminLogsResponseSuccess | getAdminLogsResponseError;
+  | getAdminLogsResponseSuccess
+  | getAdminLogsResponseError;
 
 export const getGetAdminLogsUrl = () => {
   return `/api/admin/logs`;
@@ -1468,7 +1599,8 @@ export type getAdminSecurityLogsResponseError =
   };
 
 export type getAdminSecurityLogsResponse =
-  getAdminSecurityLogsResponseSuccess | getAdminSecurityLogsResponseError;
+  | getAdminSecurityLogsResponseSuccess
+  | getAdminSecurityLogsResponseError;
 
 export const getGetAdminSecurityLogsUrl = () => {
   return `/api/admin/logs/security`;
@@ -1514,7 +1646,8 @@ export type listAdminManualDrivesResponseError =
   };
 
 export type listAdminManualDrivesResponse =
-  listAdminManualDrivesResponseSuccess | listAdminManualDrivesResponseError;
+  | listAdminManualDrivesResponseSuccess
+  | listAdminManualDrivesResponseError;
 
 export const getListAdminManualDrivesUrl = () => {
   return `/api/admin/manual-drives`;
@@ -1560,7 +1693,8 @@ export type addAdminManualDriveResponseError =
   };
 
 export type addAdminManualDriveResponse =
-  addAdminManualDriveResponseSuccess | addAdminManualDriveResponseError;
+  | addAdminManualDriveResponseSuccess
+  | addAdminManualDriveResponseError;
 
 export const getAddAdminManualDriveUrl = () => {
   return `/api/admin/manual-drives`;
@@ -1633,7 +1767,8 @@ export type deleteAdminManualDriveResponseError =
   };
 
 export type deleteAdminManualDriveResponse =
-  deleteAdminManualDriveResponseSuccess | deleteAdminManualDriveResponseError;
+  | deleteAdminManualDriveResponseSuccess
+  | deleteAdminManualDriveResponseError;
 
 export const getDeleteAdminManualDriveUrl = () => {
   return `/api/admin/manual-drives`;
@@ -1706,7 +1841,8 @@ export type listProtectedFoldersResponseError =
   };
 
 export type listProtectedFoldersResponse =
-  listProtectedFoldersResponseSuccess | listProtectedFoldersResponseError;
+  | listProtectedFoldersResponseSuccess
+  | listProtectedFoldersResponseError;
 
 export const getListProtectedFoldersUrl = () => {
   return `/api/admin/protected-folders`;
@@ -1752,7 +1888,8 @@ export type updateProtectedFoldersResponseError =
   };
 
 export type updateProtectedFoldersResponse =
-  updateProtectedFoldersResponseSuccess | updateProtectedFoldersResponseError;
+  | updateProtectedFoldersResponseSuccess
+  | updateProtectedFoldersResponseError;
 
 export const getUpdateProtectedFoldersUrl = () => {
   return `/api/admin/protected-folders`;
@@ -1825,7 +1962,8 @@ export type deleteProtectedFolderResponseError =
   };
 
 export type deleteProtectedFolderResponse =
-  deleteProtectedFolderResponseSuccess | deleteProtectedFolderResponseError;
+  | deleteProtectedFolderResponseSuccess
+  | deleteProtectedFolderResponseError;
 
 export const getDeleteProtectedFolderUrl = () => {
   return `/api/admin/protected-folders`;
@@ -1878,6 +2016,245 @@ export const deleteProtectedFolder = async (
   } as deleteProtectedFolderResponse;
 };
 
+export type listScheduledUploadAdminAlertsResponse200 = {
+  data: ScheduledUploadAdminAlertsResponse;
+  status: 200;
+};
+
+export type listScheduledUploadAdminAlertsResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listScheduledUploadAdminAlertsResponseSuccess =
+  listScheduledUploadAdminAlertsResponse200 & {
+    headers: Headers;
+  };
+export type listScheduledUploadAdminAlertsResponseError =
+  listScheduledUploadAdminAlertsResponse401 & {
+    headers: Headers;
+  };
+
+export type listScheduledUploadAdminAlertsResponse =
+  | listScheduledUploadAdminAlertsResponseSuccess
+  | listScheduledUploadAdminAlertsResponseError;
+
+export const getListScheduledUploadAdminAlertsUrl = (
+  params?: ListScheduledUploadAdminAlertsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/scheduled-uploads/alerts?${stringifiedParams}`
+    : `/api/admin/scheduled-uploads/alerts`;
+};
+
+/**
+ * List durable administrator alerts for private scheduled uploads.
+ */
+export const listScheduledUploadAdminAlerts = async (
+  params?: ListScheduledUploadAdminAlertsParams,
+  options?: RequestInit,
+): Promise<listScheduledUploadAdminAlertsResponse> => {
+  const res = await fetch(getListScheduledUploadAdminAlertsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listScheduledUploadAdminAlertsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listScheduledUploadAdminAlertsResponse;
+};
+
+export type updateScheduledUploadAdminAlertResponse200 = {
+  data: UpdateScheduledUploadAdminAlertResponse;
+  status: 200;
+};
+
+export type updateScheduledUploadAdminAlertResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type updateScheduledUploadAdminAlertResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type updateScheduledUploadAdminAlertResponseSuccess =
+  updateScheduledUploadAdminAlertResponse200 & {
+    headers: Headers;
+  };
+export type updateScheduledUploadAdminAlertResponseError = (
+  | updateScheduledUploadAdminAlertResponse401
+  | updateScheduledUploadAdminAlertResponse404
+) & {
+  headers: Headers;
+};
+
+export type updateScheduledUploadAdminAlertResponse =
+  | updateScheduledUploadAdminAlertResponseSuccess
+  | updateScheduledUploadAdminAlertResponseError;
+
+export const getUpdateScheduledUploadAdminAlertUrl = () => {
+  return `/api/admin/scheduled-uploads/alerts/update`;
+};
+
+/**
+ * Acknowledge or resolve one scheduled-upload administrator alert.
+ */
+export const updateScheduledUploadAdminAlert = async (
+  updateScheduledUploadAdminAlertRequest: UpdateScheduledUploadAdminAlertRequest,
+  options?: RequestInit,
+): Promise<updateScheduledUploadAdminAlertResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getUpdateScheduledUploadAdminAlertUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(updateScheduledUploadAdminAlertRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: updateScheduledUploadAdminAlertResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as updateScheduledUploadAdminAlertResponse;
+};
+
+export type cancelScheduledUploadAsAdminResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type cancelScheduledUploadAsAdminResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type cancelScheduledUploadAsAdminResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type cancelScheduledUploadAsAdminResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type cancelScheduledUploadAsAdminResponseSuccess =
+  cancelScheduledUploadAsAdminResponse200 & {
+    headers: Headers;
+  };
+export type cancelScheduledUploadAsAdminResponseError = (
+  | cancelScheduledUploadAsAdminResponse401
+  | cancelScheduledUploadAsAdminResponse404
+  | cancelScheduledUploadAsAdminResponse409
+) & {
+  headers: Headers;
+};
+
+export type cancelScheduledUploadAsAdminResponse =
+  | cancelScheduledUploadAsAdminResponseSuccess
+  | cancelScheduledUploadAsAdminResponseError;
+
+export const getCancelScheduledUploadAsAdminUrl = () => {
+  return `/api/admin/scheduled-uploads/cancel`;
+};
+
+/**
+ * Cancel a paused private package before its first Drive write.
+ */
+export const cancelScheduledUploadAsAdmin = async (
+  cancelScheduledUploadAsAdminRequest: CancelScheduledUploadAsAdminRequest,
+  options?: RequestInit,
+): Promise<cancelScheduledUploadAsAdminResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getCancelScheduledUploadAsAdminUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(cancelScheduledUploadAsAdminRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: cancelScheduledUploadAsAdminResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as cancelScheduledUploadAsAdminResponse;
+};
+
 export type getAdminStatsResponse200 = {
   data: unknown;
   status: 200;
@@ -1896,7 +2273,8 @@ export type getAdminStatsResponseError = getAdminStatsResponse401 & {
 };
 
 export type getAdminStatsResponse =
-  getAdminStatsResponseSuccess | getAdminStatsResponseError;
+  | getAdminStatsResponseSuccess
+  | getAdminStatsResponseError;
 
 export const getGetAdminStatsUrl = () => {
   return `/api/admin/stats`;
@@ -1940,7 +2318,8 @@ export type getAdminSystemHealthResponseError =
   };
 
 export type getAdminSystemHealthResponse =
-  getAdminSystemHealthResponseSuccess | getAdminSystemHealthResponseError;
+  | getAdminSystemHealthResponseSuccess
+  | getAdminSystemHealthResponseError;
 
 export const getGetAdminSystemHealthUrl = () => {
   return `/api/admin/system-health`;
@@ -1987,7 +2366,8 @@ export type getUserAccessResponseError = getUserAccessResponse401 & {
 };
 
 export type getUserAccessResponse =
-  getUserAccessResponseSuccess | getUserAccessResponseError;
+  | getUserAccessResponseSuccess
+  | getUserAccessResponseError;
 
 export const getGetUserAccessUrl = (params?: GetUserAccessParams) => {
   const normalizedParams = new URLSearchParams();
@@ -2043,7 +2423,8 @@ export type rotateUserPasswordResponseError = rotateUserPasswordResponse401 & {
 };
 
 export type rotateUserPasswordResponse =
-  rotateUserPasswordResponseSuccess | rotateUserPasswordResponseError;
+  | rotateUserPasswordResponseSuccess
+  | rotateUserPasswordResponseError;
 
 export const getRotateUserPasswordUrl = () => {
   return `/api/admin/user-password`;
@@ -2112,7 +2493,8 @@ export type listAdminsResponseError = listAdminsResponse401 & {
 };
 
 export type listAdminsResponse =
-  listAdminsResponseSuccess | listAdminsResponseError;
+  | listAdminsResponseSuccess
+  | listAdminsResponseError;
 
 export const getListAdminsUrl = () => {
   return `/api/admin/users`;
@@ -2224,7 +2606,8 @@ export type removeAdminResponseError = removeAdminResponse401 & {
 };
 
 export type removeAdminResponse =
-  removeAdminResponseSuccess | removeAdminResponseError;
+  | removeAdminResponseSuccess
+  | removeAdminResponseError;
 
 export const getRemoveAdminUrl = () => {
   return `/api/admin/users`;
@@ -2296,7 +2679,8 @@ export type archivePreviewResponseError = archivePreviewResponse401 & {
 };
 
 export type archivePreviewResponse =
-  archivePreviewResponseSuccess | archivePreviewResponseError;
+  | archivePreviewResponseSuccess
+  | archivePreviewResponseError;
 
 export const getArchivePreviewUrl = (params: ArchivePreviewParams) => {
   const normalizedParams = new URLSearchParams();
@@ -2351,7 +2735,8 @@ export type disable2faResponseError = disable2faResponse401 & {
 };
 
 export type disable2faResponse =
-  disable2faResponseSuccess | disable2faResponseError;
+  | disable2faResponseSuccess
+  | disable2faResponseError;
 
 export const getDisable2faUrl = () => {
   return `/api/auth/2fa/disable`;
@@ -2393,7 +2778,8 @@ export type generate2faSecretResponseError = generate2faSecretResponse401 & {
 };
 
 export type generate2faSecretResponse =
-  generate2faSecretResponseSuccess | generate2faSecretResponseError;
+  | generate2faSecretResponseSuccess
+  | generate2faSecretResponseError;
 
 export const getGenerate2faSecretUrl = () => {
   return `/api/auth/2fa/generate`;
@@ -2435,7 +2821,8 @@ export type get2faStatusResponseError = get2faStatusResponse401 & {
 };
 
 export type get2faStatusResponse =
-  get2faStatusResponseSuccess | get2faStatusResponseError;
+  | get2faStatusResponseSuccess
+  | get2faStatusResponseError;
 
 export const getGet2faStatusUrl = () => {
   return `/api/auth/2fa/status`;
@@ -2477,7 +2864,8 @@ export type verify2faCodeResponseError = verify2faCodeResponse401 & {
 };
 
 export type verify2faCodeResponse =
-  verify2faCodeResponseSuccess | verify2faCodeResponseError;
+  | verify2faCodeResponseSuccess
+  | verify2faCodeResponseError;
 
 export const getVerify2faCodeUrl = () => {
   return `/api/auth/2fa/verify`;
@@ -2538,37 +2926,24 @@ export type authenticateFolderResponse401 = {
   status: 401;
 };
 
-export type authenticateFolderResponse404 = {
-  data: Error;
-  status: 404;
-};
-
-export type authenticateFolderResponse429 = {
-  data: Error;
-  status: 429;
-};
-
 export type authenticateFolderResponseSuccess =
   authenticateFolderResponse200 & {
     headers: Headers;
   };
-export type authenticateFolderResponseError = (
-  | authenticateFolderResponse401
-  | authenticateFolderResponse404
-  | authenticateFolderResponse429
-) & {
+export type authenticateFolderResponseError = authenticateFolderResponse401 & {
   headers: Headers;
 };
 
 export type authenticateFolderResponse =
-  authenticateFolderResponseSuccess | authenticateFolderResponseError;
+  | authenticateFolderResponseSuccess
+  | authenticateFolderResponseError;
 
 export const getAuthenticateFolderUrl = () => {
   return `/api/auth/folder`;
 };
 
 /**
- * Validate a protected-folder ID and password and return a one-hour folder-scoped access token.
+ * Submit credentials to access a protected folder.
  */
 export const authenticateFolder = async (
   authenticateFolderRequest: AuthenticateFolderRequest,
@@ -2623,6 +2998,7 @@ export type localAuthCheckResponse200 = {
 export type localAuthCheckResponseSuccess = localAuthCheckResponse200 & {
   headers: Headers;
 };
+
 export type localAuthCheckResponse = localAuthCheckResponseSuccess;
 
 export const getLocalAuthCheckUrl = () => {
@@ -2692,7 +3068,8 @@ export type localAuthLogoutResponseError = localAuthLogoutResponse401 & {
 };
 
 export type localAuthLogoutResponse =
-  localAuthLogoutResponseSuccess | localAuthLogoutResponseError;
+  | localAuthLogoutResponseSuccess
+  | localAuthLogoutResponseError;
 
 export const getLocalAuthLogoutUrl = () => {
   return `/api/auth/local/logout`;
@@ -2736,7 +3113,8 @@ export type localAuthUnlockResponseError = localAuthUnlockResponse401 & {
 };
 
 export type localAuthUnlockResponse =
-  localAuthUnlockResponseSuccess | localAuthUnlockResponseError;
+  | localAuthUnlockResponseSuccess
+  | localAuthUnlockResponseError;
 
 export const getLocalAuthUnlockUrl = () => {
   return `/api/auth/local/unlock`;
@@ -2805,7 +3183,8 @@ export type getCurrentUserResponseError = getCurrentUserResponse401 & {
 };
 
 export type getCurrentUserResponse =
-  getCurrentUserResponseSuccess | getCurrentUserResponseError;
+  | getCurrentUserResponseSuccess
+  | getCurrentUserResponseError;
 
 export const getGetCurrentUserUrl = () => {
   return `/api/auth/me`;
@@ -2840,6 +3219,7 @@ export type getAuthStatusResponse200 = {
 export type getAuthStatusResponseSuccess = getAuthStatusResponse200 & {
   headers: Headers;
 };
+
 export type getAuthStatusResponse = getAuthStatusResponseSuccess;
 
 export const getGetAuthStatusUrl = () => {
@@ -2872,6 +3252,7 @@ export type nextAuthHandlerResponse200 = {
 export type nextAuthHandlerResponseSuccess = nextAuthHandlerResponse200 & {
   headers: Headers;
 };
+
 export type nextAuthHandlerResponse = nextAuthHandlerResponseSuccess;
 
 export const getNextAuthHandlerUrl = (nextauth: string) => {
@@ -2907,30 +3288,21 @@ export type bulkDownloadResponse401 = {
   status: 401;
 };
 
-export type bulkDownloadResponse413 = {
-  data: Error;
-  status: 413;
-};
-
 export type bulkDownloadResponseSuccess = bulkDownloadResponse200 & {
   headers: Headers;
 };
-export type bulkDownloadResponseError = (
-  bulkDownloadResponse401 | bulkDownloadResponse413
-) & {
+export type bulkDownloadResponseError = bulkDownloadResponse401 & {
   headers: Headers;
 };
 
 export type bulkDownloadResponse =
-  bulkDownloadResponseSuccess | bulkDownloadResponseError;
+  | bulkDownloadResponseSuccess
+  | bulkDownloadResponseError;
 
 export const getBulkDownloadUrl = () => {
   return `/api/bulk-download`;
 };
 
-/**
- * Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.
- */
 export const bulkDownload = async (
   bulkDownloadBody: unknown,
   options?: RequestInit,
@@ -2994,7 +3366,8 @@ export type clearCacheResponseError = clearCacheResponse401 & {
 };
 
 export type clearCacheResponse =
-  clearCacheResponseSuccess | clearCacheResponseError;
+  | clearCacheResponseSuccess
+  | clearCacheResponseError;
 
 export const getClearCacheUrl = () => {
   return `/api/clearcache`;
@@ -3053,6 +3426,7 @@ export type getConfigLegacyResponse200 = {
 export type getConfigLegacyResponseSuccess = getConfigLegacyResponse200 & {
   headers: Headers;
 };
+
 export type getConfigLegacyResponse = getConfigLegacyResponseSuccess;
 
 export const getGetConfigLegacyUrl = () => {
@@ -3085,6 +3459,7 @@ export type getPublicConfigResponse200 = {
 export type getPublicConfigResponseSuccess = getPublicConfigResponse200 & {
   headers: Headers;
 };
+
 export type getPublicConfigResponse = getPublicConfigResponseSuccess;
 
 export const getGetPublicConfigUrl = () => {
@@ -3129,7 +3504,8 @@ export type cronIncidentMonitorResponseError =
   };
 
 export type cronIncidentMonitorResponse =
-  cronIncidentMonitorResponseSuccess | cronIncidentMonitorResponseError;
+  | cronIncidentMonitorResponseSuccess
+  | cronIncidentMonitorResponseError;
 
 export const getCronIncidentMonitorUrl = () => {
   return `/api/cron/incident-monitor`;
@@ -3173,7 +3549,8 @@ export type cronStorageCheckResponseError = cronStorageCheckResponse401 & {
 };
 
 export type cronStorageCheckResponse =
-  cronStorageCheckResponseSuccess | cronStorageCheckResponseError;
+  | cronStorageCheckResponseSuccess
+  | cronStorageCheckResponseError;
 
 export const getCronStorageCheckUrl = () => {
   return `/api/cron/storage-check`;
@@ -3215,7 +3592,8 @@ export type cronWeeklyReportResponseError = cronWeeklyReportResponse401 & {
 };
 
 export type cronWeeklyReportResponse =
-  cronWeeklyReportResponseSuccess | cronWeeklyReportResponseError;
+  | cronWeeklyReportResponseSuccess
+  | cronWeeklyReportResponseError;
 
 export const getCronWeeklyReportUrl = () => {
   return `/api/cron/weekly-report`;
@@ -3257,7 +3635,8 @@ export type getDataUsageResponseError = getDataUsageResponse401 & {
 };
 
 export type getDataUsageResponse =
-  getDataUsageResponseSuccess | getDataUsageResponseError;
+  | getDataUsageResponseSuccess
+  | getDataUsageResponseError;
 
 export const getGetDataUsageUrl = () => {
   return `/api/datausage`;
@@ -3305,13 +3684,16 @@ export type downloadFileResponseSuccess = downloadFileResponse200 & {
   headers: Headers;
 };
 export type downloadFileResponseError = (
-  downloadFileResponse302 | downloadFileResponse401 | downloadFileResponse404
+  | downloadFileResponse302
+  | downloadFileResponse401
+  | downloadFileResponse404
 ) & {
   headers: Headers;
 };
 
 export type downloadFileResponse =
-  downloadFileResponseSuccess | downloadFileResponseError;
+  | downloadFileResponseSuccess
+  | downloadFileResponseError;
 
 export const getDownloadFileUrl = (params: DownloadFileParams) => {
   const normalizedParams = new URLSearchParams();
@@ -3369,7 +3751,8 @@ export type getEventsResponseError = getEventsResponse401 & {
 };
 
 export type getEventsResponse =
-  getEventsResponseSuccess | getEventsResponseError;
+  | getEventsResponseSuccess
+  | getEventsResponseError;
 
 export const getGetEventsUrl = () => {
   return `/api/events`;
@@ -3411,7 +3794,8 @@ export type createFileRequestResponseError = createFileRequestResponse401 & {
 };
 
 export type createFileRequestResponse =
-  createFileRequestResponseSuccess | createFileRequestResponseError;
+  | createFileRequestResponseSuccess
+  | createFileRequestResponseError;
 
 export const getCreateFileRequestUrl = () => {
   return `/api/file-request`;
@@ -3482,7 +3866,8 @@ export type uploadToFileRequestResponseError =
   };
 
 export type uploadToFileRequestResponse =
-  uploadToFileRequestResponseSuccess | uploadToFileRequestResponseError;
+  | uploadToFileRequestResponseSuccess
+  | uploadToFileRequestResponseError;
 
 export const getUploadToFileRequestUrl = (
   params: UploadToFileRequestParams,
@@ -3505,24 +3890,16 @@ export const getUploadToFileRequestUrl = (
 export const uploadToFileRequest = async (
   uploadToFileRequestBody: FileRequestUploadInitRequest | string | Blob,
   params: UploadToFileRequestParams,
-  options?: RequestInit,
+  options?: Parameters<typeof mixedUploadFetch>[1],
 ): Promise<uploadToFileRequestResponse> => {
-  const res = await fetch(getUploadToFileRequestUrl(params), {
-    ...options,
-    method: "POST",
-    body: toSdkUploadBody(uploadToFileRequestBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: uploadToFileRequestResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as uploadToFileRequestResponse;
+  return mixedUploadFetch<uploadToFileRequestResponse>(
+    getUploadToFileRequestUrl(params),
+    {
+      ...options,
+      method: "POST",
+      body: uploadToFileRequestBody,
+    },
+  );
 };
 
 export type getFileRequestResponse200 = {
@@ -3533,6 +3910,7 @@ export type getFileRequestResponse200 = {
 export type getFileRequestResponseSuccess = getFileRequestResponse200 & {
   headers: Headers;
 };
+
 export type getFileRequestResponse = getFileRequestResponseSuccess;
 
 export const getGetFileRequestUrl = (token: string) => {
@@ -3563,27 +3941,11 @@ export type getFileDetailsResponse200 = {
   status: 200;
 };
 
-export type getFileDetailsResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type getFileDetailsResponse404 = {
-  data: Error;
-  status: 404;
-};
-
 export type getFileDetailsResponseSuccess = getFileDetailsResponse200 & {
   headers: Headers;
 };
-export type getFileDetailsResponseError = (
-  getFileDetailsResponse401 | getFileDetailsResponse404
-) & {
-  headers: Headers;
-};
 
-export type getFileDetailsResponse =
-  getFileDetailsResponseSuccess | getFileDetailsResponseError;
+export type getFileDetailsResponse = getFileDetailsResponseSuccess;
 
 export const getGetFileDetailsUrl = (params: GetFileDetailsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -3642,13 +4004,15 @@ export type listFilesResponseSuccess = listFilesResponse200 & {
   headers: Headers;
 };
 export type listFilesResponseError = (
-  listFilesResponse401 | listFilesResponse404
+  | listFilesResponse401
+  | listFilesResponse404
 ) & {
   headers: Headers;
 };
 
 export type listFilesResponse =
-  listFilesResponseSuccess | listFilesResponseError;
+  | listFilesResponseSuccess
+  | listFilesResponseError;
 
 export const getListFilesUrl = (params: ListFilesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -3706,7 +4070,8 @@ export type bulkDeleteFilesResponseError = bulkDeleteFilesResponse401 & {
 };
 
 export type bulkDeleteFilesResponse =
-  bulkDeleteFilesResponseSuccess | bulkDeleteFilesResponseError;
+  | bulkDeleteFilesResponseSuccess
+  | bulkDeleteFilesResponseError;
 
 export const getBulkDeleteFilesUrl = () => {
   return `/api/files/bulk-delete`;
@@ -3775,7 +4140,8 @@ export type bulkMoveFilesResponseError = bulkMoveFilesResponse401 & {
 };
 
 export type bulkMoveFilesResponse =
-  bulkMoveFilesResponseSuccess | bulkMoveFilesResponseError;
+  | bulkMoveFilesResponseSuccess
+  | bulkMoveFilesResponseError;
 
 export const getBulkMoveFilesUrl = () => {
   return `/api/files/bulk-move`;
@@ -3908,14 +4274,15 @@ export type deleteFileResponseError = deleteFileResponse401 & {
 };
 
 export type deleteFileResponse =
-  deleteFileResponseSuccess | deleteFileResponseError;
+  | deleteFileResponseSuccess
+  | deleteFileResponseError;
 
 export const getDeleteFileUrl = () => {
   return `/api/files/delete`;
 };
 
 /**
- * Move a file to trash with the required server-side permission.
+ * Move file to trash (Admin only).
  */
 export const deleteFile = async (
   deleteFileRequest: DeleteFileRequest,
@@ -4044,14 +4411,15 @@ export type renameFileResponseError = renameFileResponse401 & {
 };
 
 export type renameFileResponse =
-  renameFileResponseSuccess | renameFileResponseError;
+  | renameFileResponseSuccess
+  | renameFileResponseError;
 
 export const getRenameFileUrl = () => {
   return `/api/files/rename`;
 };
 
 /**
- * Rename a file or folder with the required server-side permission.
+ * Rename a file or folder (Admin only).
  */
 export const renameFile = async (
   renameFileRequest: RenameFileRequest,
@@ -4117,7 +4485,8 @@ export type updateFileMetadataResponseError = updateFileMetadataResponse401 & {
 };
 
 export type updateFileMetadataResponse =
-  updateFileMetadataResponseSuccess | updateFileMetadataResponseError;
+  | updateFileMetadataResponseSuccess
+  | updateFileMetadataResponseError;
 
 export const getUpdateFileMetadataUrl = () => {
   return `/api/files/update`;
@@ -4186,7 +4555,8 @@ export type updateFileMediaResponseError = updateFileMediaResponse401 & {
 };
 
 export type updateFileMediaResponse =
-  updateFileMediaResponseSuccess | updateFileMediaResponseError;
+  | updateFileMediaResponseSuccess
+  | updateFileMediaResponseError;
 
 export const getUpdateFileMediaUrl = () => {
   return `/api/files/update-media`;
@@ -4256,13 +4626,15 @@ export type uploadFileResponseSuccess = uploadFileResponse200 & {
   headers: Headers;
 };
 export type uploadFileResponseError = (
-  uploadFileResponse401 | uploadFileResponse403
+  | uploadFileResponse401
+  | uploadFileResponse403
 ) & {
   headers: Headers;
 };
 
 export type uploadFileResponse =
-  uploadFileResponseSuccess | uploadFileResponseError;
+  | uploadFileResponseSuccess
+  | uploadFileResponseError;
 
 export const getUploadFileUrl = (params: UploadFileParams) => {
   const normalizedParams = new URLSearchParams();
@@ -4281,27 +4653,18 @@ export const getUploadFileUrl = (params: UploadFileParams) => {
 };
 
 /**
- * Initialize or send a chunk for an upload by an authenticated user with upload access.
+ * Upload a file to Google Drive (Admin only).
  */
 export const uploadFile = async (
   uploadFileBody: ResumableUploadInitBody | string | Blob,
   params: UploadFileParams,
-  options?: RequestInit,
+  options?: Parameters<typeof mixedUploadFetch>[1],
 ): Promise<uploadFileResponse> => {
-  const res = await fetch(getUploadFileUrl(params), {
+  return mixedUploadFetch<uploadFileResponse>(getUploadFileUrl(params), {
     ...options,
     method: "POST",
-    body: toSdkUploadBody(uploadFileBody),
+    body: uploadFileBody,
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: uploadFileResponse["data"] = body ? JSON.parse(body) : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as uploadFileResponse;
 };
 
 export type listFileRevisionsResponse200 = {
@@ -4322,7 +4685,8 @@ export type listFileRevisionsResponseError = listFileRevisionsResponse401 & {
 };
 
 export type listFileRevisionsResponse =
-  listFileRevisionsResponseSuccess | listFileRevisionsResponseError;
+  | listFileRevisionsResponseSuccess
+  | listFileRevisionsResponseError;
 
 export const getListFileRevisionsUrl = (fileId: string) => {
   return `/api/files/${fileId}/revisions`;
@@ -4365,7 +4729,8 @@ export type createFolderResponseError = createFolderResponse401 & {
 };
 
 export type createFolderResponse =
-  createFolderResponseSuccess | createFolderResponseError;
+  | createFolderResponseSuccess
+  | createFolderResponseError;
 
 export const getCreateFolderUrl = () => {
   return `/api/folder/create`;
@@ -4424,6 +4789,7 @@ export type getFolderPathResponse200 = {
 export type getFolderPathResponseSuccess = getFolderPathResponse200 & {
   headers: Headers;
 };
+
 export type getFolderPathResponse = getFolderPathResponseSuccess;
 
 export const getGetFolderPathUrl = (params: GetFolderPathParams) => {
@@ -4479,7 +4845,8 @@ export type healthCheckResponseError = healthCheckResponse503 & {
 };
 
 export type healthCheckResponse =
-  healthCheckResponseSuccess | healthCheckResponseError;
+  | healthCheckResponseSuccess
+  | healthCheckResponseError;
 
 export const getHealthCheckUrl = () => {
   return `/api/health`;
@@ -4514,6 +4881,7 @@ export type getMetadataResponse200 = {
 export type getMetadataResponseSuccess = getMetadataResponse200 & {
   headers: Headers;
 };
+
 export type getMetadataResponse = getMetadataResponseSuccess;
 
 export const getGetMetadataUrl = (params?: GetMetadataParams) => {
@@ -4551,303 +4919,6 @@ export const getMetadata = async (
   } as getMetadataResponse;
 };
 
-export type listMobileDrivesResponse200 = {
-  data: MobileDrivesResponse;
-  status: 200;
-};
-
-export type listMobileDrivesResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type listMobileDrivesResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type listMobileDrivesResponseSuccess = listMobileDrivesResponse200 & {
-  headers: Headers;
-};
-export type listMobileDrivesResponseError = (
-  listMobileDrivesResponse401 | listMobileDrivesResponse503
-) & {
-  headers: Headers;
-};
-
-export type listMobileDrivesResponse =
-  listMobileDrivesResponseSuccess | listMobileDrivesResponseError;
-
-export const getListMobileDrivesUrl = () => {
-  return `/api/mobile/drives`;
-};
-
-/**
- * List the configured file roots available to the signed-in mobile user.
- */
-export const listMobileDrives = async (
-  options?: RequestInit,
-): Promise<listMobileDrivesResponse> => {
-  const res = await fetch(getListMobileDrivesUrl(), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listMobileDrivesResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listMobileDrivesResponse;
-};
-
-export type listMobileFavoritesResponse200 = {
-  data: MobileFavoritesResponse | MobileFavoriteIdsResponse;
-  status: 200;
-};
-
-export type listMobileFavoritesResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type listMobileFavoritesResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type listMobileFavoritesResponseSuccess =
-  listMobileFavoritesResponse200 & {
-    headers: Headers;
-  };
-export type listMobileFavoritesResponseError = (
-  listMobileFavoritesResponse401 | listMobileFavoritesResponse503
-) & {
-  headers: Headers;
-};
-
-export type listMobileFavoritesResponse =
-  listMobileFavoritesResponseSuccess | listMobileFavoritesResponseError;
-
-export const getListMobileFavoritesUrl = (
-  params?: ListMobileFavoritesParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/mobile/favorites?${stringifiedParams}`
-    : `/api/mobile/favorites`;
-};
-
-/**
- * List a page of the signed-in user's favorite files, or only their IDs for native-client state.
- */
-export const listMobileFavorites = async (
-  params?: ListMobileFavoritesParams,
-  options?: RequestInit,
-): Promise<listMobileFavoritesResponse> => {
-  const res = await fetch(getListMobileFavoritesUrl(params), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listMobileFavoritesResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listMobileFavoritesResponse;
-};
-
-export type setMobileFavoriteResponse200 = {
-  data: MobileFavoriteUpdateResponse;
-  status: 200;
-};
-
-export type setMobileFavoriteResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type setMobileFavoriteResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type setMobileFavoriteResponseSuccess = setMobileFavoriteResponse200 & {
-  headers: Headers;
-};
-export type setMobileFavoriteResponseError = (
-  setMobileFavoriteResponse401 | setMobileFavoriteResponse503
-) & {
-  headers: Headers;
-};
-
-export type setMobileFavoriteResponse =
-  setMobileFavoriteResponseSuccess | setMobileFavoriteResponseError;
-
-export const getSetMobileFavoriteUrl = () => {
-  return `/api/mobile/favorites`;
-};
-
-/**
- * Add or remove a favorite for the signed-in native user.
- */
-export const setMobileFavorite = async (
-  mobileFavoriteUpdateBody: MobileFavoriteUpdateBody,
-  options?: RequestInit,
-): Promise<setMobileFavoriteResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getSetMobileFavoriteUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobileFavoriteUpdateBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: setMobileFavoriteResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as setMobileFavoriteResponse;
-};
-
-export type unlockMobileLocalStorageResponse200 = {
-  data: MobileLocalStorageUnlockResponse;
-  status: 200;
-};
-
-export type unlockMobileLocalStorageResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type unlockMobileLocalStorageResponse403 = {
-  data: Error;
-  status: 403;
-};
-
-export type unlockMobileLocalStorageResponse429 = {
-  data: Error;
-  status: 429;
-};
-
-export type unlockMobileLocalStorageResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type unlockMobileLocalStorageResponseSuccess =
-  unlockMobileLocalStorageResponse200 & {
-    headers: Headers;
-  };
-export type unlockMobileLocalStorageResponseError = (
-  | unlockMobileLocalStorageResponse401
-  | unlockMobileLocalStorageResponse403
-  | unlockMobileLocalStorageResponse429
-  | unlockMobileLocalStorageResponse503
-) & {
-  headers: Headers;
-};
-
-export type unlockMobileLocalStorageResponse =
-  | unlockMobileLocalStorageResponseSuccess
-  | unlockMobileLocalStorageResponseError;
-
-export const getUnlockMobileLocalStorageUrl = () => {
-  return `/api/mobile/local-storage/unlock`;
-};
-
-/**
- * Verify local storage access for a signed-in native client and return a short-lived token for SecureStore-backed requests.
- */
-export const unlockMobileLocalStorage = async (
-  mobileLocalStorageUnlockBody: MobileLocalStorageUnlockBody,
-  options?: RequestInit,
-): Promise<unlockMobileLocalStorageResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getUnlockMobileLocalStorageUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobileLocalStorageUnlockBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: unlockMobileLocalStorageResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as unlockMobileLocalStorageResponse;
-};
-
 export type completeMobileOAuthGetResponse302 = {
   data: void;
   status: 302;
@@ -4857,9 +4928,9 @@ export type completeMobileOAuthGetResponse401 = {
   data: Error;
   status: 401;
 };
-
 export type completeMobileOAuthGetResponseError = (
-  completeMobileOAuthGetResponse302 | completeMobileOAuthGetResponse401
+  | completeMobileOAuthGetResponse302
+  | completeMobileOAuthGetResponse401
 ) & {
   headers: Headers;
 };
@@ -4929,14 +5000,15 @@ export type completeMobileOAuthPostResponseError =
   };
 
 export type completeMobileOAuthPostResponse =
-  completeMobileOAuthPostResponseSuccess | completeMobileOAuthPostResponseError;
+  | completeMobileOAuthPostResponseSuccess
+  | completeMobileOAuthPostResponseError;
 
 export const getCompleteMobileOAuthPostUrl = () => {
   return `/api/mobile/oauth-complete`;
 };
 
 /**
- * Redeem the one-time exchange token returned through the native OAuth callback.
+ * Redeem exchange token from the custom-scheme callback; returns bootstrap material for the shell.
  */
 export const completeMobileOAuthPost = async (
   mobileOAuthCompleteBody: MobileOAuthCompleteBody,
@@ -4994,6 +5066,7 @@ export type createMobileOAuthStateResponseSuccess =
   createMobileOAuthStateResponse200 & {
     headers: Headers;
   };
+
 export type createMobileOAuthStateResponse =
   createMobileOAuthStateResponseSuccess;
 
@@ -5002,7 +5075,7 @@ export const getCreateMobileOAuthStateUrl = () => {
 };
 
 /**
- * Create a one-time OAuth state for React Native Google sign-in through the system browser.
+ * Create a one-time OAuth state for Capacitor native Google sign-in.
  */
 export const createMobileOAuthState = async (
   options?: RequestInit,
@@ -5024,219 +5097,6 @@ export const createMobileOAuthState = async (
   } as createMobileOAuthStateResponse;
 };
 
-export type listMobilePinnedFoldersResponse200 = {
-  data: MobilePinnedFoldersResponse;
-  status: 200;
-};
-
-export type listMobilePinnedFoldersResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type listMobilePinnedFoldersResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type listMobilePinnedFoldersResponseSuccess =
-  listMobilePinnedFoldersResponse200 & {
-    headers: Headers;
-  };
-export type listMobilePinnedFoldersResponseError = (
-  listMobilePinnedFoldersResponse401 | listMobilePinnedFoldersResponse503
-) & {
-  headers: Headers;
-};
-
-export type listMobilePinnedFoldersResponse =
-  listMobilePinnedFoldersResponseSuccess | listMobilePinnedFoldersResponseError;
-
-export const getListMobilePinnedFoldersUrl = () => {
-  return `/api/mobile/pins`;
-};
-
-/**
- * List pinned folders for the signed-in native user.
- */
-export const listMobilePinnedFolders = async (
-  options?: RequestInit,
-): Promise<listMobilePinnedFoldersResponse> => {
-  const res = await fetch(getListMobilePinnedFoldersUrl(), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listMobilePinnedFoldersResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listMobilePinnedFoldersResponse;
-};
-
-export type addMobilePinResponse200 = {
-  data: MobilePinMutationResponse;
-  status: 200;
-};
-
-export type addMobilePinResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type addMobilePinResponse403 = {
-  data: Error;
-  status: 403;
-};
-
-export type addMobilePinResponseSuccess = addMobilePinResponse200 & {
-  headers: Headers;
-};
-export type addMobilePinResponseError = (
-  addMobilePinResponse401 | addMobilePinResponse403
-) & {
-  headers: Headers;
-};
-
-export type addMobilePinResponse =
-  addMobilePinResponseSuccess | addMobilePinResponseError;
-
-export const getAddMobilePinUrl = () => {
-  return `/api/mobile/pins`;
-};
-
-/**
- * Pin a folder. Requires the server administrator role.
- */
-export const addMobilePin = async (
-  mobilePinBody: MobilePinBody,
-  options?: RequestInit,
-): Promise<addMobilePinResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getAddMobilePinUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobilePinBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: addMobilePinResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as addMobilePinResponse;
-};
-
-export type removeMobilePinResponse200 = {
-  data: MobilePinMutationResponse;
-  status: 200;
-};
-
-export type removeMobilePinResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type removeMobilePinResponse403 = {
-  data: Error;
-  status: 403;
-};
-
-export type removeMobilePinResponseSuccess = removeMobilePinResponse200 & {
-  headers: Headers;
-};
-export type removeMobilePinResponseError = (
-  removeMobilePinResponse401 | removeMobilePinResponse403
-) & {
-  headers: Headers;
-};
-
-export type removeMobilePinResponse =
-  removeMobilePinResponseSuccess | removeMobilePinResponseError;
-
-export const getRemoveMobilePinUrl = () => {
-  return `/api/mobile/pins`;
-};
-
-/**
- * Unpin a folder. Requires the server administrator role.
- */
-export const removeMobilePin = async (
-  mobilePinBody: MobilePinBody,
-  options?: RequestInit,
-): Promise<removeMobilePinResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getRemoveMobilePinUrl(), {
-    ...options,
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobilePinBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: removeMobilePinResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as removeMobilePinResponse;
-};
-
 export type bootstrapMobileSessionGetResponse302 = {
   data: void;
   status: 302;
@@ -5246,9 +5106,9 @@ export type bootstrapMobileSessionGetResponse401 = {
   data: Error;
   status: 401;
 };
-
 export type bootstrapMobileSessionGetResponseError = (
-  bootstrapMobileSessionGetResponse302 | bootstrapMobileSessionGetResponse401
+  | bootstrapMobileSessionGetResponse302
+  | bootstrapMobileSessionGetResponse401
 ) & {
   headers: Headers;
 };
@@ -5275,7 +5135,7 @@ export const getBootstrapMobileSessionGetUrl = (
 };
 
 /**
- * Legacy cookie bootstrap for existing web clients. React Native clients use the POST bearer-session exchange.
+ * Redeem bootstrap token via redirect and set the NextAuth session cookie in the WebView.
  */
 export const bootstrapMobileSessionGet = async (
   params: BootstrapMobileSessionGetParams,
@@ -5300,7 +5160,8 @@ export const bootstrapMobileSessionGet = async (
 
 export type bootstrapMobileSessionPostResponse200 = {
   data:
-    MobileSessionBootstrapMintResponse | MobileSessionBootstrapRedeemResponse;
+    | MobileSessionBootstrapMintResponse
+    | MobileSessionBootstrapRedeemResponse;
   status: 200;
 };
 
@@ -5327,11 +5188,12 @@ export const getBootstrapMobileSessionPostUrl = () => {
 };
 
 /**
- * Mint a one-time bootstrap URL or redeem a one-time bootstrap token for a React Native bearer session.
+ * Mint a bootstrap URL from a session token, or redeem a bootstrap token for a session token (native shell).
  */
 export const bootstrapMobileSessionPost = async (
   mobileSessionBootstrapMintBodyMobileSessionBootstrapRedeemBody:
-    MobileSessionBootstrapMintBody | MobileSessionBootstrapRedeemBody,
+    | MobileSessionBootstrapMintBody
+    | MobileSessionBootstrapRedeemBody,
   options?: RequestInit,
 ): Promise<bootstrapMobileSessionPostResponse> => {
   const getHeaders = (
@@ -5379,229 +5241,6 @@ export const bootstrapMobileSessionPost = async (
   } as bootstrapMobileSessionPostResponse;
 };
 
-export type listMobileTagsResponse200 = {
-  data: MobileTagsResponse;
-  status: 200;
-};
-
-export type listMobileTagsResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type listMobileTagsResponse503 = {
-  data: Error;
-  status: 503;
-};
-
-export type listMobileTagsResponseSuccess = listMobileTagsResponse200 & {
-  headers: Headers;
-};
-export type listMobileTagsResponseError = (
-  listMobileTagsResponse401 | listMobileTagsResponse503
-) & {
-  headers: Headers;
-};
-
-export type listMobileTagsResponse =
-  listMobileTagsResponseSuccess | listMobileTagsResponseError;
-
-export const getListMobileTagsUrl = (params: ListMobileTagsParams) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/mobile/tags?${stringifiedParams}`
-    : `/api/mobile/tags`;
-};
-
-/**
- * Read tags for a file available to the signed-in native user.
- */
-export const listMobileTags = async (
-  params: ListMobileTagsParams,
-  options?: RequestInit,
-): Promise<listMobileTagsResponse> => {
-  const res = await fetch(getListMobileTagsUrl(params), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listMobileTagsResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listMobileTagsResponse;
-};
-
-export type addMobileTagResponse200 = {
-  data: MobileTagMutationResponse;
-  status: 200;
-};
-
-export type addMobileTagResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type addMobileTagResponse403 = {
-  data: Error;
-  status: 403;
-};
-
-export type addMobileTagResponseSuccess = addMobileTagResponse200 & {
-  headers: Headers;
-};
-export type addMobileTagResponseError = (
-  addMobileTagResponse401 | addMobileTagResponse403
-) & {
-  headers: Headers;
-};
-
-export type addMobileTagResponse =
-  addMobileTagResponseSuccess | addMobileTagResponseError;
-
-export const getAddMobileTagUrl = () => {
-  return `/api/mobile/tags`;
-};
-
-/**
- * Add a file tag. Requires the server administrator role.
- */
-export const addMobileTag = async (
-  mobileTagBody: MobileTagBody,
-  options?: RequestInit,
-): Promise<addMobileTagResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getAddMobileTagUrl(), {
-    ...options,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobileTagBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: addMobileTagResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as addMobileTagResponse;
-};
-
-export type removeMobileTagResponse200 = {
-  data: MobileTagMutationResponse;
-  status: 200;
-};
-
-export type removeMobileTagResponse401 = {
-  data: Error;
-  status: 401;
-};
-
-export type removeMobileTagResponse403 = {
-  data: Error;
-  status: 403;
-};
-
-export type removeMobileTagResponseSuccess = removeMobileTagResponse200 & {
-  headers: Headers;
-};
-export type removeMobileTagResponseError = (
-  removeMobileTagResponse401 | removeMobileTagResponse403
-) & {
-  headers: Headers;
-};
-
-export type removeMobileTagResponse =
-  removeMobileTagResponseSuccess | removeMobileTagResponseError;
-
-export const getRemoveMobileTagUrl = () => {
-  return `/api/mobile/tags`;
-};
-
-/**
- * Remove a file tag. Requires the server administrator role.
- */
-export const removeMobileTag = async (
-  mobileTagBody: MobileTagBody,
-  options?: RequestInit,
-): Promise<removeMobileTagResponse> => {
-  const getHeaders = (
-    h?: NonNullable<RequestInit["headers"]>,
-  ): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(
-          h as Iterable<Iterable<string>>,
-          (entry) => Array.from(entry) as [string, string],
-        ),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<
-      string | readonly string[] | undefined
-    >(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-  const res = await fetch(getRemoveMobileTagUrl(), {
-    ...options,
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...getHeaders(options?.headers),
-    },
-    body: JSON.stringify(mobileTagBody),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: removeMobileTagResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as removeMobileTagResponse;
-};
-
 export type getOpenGraphImageResponse200 = {
   data: unknown;
   status: 200;
@@ -5610,6 +5249,7 @@ export type getOpenGraphImageResponse200 = {
 export type getOpenGraphImageResponseSuccess = getOpenGraphImageResponse200 & {
   headers: Headers;
 };
+
 export type getOpenGraphImageResponse = getOpenGraphImageResponseSuccess;
 
 export const getGetOpenGraphImageUrl = (params?: GetOpenGraphImageParams) => {
@@ -5655,6 +5295,7 @@ export type proxyImageResponse200 = {
 export type proxyImageResponseSuccess = proxyImageResponse200 & {
   headers: Headers;
 };
+
 export type proxyImageResponse = proxyImageResponseSuccess;
 
 export const getProxyImageUrl = (params: ProxyImageParams) => {
@@ -5712,13 +5353,15 @@ export type requestFolderAccessResponseSuccess =
     headers: Headers;
   };
 export type requestFolderAccessResponseError = (
-  requestFolderAccessResponse401 | requestFolderAccessResponse403
+  | requestFolderAccessResponse401
+  | requestFolderAccessResponse403
 ) & {
   headers: Headers;
 };
 
 export type requestFolderAccessResponse =
-  requestFolderAccessResponseSuccess | requestFolderAccessResponseError;
+  | requestFolderAccessResponseSuccess
+  | requestFolderAccessResponseError;
 
 export const getRequestFolderAccessUrl = () => {
   return `/api/request-access`;
@@ -5771,25 +5414,738 @@ export const requestFolderAccess = async (
   } as requestFolderAccessResponse;
 };
 
+export type listScheduledUploadsResponse200 = {
+  data: ScheduledUploadListResponse;
+  status: 200;
+};
+
+export type listScheduledUploadsResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listScheduledUploadsResponseSuccess =
+  listScheduledUploadsResponse200 & {
+    headers: Headers;
+  };
+export type listScheduledUploadsResponseError =
+  listScheduledUploadsResponse401 & {
+    headers: Headers;
+  };
+
+export type listScheduledUploadsResponse =
+  | listScheduledUploadsResponseSuccess
+  | listScheduledUploadsResponseError;
+
+export const getListScheduledUploadsUrl = () => {
+  return `/api/scheduled-uploads`;
+};
+
+/**
+ * List scheduled uploads visible to the authenticated owner or administrator.
+ */
+export const listScheduledUploads = async (
+  options?: RequestInit,
+): Promise<listScheduledUploadsResponse> => {
+  const res = await fetch(getListScheduledUploadsUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listScheduledUploadsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listScheduledUploadsResponse;
+};
+
+export type createScheduledUploadResponse201 = {
+  data: ScheduledUploadCreateResponse;
+  status: 201;
+};
+
+export type createScheduledUploadResponse400 = {
+  data: Error;
+  status: 400;
+};
+
+export type createScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type createScheduledUploadResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type createScheduledUploadResponse507 = {
+  data: Error;
+  status: 507;
+};
+
+export type createScheduledUploadResponseSuccess =
+  createScheduledUploadResponse201 & {
+    headers: Headers;
+  };
+export type createScheduledUploadResponseError = (
+  | createScheduledUploadResponse400
+  | createScheduledUploadResponse401
+  | createScheduledUploadResponse403
+  | createScheduledUploadResponse507
+) & {
+  headers: Headers;
+};
+
+export type createScheduledUploadResponse =
+  | createScheduledUploadResponseSuccess
+  | createScheduledUploadResponseError;
+
+export const getCreateScheduledUploadUrl = () => {
+  return `/api/scheduled-uploads`;
+};
+
+/**
+ * Create a private staging package and schedule a future Drive write.
+ */
+export const createScheduledUpload = async (
+  createScheduledUploadRequest: CreateScheduledUploadRequest,
+  options?: RequestInit,
+): Promise<createScheduledUploadResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getCreateScheduledUploadUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(createScheduledUploadRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createScheduledUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createScheduledUploadResponse;
+};
+
+export type getScheduledUploadResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type getScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type getScheduledUploadResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type getScheduledUploadResponseSuccess =
+  getScheduledUploadResponse200 & {
+    headers: Headers;
+  };
+export type getScheduledUploadResponseError = (
+  | getScheduledUploadResponse401
+  | getScheduledUploadResponse404
+) & {
+  headers: Headers;
+};
+
+export type getScheduledUploadResponse =
+  | getScheduledUploadResponseSuccess
+  | getScheduledUploadResponseError;
+
+export const getGetScheduledUploadUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}`;
+};
+
+export const getScheduledUpload = async (
+  scheduleId: string,
+  options?: RequestInit,
+): Promise<getScheduledUploadResponse> => {
+  const res = await fetch(getGetScheduledUploadUrl(scheduleId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getScheduledUploadResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getScheduledUploadResponse;
+};
+
+export type updateScheduledUploadTimeResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type updateScheduledUploadTimeResponse400 = {
+  data: Error;
+  status: 400;
+};
+
+export type updateScheduledUploadTimeResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type updateScheduledUploadTimeResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type updateScheduledUploadTimeResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type updateScheduledUploadTimeResponseSuccess =
+  updateScheduledUploadTimeResponse200 & {
+    headers: Headers;
+  };
+export type updateScheduledUploadTimeResponseError = (
+  | updateScheduledUploadTimeResponse400
+  | updateScheduledUploadTimeResponse401
+  | updateScheduledUploadTimeResponse404
+  | updateScheduledUploadTimeResponse409
+) & {
+  headers: Headers;
+};
+
+export type updateScheduledUploadTimeResponse =
+  | updateScheduledUploadTimeResponseSuccess
+  | updateScheduledUploadTimeResponseError;
+
+export const getUpdateScheduledUploadTimeUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}`;
+};
+
+/**
+ * Change a waiting upload's future local time, time zone, and offset.
+ */
+export const updateScheduledUploadTime = async (
+  scheduleId: string,
+  updateScheduledUploadTimeRequest: UpdateScheduledUploadTimeRequest,
+  options?: RequestInit,
+): Promise<updateScheduledUploadTimeResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getUpdateScheduledUploadTimeUrl(scheduleId), {
+    ...options,
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(updateScheduledUploadTimeRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: updateScheduledUploadTimeResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as updateScheduledUploadTimeResponse;
+};
+
+export type cancelScheduledUploadResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type cancelScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type cancelScheduledUploadResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type cancelScheduledUploadResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type cancelScheduledUploadResponseSuccess =
+  cancelScheduledUploadResponse200 & {
+    headers: Headers;
+  };
+export type cancelScheduledUploadResponseError = (
+  | cancelScheduledUploadResponse401
+  | cancelScheduledUploadResponse404
+  | cancelScheduledUploadResponse409
+) & {
+  headers: Headers;
+};
+
+export type cancelScheduledUploadResponse =
+  | cancelScheduledUploadResponseSuccess
+  | cancelScheduledUploadResponseError;
+
+export const getCancelScheduledUploadUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}`;
+};
+
+export const cancelScheduledUpload = async (
+  scheduleId: string,
+  options?: RequestInit,
+): Promise<cancelScheduledUploadResponse> => {
+  const res = await fetch(getCancelScheduledUploadUrl(scheduleId), {
+    ...options,
+    method: "DELETE",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: cancelScheduledUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as cancelScheduledUploadResponse;
+};
+
+export type abandonScheduledUploadResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type abandonScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type abandonScheduledUploadResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type abandonScheduledUploadResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type abandonScheduledUploadResponseSuccess =
+  abandonScheduledUploadResponse200 & {
+    headers: Headers;
+  };
+export type abandonScheduledUploadResponseError = (
+  | abandonScheduledUploadResponse401
+  | abandonScheduledUploadResponse404
+  | abandonScheduledUploadResponse409
+) & {
+  headers: Headers;
+};
+
+export type abandonScheduledUploadResponse =
+  | abandonScheduledUploadResponseSuccess
+  | abandonScheduledUploadResponseError;
+
+export const getAbandonScheduledUploadUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}/abandon`;
+};
+
+export const abandonScheduledUpload = async (
+  scheduleId: string,
+  options?: RequestInit,
+): Promise<abandonScheduledUploadResponse> => {
+  const res = await fetch(getAbandonScheduledUploadUrl(scheduleId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: abandonScheduledUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as abandonScheduledUploadResponse;
+};
+
+export type commitScheduledUploadResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type commitScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type commitScheduledUploadResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type commitScheduledUploadResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type commitScheduledUploadResponseSuccess =
+  commitScheduledUploadResponse200 & {
+    headers: Headers;
+  };
+export type commitScheduledUploadResponseError = (
+  | commitScheduledUploadResponse401
+  | commitScheduledUploadResponse404
+  | commitScheduledUploadResponse409
+) & {
+  headers: Headers;
+};
+
+export type commitScheduledUploadResponse =
+  | commitScheduledUploadResponseSuccess
+  | commitScheduledUploadResponseError;
+
+export const getCommitScheduledUploadUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}/commit`;
+};
+
+/**
+ * Verify every staged byte and move a complete package into waiting state.
+ */
+export const commitScheduledUpload = async (
+  scheduleId: string,
+  options?: RequestInit,
+): Promise<commitScheduledUploadResponse> => {
+  const res = await fetch(getCommitScheduledUploadUrl(scheduleId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: commitScheduledUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as commitScheduledUploadResponse;
+};
+
+export type readScheduledUploadItemContentResponse200 = {
+  data: Blob;
+  status: 200;
+};
+
+export type readScheduledUploadItemContentResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type readScheduledUploadItemContentResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type readScheduledUploadItemContentResponseSuccess =
+  readScheduledUploadItemContentResponse200 & {
+    headers: Headers;
+  };
+export type readScheduledUploadItemContentResponseError = (
+  | readScheduledUploadItemContentResponse401
+  | readScheduledUploadItemContentResponse404
+) & {
+  headers: Headers;
+};
+
+export type readScheduledUploadItemContentResponse =
+  | readScheduledUploadItemContentResponseSuccess
+  | readScheduledUploadItemContentResponseError;
+
+export const getReadScheduledUploadItemContentUrl = (
+  scheduleId: string,
+  itemId: string,
+) => {
+  return `/api/scheduled-uploads/${scheduleId}/items/${itemId}/content`;
+};
+
+/**
+ * Read private staged content as an owner or administrator stream.
+ */
+export const readScheduledUploadItemContent = async (
+  scheduleId: string,
+  itemId: string,
+  options?: RequestInit,
+): Promise<readScheduledUploadItemContentResponse> => {
+  const res = await fetch(
+    getReadScheduledUploadItemContentUrl(scheduleId, itemId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.blob();
+  const data: readScheduledUploadItemContentResponse["data"] =
+    body as readScheduledUploadItemContentResponse["data"];
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as readScheduledUploadItemContentResponse;
+};
+
+export type stageScheduledUploadItemContentResponse200 = {
+  data: ScheduledUploadItemStageResponse;
+  status: 200;
+};
+
+export type stageScheduledUploadItemContentResponse400 = {
+  data: Error;
+  status: 400;
+};
+
+export type stageScheduledUploadItemContentResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type stageScheduledUploadItemContentResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type stageScheduledUploadItemContentResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type stageScheduledUploadItemContentResponse413 = {
+  data: Error;
+  status: 413;
+};
+
+export type stageScheduledUploadItemContentResponse507 = {
+  data: Error;
+  status: 507;
+};
+
+export type stageScheduledUploadItemContentResponseSuccess =
+  stageScheduledUploadItemContentResponse200 & {
+    headers: Headers;
+  };
+export type stageScheduledUploadItemContentResponseError = (
+  | stageScheduledUploadItemContentResponse400
+  | stageScheduledUploadItemContentResponse401
+  | stageScheduledUploadItemContentResponse404
+  | stageScheduledUploadItemContentResponse409
+  | stageScheduledUploadItemContentResponse413
+  | stageScheduledUploadItemContentResponse507
+) & {
+  headers: Headers;
+};
+
+export type stageScheduledUploadItemContentResponse =
+  | stageScheduledUploadItemContentResponseSuccess
+  | stageScheduledUploadItemContentResponseError;
+
+export const getStageScheduledUploadItemContentUrl = (
+  scheduleId: string,
+  itemId: string,
+) => {
+  return `/api/scheduled-uploads/${scheduleId}/items/${itemId}/content`;
+};
+
+/**
+ * Stream one file into private staging without buffering multipart form data.
+ */
+export const stageScheduledUploadItemContent = async (
+  scheduleId: string,
+  itemId: string,
+  stageScheduledUploadItemContentBody: Blob,
+  options?: RequestInit,
+): Promise<stageScheduledUploadItemContentResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(
+    getStageScheduledUploadItemContentUrl(scheduleId, itemId),
+    {
+      ...options,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        ...getHeaders(options?.headers),
+      },
+      body: stageScheduledUploadItemContentBody,
+    },
+  );
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: stageScheduledUploadItemContentResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as stageScheduledUploadItemContentResponse;
+};
+
+export type retryScheduledUploadResponse200 = {
+  data: ScheduledUploadResponse;
+  status: 200;
+};
+
+export type retryScheduledUploadResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type retryScheduledUploadResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type retryScheduledUploadResponse409 = {
+  data: Error;
+  status: 409;
+};
+
+export type retryScheduledUploadResponseSuccess =
+  retryScheduledUploadResponse200 & {
+    headers: Headers;
+  };
+export type retryScheduledUploadResponseError = (
+  | retryScheduledUploadResponse401
+  | retryScheduledUploadResponse404
+  | retryScheduledUploadResponse409
+) & {
+  headers: Headers;
+};
+
+export type retryScheduledUploadResponse =
+  | retryScheduledUploadResponseSuccess
+  | retryScheduledUploadResponseError;
+
+export const getRetryScheduledUploadUrl = (scheduleId: string) => {
+  return `/api/scheduled-uploads/${scheduleId}/retry`;
+};
+
+export const retryScheduledUpload = async (
+  scheduleId: string,
+  options?: RequestInit,
+): Promise<retryScheduledUploadResponse> => {
+  const res = await fetch(getRetryScheduledUploadUrl(scheduleId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: retryScheduledUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as retryScheduledUploadResponse;
+};
+
 export type searchFilesResponse200 = {
   data: DriveFile[];
   status: 200;
 };
 
-export type searchFilesResponse401 = {
-  data: Error;
-  status: 401;
-};
-
 export type searchFilesResponseSuccess = searchFilesResponse200 & {
   headers: Headers;
 };
-export type searchFilesResponseError = searchFilesResponse401 & {
-  headers: Headers;
-};
 
-export type searchFilesResponse =
-  searchFilesResponseSuccess | searchFilesResponseError;
+export type searchFilesResponse = searchFilesResponseSuccess;
 
 export const getSearchFilesUrl = (params: SearchFilesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -5837,6 +6193,7 @@ export type globalSearchResponse200 = {
 export type globalSearchResponseSuccess = globalSearchResponse200 & {
   headers: Headers;
 };
+
 export type globalSearchResponse = globalSearchResponseSuccess;
 
 export const getGlobalSearchUrl = (params: GlobalSearchParams) => {
@@ -5882,6 +6239,7 @@ export type finishSetupResponse200 = {
 export type finishSetupResponseSuccess = finishSetupResponse200 & {
   headers: Headers;
 };
+
 export type finishSetupResponse = finishSetupResponseSuccess;
 
 export const getFinishSetupUrl = () => {
@@ -5942,6 +6300,7 @@ export type finishServiceAccountSetupResponseSuccess =
   finishServiceAccountSetupResponse200 & {
     headers: Headers;
   };
+
 export type finishServiceAccountSetupResponse =
   finishServiceAccountSetupResponseSuccess;
 
@@ -5996,96 +6355,6 @@ export const finishServiceAccountSetup = async (
   } as finishServiceAccountSetupResponse;
 };
 
-export type nativeSetupOAuthCallbackResponse302 = {
-  data: void;
-  status: 302;
-};
-
-export type nativeSetupOAuthCallbackResponse400 = {
-  data: ErrorResponse;
-  status: 400;
-};
-
-export type nativeSetupOAuthCallbackResponseError = (
-  nativeSetupOAuthCallbackResponse302 | nativeSetupOAuthCallbackResponse400
-) & {
-  headers: Headers;
-};
-
-export type nativeSetupOAuthCallbackResponse =
-  nativeSetupOAuthCallbackResponseError;
-
-export const getNativeSetupOAuthCallbackUrl = (
-  params: NativeSetupOAuthCallbackParams,
-) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? "null" : String(value));
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0
-    ? `/api/setup/native-callback?${stringifiedParams}`
-    : `/api/setup/native-callback`;
-};
-
-export const nativeSetupOAuthCallback = async (
-  params: NativeSetupOAuthCallbackParams,
-  options?: RequestInit,
-): Promise<nativeSetupOAuthCallbackResponse> => {
-  const res = await fetch(getNativeSetupOAuthCallbackUrl(params), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: nativeSetupOAuthCallbackResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as nativeSetupOAuthCallbackResponse;
-};
-
-export type getSetupStatusResponse200 = {
-  data: SetupStatusResponse;
-  status: 200;
-};
-
-export type getSetupStatusResponseSuccess = getSetupStatusResponse200 & {
-  headers: Headers;
-};
-export type getSetupStatusResponse = getSetupStatusResponseSuccess;
-
-export const getGetSetupStatusUrl = () => {
-  return `/api/setup/status`;
-};
-
-export const getSetupStatus = async (
-  options?: RequestInit,
-): Promise<getSetupStatusResponse> => {
-  const res = await fetch(getGetSetupStatusUrl(), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getSetupStatusResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getSetupStatusResponse;
-};
-
 export type createShareLinkResponse200 = {
   data: CreateShareLinkResponse;
   status: 200;
@@ -6104,7 +6373,8 @@ export type createShareLinkResponseError = createShareLinkResponse401 & {
 };
 
 export type createShareLinkResponse =
-  createShareLinkResponseSuccess | createShareLinkResponseError;
+  | createShareLinkResponseSuccess
+  | createShareLinkResponseError;
 
 export const getCreateShareLinkUrl = () => {
   return `/api/share`;
@@ -6176,7 +6446,8 @@ export type deleteShareLinkResponseError = deleteShareLinkResponse401 & {
 };
 
 export type deleteShareLinkResponse =
-  deleteShareLinkResponseSuccess | deleteShareLinkResponseError;
+  | deleteShareLinkResponseSuccess
+  | deleteShareLinkResponseError;
 
 export const getDeleteShareLinkUrl = () => {
   return `/api/share/delete`;
@@ -6241,6 +6512,7 @@ export type getSharedCollectionItemsResponseSuccess =
   getSharedCollectionItemsResponse200 & {
     headers: Headers;
   };
+
 export type getSharedCollectionItemsResponse =
   getSharedCollectionItemsResponseSuccess;
 
@@ -6306,7 +6578,8 @@ export type listShareLinksResponseError = listShareLinksResponse401 & {
 };
 
 export type listShareLinksResponse =
-  listShareLinksResponseSuccess | listShareLinksResponseError;
+  | listShareLinksResponseSuccess
+  | listShareLinksResponseError;
 
 export const getListShareLinksUrl = () => {
   return `/api/share/list`;
@@ -6351,7 +6624,8 @@ export type revokeShareLinkResponseError = revokeShareLinkResponse401 & {
 };
 
 export type revokeShareLinkResponse =
-  revokeShareLinkResponseSuccess | revokeShareLinkResponseError;
+  | revokeShareLinkResponseSuccess
+  | revokeShareLinkResponseError;
 
 export const getRevokeShareLinkUrl = () => {
   return `/api/share/revoke`;
@@ -6415,6 +6689,7 @@ export type getShareStatusResponse200 = {
 export type getShareStatusResponseSuccess = getShareStatusResponse200 & {
   headers: Headers;
 };
+
 export type getShareStatusResponse = getShareStatusResponseSuccess;
 
 export const getGetShareStatusUrl = () => {
@@ -6477,6 +6752,7 @@ export type trackShareAccessResponse204 = {
 export type trackShareAccessResponseSuccess = trackShareAccessResponse204 & {
   headers: Headers;
 };
+
 export type trackShareAccessResponse = trackShareAccessResponseSuccess;
 
 export const getTrackShareAccessUrl = () => {
@@ -6551,7 +6827,8 @@ export type getStorageDetailsResponseError = getStorageDetailsResponse401 & {
 };
 
 export type getStorageDetailsResponse =
-  getStorageDetailsResponseSuccess | getStorageDetailsResponseError;
+  | getStorageDetailsResponseSuccess
+  | getStorageDetailsResponseError;
 
 export const getGetStorageDetailsUrl = () => {
   return `/api/storage-details`;

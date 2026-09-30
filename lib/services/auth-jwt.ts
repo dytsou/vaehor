@@ -36,6 +36,16 @@ export async function resolveRole(email: string): Promise<AppRole> {
   return "USER";
 }
 
+export async function revokeEditorAccess(email: string) {
+  const normalizedEmail = email.toLowerCase().trim();
+  await db.user.updateMany({
+    where: { email: normalizedEmail, role: "EDITOR" },
+    data: { role: "USER" },
+  });
+  await kv.srem(REDIS_KEYS.ADMIN_EDITORS, normalizedEmail);
+  return normalizedEmail;
+}
+
 async function syncDbUserRole(
   normalizedEmail: string,
   targetRole: AppRole,

@@ -125,6 +125,10 @@ export function useFileBrowserController({
   const isAdmin = user?.role === "ADMIN" && !isGuestUser;
   const isEditor = user?.role === "EDITOR" && !isGuestUser;
   const canEdit = (isAdmin || isEditor) && !isGuestUser;
+  const canScheduleUploads =
+    canEdit &&
+    !shareToken &&
+    Boolean(currentFolderId && !currentFolderId.startsWith("local://"));
 
   const upload = useUpload({
     currentFolderId,
@@ -482,6 +486,7 @@ export function useFileBrowserController({
       history,
       shareToken,
       isAdmin,
+      canScheduleUploads,
       isBulkMode,
       view,
       dragOverBreadcrumb: dragAndDrop.dragOverBreadcrumb,
@@ -491,6 +496,15 @@ export function useFileBrowserController({
       onBreadcrumbDrop: (event: React.DragEvent, folder: { id: string }) =>
         dragAndDrop.onDropOnBreadcrumb(event, folder),
       onUploadClick: () => upload.requestUpload(),
+      onScheduleUploadsClick: () => {
+        if (!currentFolderId || currentFolderId.startsWith("local://")) return;
+        const params = new URLSearchParams({
+          destinationId: currentFolderId,
+          destinationName:
+            history[history.length - 1]?.name || t("folderDefaultName"),
+        });
+        router.push("/" + locale + "/scheduled-uploads?" + params.toString());
+      },
       onShareFolderClick: () =>
         fileActions.handleShare({
           id: currentFolderId!,

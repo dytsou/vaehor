@@ -1,6 +1,7 @@
 import "./health/index.tsp";
 import "./admin/index.tsp";
 import "./files/index.tsp";
+import "./scheduled-uploads/index.tsp";
 import "./auth/index.tsp";
 import "./mobile/index.tsp";
 import "./share/index.tsp";
