@@ -9,12 +9,13 @@ namespace VaehorApi {
 
   model AuthenticateFolderRequest {
     folderId: string;
-    id?: string;
+    id: string;
     password: string;
   }
 
   model AuthenticateFolderResponse {
-    token?: string;
+    success: boolean;
+    token: string;
   }
 
   model CreateShareLinkRequest {

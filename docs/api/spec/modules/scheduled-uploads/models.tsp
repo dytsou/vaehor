@@ -189,11 +189,6 @@ namespace VaehorApi {
     @body body: Error;
   }
 
-  model PayloadTooLargeErrorResponse {
-    @statusCode statusCode: 413;
-    @body body: Error;
-  }
-
   model InsufficientStorageErrorResponse {
     @statusCode statusCode: 507;
     @body body: Error;

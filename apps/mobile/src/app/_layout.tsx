@@ -1,0 +1,129 @@
+import { Stack, type ErrorBoundaryProps, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
+import { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
+import { AppState, useColorScheme } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AppShellScreen } from "../app-shell/AppShellScreen";
+import { getDeviceLocale } from "../app-shell/locale";
+import {
+  MobilePreferencesProvider,
+  useMobilePreferences,
+} from "../lib/mobile-preferences";
+import { MobileAudioPlaybackProvider } from "../lib/audio-playback";
+import {
+  completePendingOAuthCallback,
+  parseOAuthCallbackUrl,
+} from "../lib/oauth";
+import { parseDeepLink, resolveShareDestination } from "../lib/deep-link";
+import { preferencesStore } from "../lib/servers";
+import { clearBiometricSessionCache } from "../lib/biometric-session";
+
+export default function RootLayout() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") clearBiometricSessionCache();
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const handleUrl = async (url: string) => {
+      if (!mounted) return;
+
+      if (parseOAuthCallbackUrl(url)) {
+        try {
+          const completed = await completePendingOAuthCallback(url);
+          if (mounted && completed) {
+            router.replace({
+              pathname: "/",
+              params: { connected: completed.origin },
+            });
+          }
+        } catch {
+          if (mounted) {
+            router.replace({
+              pathname: "/",
+              params: { authError: "oauth_callback_failed" },
+            });
+          }
+        }
+        return;
+      }
+
+      const parsed = parseDeepLink(url);
+      if (parsed.kind !== "share") return;
+
+      const servers = await preferencesStore.getServers();
+      const destination = resolveShareDestination(parsed.target, servers);
+      if (!mounted) return;
+      router.push({
+        pathname: "/share",
+        params: {
+          origin: parsed.target.origin,
+          path: parsed.target.path,
+          destination: destination.kind,
+          ...(destination.kind === "bookmark"
+            ? { serverId: destination.bookmark.id }
+            : {}),
+        },
+      });
+    };
+
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      void handleUrl(url);
+    });
+    void Linking.getInitialURL().then((url) => {
+      if (url) void handleUrl(url);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, [router]);
+
+  return (
+    <SafeAreaProvider>
+      <MobilePreferencesProvider>
+        <RootStack />
+      </MobilePreferencesProvider>
+    </SafeAreaProvider>
+  );
+}
+
+function RootStack() {
+  const { theme } = useMobilePreferences();
+  const backgroundColor = theme === "dark" ? "#111820" : "#F4F7F8";
+
+  return (
+    <MobileAudioPlaybackProvider>
+      <>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor },
+          }}
+        />
+      </>
+    </MobileAudioPlaybackProvider>
+  );
+}
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const theme = useColorScheme();
+
+  return (
+    <AppShellScreen
+      locale={getDeviceLocale()}
+      theme={theme === "dark" ? "dark" : "light"}
+      state={{ kind: "error", message: error.message }}
+      onRetry={retry}
+    />
+  );
+}

@@ -1,4 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  },
+}));
+vi.mock("expo-crypto", () => ({ randomUUID: vi.fn(() => "test-server-id") }));
+vi.mock("expo-secure-store", () => ({
+  setItemAsync: vi.fn(),
+  getItemAsync: vi.fn(),
+  deleteItemAsync: vi.fn(),
+}));
+
 import {
   addServer,
   getActiveServer,
@@ -103,8 +118,7 @@ describe("servers", () => {
   });
 
   describe("switchActiveServer", () => {
-    it("clears cookies for previous origin and updates active id", async () => {
-      const clearCookies = vi.fn().mockResolvedValue(undefined);
+    it("switches the active server without clearing either saved session", async () => {
       const store = memoryStore();
       const a = await addServer(store, {
         url: "https://a.example.com",
@@ -114,9 +128,12 @@ describe("servers", () => {
         url: "https://b.example.com",
         healthCheck: async () => true,
       });
-      await switchActiveServer(store, b.id, a.url, clearCookies);
-      expect(clearCookies).toHaveBeenCalledWith("https://a.example.com");
+      await switchActiveServer(store, b.id);
       expect(await getActiveServer(store)).toMatchObject({ id: b.id });
+      expect((await store.getServers()).map((server) => server.id)).toEqual([
+        a.id,
+        b.id,
+      ]);
     });
   });
 });

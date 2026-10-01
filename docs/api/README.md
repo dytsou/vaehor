@@ -53,15 +53,27 @@ pnpm compile:openapi
 | POST   | `/api/auth/2fa/disable`   | Disable 2FA for the current user      |
 | `*`    | `/api/auth/[...nextauth]` | NextAuth handler route                |
 
-### Mobile (Capacitor)
+### Mobile (React Native / Expo)
 
-| Method | Endpoint                        | Description                                              |
-| ------ | ------------------------------- | -------------------------------------------------------- |
-| GET    | `/api/mobile/oauth-state`       | Create one-time OAuth state for native Google sign-in    |
-| GET    | `/api/mobile/oauth-complete`    | Finish browser OAuth → redirect `vaehor://auth/callback` |
-| POST   | `/api/mobile/oauth-complete`    | Redeem exchange token → bootstrap material               |
-| GET    | `/api/mobile/session-bootstrap` | Redeem bootstrap token via redirect + set session cookie |
-| POST   | `/api/mobile/session-bootstrap` | Mint bootstrap URL or redeem bootstrap token             |
+The React Native client uses a per-server bearer session stored in the device secure store. Google sign-in opens the system browser and returns through a native app link; file and admin permissions remain enforced by the server.
+
+| Method | Endpoint                           | Description                                              |
+| ------ | ---------------------------------- | -------------------------------------------------------- |
+| GET    | `/api/mobile/drives`               | List the configured root and manual file roots           |
+| GET    | `/api/mobile/favorites`            | List the signed-in user's favorite files                 |
+| POST   | `/api/mobile/favorites`            | Add or remove one of the signed-in user's favorites      |
+| GET    | `/api/mobile/pins`                 | List available pinned folders                            |
+| POST   | `/api/mobile/pins`                 | Pin a folder (administrator)                             |
+| DELETE | `/api/mobile/pins`                 | Unpin a folder (administrator)                           |
+| GET    | `/api/mobile/tags?fileId=...`      | List tags for a file                                     |
+| POST   | `/api/mobile/tags`                 | Add a file tag (administrator)                           |
+| DELETE | `/api/mobile/tags`                 | Remove a file tag (administrator)                        |
+| POST   | `/api/mobile/local-storage/unlock` | Unlock local storage for the signed-in session           |
+| GET    | `/api/mobile/oauth-state`          | Create one-time OAuth state for native Google sign-in    |
+| GET    | `/api/mobile/oauth-complete`       | Finish browser OAuth → redirect `vaehor://auth/callback` |
+| POST   | `/api/mobile/oauth-complete`       | Redeem the one-time OAuth callback exchange token        |
+| GET    | `/api/mobile/session-bootstrap`    | Legacy cookie bootstrap for existing web clients         |
+| POST   | `/api/mobile/session-bootstrap`    | Mint bootstrap URL or redeem a bearer session token      |
 
 Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/openapi.yaml` (tag **Mobile**).
 
@@ -106,11 +118,12 @@ Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/op
 
 ### Public Config and Setup
 
-| Method | Endpoint             | Description                          |
-| ------ | -------------------- | ------------------------------------ |
-| GET    | `/api/config/public` | Read public-facing app configuration |
-| POST   | `/api/setup/finish`  | Finish initial setup                 |
-| GET    | `/api/health`        | Public health endpoint               |
+| Method | Endpoint                     | Description                             |
+| ------ | ---------------------------- | --------------------------------------- |
+| GET    | `/api/config/public`         | Read public-facing app configuration    |
+| POST   | `/api/setup/finish`          | Finish initial setup                    |
+| GET    | `/api/setup/native-callback` | Return OAuth to the native setup screen |
+| GET    | `/api/health`                | Public health endpoint                  |
 
 ### Admin
 

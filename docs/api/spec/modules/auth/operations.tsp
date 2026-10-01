@@ -20,10 +20,15 @@ namespace VaehorApi {
   @tag("Auth")
   @post
   @route("/auth/folder")
-  @doc("Submit credentials to access a protected folder.")
+  @doc("Validate a protected-folder ID and password and return a one-hour folder-scoped access token.")
+  @useAuth(OptionalMobileAuth)
   op authenticateFolder(
     @body body: AuthenticateFolderRequest,
-  ): OkResponse<AuthenticateFolderResponse> | UnauthorizedErrorResponse;
+  ):
+    OkResponse<AuthenticateFolderResponse>
+    | UnauthorizedErrorResponse
+    | NotFoundErrorResponse
+    | TooManyRequestsErrorResponse;
 
   @tag("Auth")
   @get

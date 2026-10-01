@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  appendBootstrapRedirect,
   buildShareCustomSchemeUrl,
   findBookmarkForOrigin,
   parseDeepLink,
+  resolveShareDestination,
   stripLocaleFromPathname,
 } from "../src/lib/deep-link";
 
@@ -64,15 +64,29 @@ describe("deep-link", () => {
     expect(match?.id).toBe("1");
   });
 
-  it("builds bootstrap redirect URLs", () => {
-    expect(
-      appendBootstrapRedirect(
-        "/api/mobile/session-bootstrap?token=abc",
-        "/en/share/id",
-      ),
-    ).toBe(
-      "/api/mobile/session-bootstrap?token=abc&redirect=%2Fen%2Fshare%2Fid",
+  it("routes a share to its normalized bookmark or a server setup state", () => {
+    const bookmark = {
+      id: "1",
+      url: "https://files.example.com",
+      label: "Files",
+      biometricsEnabled: false,
+    };
+    const known = parseDeepLink(
+      "vaehor://share?origin=https://files.example.com/path&path=/share/abc&share_token=secret",
     );
+    const unknown = parseDeepLink(
+      "https://new.example.com/share/abc?share_token=secret",
+    );
+
+    expect(known.kind).toBe("share");
+    expect(
+      known.kind === "share" &&
+        resolveShareDestination(known.target, [bookmark]),
+    ).toMatchObject({ kind: "bookmark", bookmark });
+    expect(
+      unknown.kind === "share" &&
+        resolveShareDestination(unknown.target, [bookmark]),
+    ).toEqual({ kind: "setup", origin: "https://new.example.com" });
   });
 
   it("round-trips custom scheme builder", () => {

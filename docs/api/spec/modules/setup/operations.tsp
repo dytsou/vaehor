@@ -9,6 +9,22 @@ using TypeSpec.OpenAPI;
 
 namespace VaehorApi {
   @tag("Setup")
+  @get
+  @route("/setup/status")
+  op getSetupStatus(): OkResponse<SetupStatusResponse>;
+
+  @tag("Setup")
+  @get
+  @route("/setup/native-callback")
+  op nativeSetupOAuthCallback(
+    @query state: string,
+    @query code?: string,
+    @query error?: string,
+  ):
+    NativeSetupCallbackRedirectResponse
+    | NativeSetupCallbackBadRequestResponse;
+
+  @tag("Setup")
   @post
   @route("/setup/finish")
   op finishSetup(@body body: unknown): OkResponse<unknown>;

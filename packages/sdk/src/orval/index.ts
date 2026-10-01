@@ -4,6 +4,13 @@
  * vaehor API
  * OpenAPI spec version: 0.0.0
  */
+
+function toSdkUploadBody(body: string | Blob | object): BodyInit {
+  if (typeof body === "string") return body;
+  if (typeof Blob !== "undefined" && body instanceof Blob) return body;
+  return JSON.stringify(body) ?? "";
+}
+
 import { mixedUploadFetch } from "../mixed-upload-fetch";
 export interface AccessRequestCreateRequest {
   folderId: string;
@@ -131,12 +138,13 @@ export interface AppConfig {
 
 export interface AuthenticateFolderRequest {
   folderId: string;
-  id?: string;
+  id: string;
   password: string;
 }
 
 export interface AuthenticateFolderResponse {
-  token?: string;
+  success: boolean;
+  token: string;
 }
 
 export interface CancelScheduledUploadAsAdminRequest {
@@ -282,6 +290,62 @@ export interface HealthResponse {
   services?: HealthServices;
 }
 
+export interface MobileDrive {
+  id: string;
+  name: string;
+  isProtected: boolean;
+}
+
+export interface MobileDrivesResponse {
+  rootFolderId: string;
+  drives: MobileDrive[];
+  role: string;
+}
+
+export interface MobileFavoriteFile {
+  id: string;
+  name?: string;
+  mimeType?: string;
+  size?: string;
+  modifiedTime?: string;
+  createdTime?: string;
+  isFolder?: boolean;
+  isProtected?: boolean;
+  /** The nearest protected folder that gates access to this favorite, when applicable. */
+  protectedFolderId?: string;
+  parents?: string[];
+  trashed?: boolean;
+}
+
+export interface MobileFavoriteIdsResponse {
+  favoriteIds: string[];
+}
+
+export interface MobileFavoriteUpdateBody {
+  fileId: string;
+  isFavorite: boolean;
+}
+
+export interface MobileFavoriteUpdateResponse {
+  success: boolean;
+  isFavorite: boolean;
+}
+
+export interface MobileFavoritesResponse {
+  files: MobileFavoriteFile[];
+  nextPageToken?: string;
+}
+
+export interface MobileLocalStorageUnlockBody {
+  password: string;
+}
+
+export interface MobileLocalStorageUnlockResponse {
+  success: boolean;
+  protected: boolean;
+  token?: string;
+}
+
 export interface MobileOAuthCompleteBody {
   token: string;
 }
@@ -293,6 +357,26 @@ export interface MobileOAuthCompleteResponse {
 
 export interface MobileOAuthStateResponse {
   state: string;
+}
+
+export interface MobilePinBody {
+  folderId: string;
+}
+
+export interface MobilePinMutationResponse {
+  success: boolean;
+  isPinned: boolean;
+}
+
+export interface MobilePinnedFolder {
+  id: string;
+  name?: string;
+  mimeType?: string;
+  parents?: string[];
+}
+
+export interface MobilePinnedFoldersResponse {
+  folders: MobilePinnedFolder[];
 }
 
 export interface MobileSessionBootstrapMintBody {
@@ -309,6 +393,19 @@ export interface MobileSessionBootstrapRedeemBody {
 
 export interface MobileSessionBootstrapRedeemResponse {
   sessionToken: string;
+}
+
+export interface MobileTagBody {
+  fileId: string;
+  tag: string;
+}
+
+export interface MobileTagMutationResponse {
+  success: boolean;
+}
+
+export interface MobileTagsResponse {
+  tags: string[];
 }
 
 export interface NotFoundResponse {
@@ -510,8 +607,8 @@ export const SearchType = {
   all: "all",
 } as const;
 
-export interface ServiceUnavailableErrorResponse {
-  body: Error;
+export interface SetupStatusResponse {
+  requiresSetupToken: boolean;
 }
 
 export interface ShareDeleteRequest {
@@ -620,6 +717,7 @@ export type UploadToFileRequestParams = {
 
 export type GetFileDetailsParams = {
   fileId: string;
+  share_token?: string;
 };
 
 export type ListFilesParams = {
@@ -644,6 +742,11 @@ export type GetMetadataParams = {
   id?: string;
 };
 
+export type ListMobileFavoritesParams = {
+  idsOnly?: boolean;
+  pageToken?: string;
+};
+
 export type CompleteMobileOAuthGetParams = {
   state: string;
 };
@@ -651,6 +754,10 @@ export type CompleteMobileOAuthGetParams = {
 export type BootstrapMobileSessionGetParams = {
   token: string;
   redirect?: string;
+};
+
+export type ListMobileTagsParams = {
+  fileId: string;
 };
 
 export type GetOpenGraphImageParams = {
@@ -665,10 +772,17 @@ export type SearchFilesParams = {
   q: string;
   folderId: string;
   type?: SearchType;
+  share_token?: string;
 };
 
 export type GlobalSearchParams = {
   q: string;
+};
+
+export type NativeSetupOAuthCallbackParams = {
+  state: string;
+  code?: string;
+  error?: string;
 };
 
 export type GetSharedCollectionItemsParams = {
@@ -2926,11 +3040,25 @@ export type authenticateFolderResponse401 = {
   status: 401;
 };
 
+export type authenticateFolderResponse404 = {
+  data: Error;
+  status: 404;
+};
+
+export type authenticateFolderResponse429 = {
+  data: Error;
+  status: 429;
+};
+
 export type authenticateFolderResponseSuccess =
   authenticateFolderResponse200 & {
     headers: Headers;
   };
-export type authenticateFolderResponseError = authenticateFolderResponse401 & {
+export type authenticateFolderResponseError = (
+  | authenticateFolderResponse401
+  | authenticateFolderResponse404
+  | authenticateFolderResponse429
+) & {
   headers: Headers;
 };
 
@@ -2943,7 +3071,7 @@ export const getAuthenticateFolderUrl = () => {
 };
 
 /**
- * Submit credentials to access a protected folder.
+ * Validate a protected-folder ID and password and return a one-hour folder-scoped access token.
  */
 export const authenticateFolder = async (
   authenticateFolderRequest: AuthenticateFolderRequest,
@@ -3288,10 +3416,18 @@ export type bulkDownloadResponse401 = {
   status: 401;
 };
 
+export type bulkDownloadResponse413 = {
+  data: Error;
+  status: 413;
+};
+
 export type bulkDownloadResponseSuccess = bulkDownloadResponse200 & {
   headers: Headers;
 };
-export type bulkDownloadResponseError = bulkDownloadResponse401 & {
+export type bulkDownloadResponseError = (
+  | bulkDownloadResponse401
+  | bulkDownloadResponse413
+) & {
   headers: Headers;
 };
 
@@ -3303,6 +3439,9 @@ export const getBulkDownloadUrl = () => {
   return `/api/bulk-download`;
 };
 
+/**
+ * Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.
+ */
 export const bulkDownload = async (
   bulkDownloadBody: unknown,
   options?: RequestInit,
@@ -3897,7 +4036,7 @@ export const uploadToFileRequest = async (
     {
       ...options,
       method: "POST",
-      body: uploadToFileRequestBody,
+      body: toSdkUploadBody(uploadToFileRequestBody),
     },
   );
 };
@@ -3941,11 +4080,29 @@ export type getFileDetailsResponse200 = {
   status: 200;
 };
 
+export type getFileDetailsResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type getFileDetailsResponse404 = {
+  data: Error;
+  status: 404;
+};
+
 export type getFileDetailsResponseSuccess = getFileDetailsResponse200 & {
   headers: Headers;
 };
+export type getFileDetailsResponseError = (
+  | getFileDetailsResponse401
+  | getFileDetailsResponse404
+) & {
+  headers: Headers;
+};
 
-export type getFileDetailsResponse = getFileDetailsResponseSuccess;
+export type getFileDetailsResponse =
+  | getFileDetailsResponseSuccess
+  | getFileDetailsResponseError;
 
 export const getGetFileDetailsUrl = (params: GetFileDetailsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -4282,7 +4439,7 @@ export const getDeleteFileUrl = () => {
 };
 
 /**
- * Move file to trash (Admin only).
+ * Move a file to trash with the required server-side permission.
  */
 export const deleteFile = async (
   deleteFileRequest: DeleteFileRequest,
@@ -4419,7 +4576,7 @@ export const getRenameFileUrl = () => {
 };
 
 /**
- * Rename a file or folder (Admin only).
+ * Rename a file or folder with the required server-side permission.
  */
 export const renameFile = async (
   renameFileRequest: RenameFileRequest,
@@ -4653,7 +4810,7 @@ export const getUploadFileUrl = (params: UploadFileParams) => {
 };
 
 /**
- * Upload a file to Google Drive (Admin only).
+ * Initialize or send a chunk for an upload by an authenticated user with upload access.
  */
 export const uploadFile = async (
   uploadFileBody: ResumableUploadInitBody | string | Blob,
@@ -4663,7 +4820,7 @@ export const uploadFile = async (
   return mixedUploadFetch<uploadFileResponse>(getUploadFileUrl(params), {
     ...options,
     method: "POST",
-    body: uploadFileBody,
+    body: toSdkUploadBody(uploadFileBody),
   });
 };
 
@@ -4919,6 +5076,309 @@ export const getMetadata = async (
   } as getMetadataResponse;
 };
 
+export type listMobileDrivesResponse200 = {
+  data: MobileDrivesResponse;
+  status: 200;
+};
+
+export type listMobileDrivesResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listMobileDrivesResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type listMobileDrivesResponseSuccess = listMobileDrivesResponse200 & {
+  headers: Headers;
+};
+export type listMobileDrivesResponseError = (
+  | listMobileDrivesResponse401
+  | listMobileDrivesResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMobileDrivesResponse =
+  | listMobileDrivesResponseSuccess
+  | listMobileDrivesResponseError;
+
+export const getListMobileDrivesUrl = () => {
+  return `/api/mobile/drives`;
+};
+
+/**
+ * List the configured file roots available to the signed-in mobile user.
+ */
+export const listMobileDrives = async (
+  options?: RequestInit,
+): Promise<listMobileDrivesResponse> => {
+  const res = await fetch(getListMobileDrivesUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listMobileDrivesResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listMobileDrivesResponse;
+};
+
+export type listMobileFavoritesResponse200 = {
+  data: MobileFavoritesResponse | MobileFavoriteIdsResponse;
+  status: 200;
+};
+
+export type listMobileFavoritesResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listMobileFavoritesResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type listMobileFavoritesResponseSuccess =
+  listMobileFavoritesResponse200 & {
+    headers: Headers;
+  };
+export type listMobileFavoritesResponseError = (
+  | listMobileFavoritesResponse401
+  | listMobileFavoritesResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMobileFavoritesResponse =
+  | listMobileFavoritesResponseSuccess
+  | listMobileFavoritesResponseError;
+
+export const getListMobileFavoritesUrl = (
+  params?: ListMobileFavoritesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/mobile/favorites?${stringifiedParams}`
+    : `/api/mobile/favorites`;
+};
+
+/**
+ * List a page of the signed-in user's favorite files, or only their IDs for native-client state.
+ */
+export const listMobileFavorites = async (
+  params?: ListMobileFavoritesParams,
+  options?: RequestInit,
+): Promise<listMobileFavoritesResponse> => {
+  const res = await fetch(getListMobileFavoritesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listMobileFavoritesResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listMobileFavoritesResponse;
+};
+
+export type setMobileFavoriteResponse200 = {
+  data: MobileFavoriteUpdateResponse;
+  status: 200;
+};
+
+export type setMobileFavoriteResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type setMobileFavoriteResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type setMobileFavoriteResponseSuccess = setMobileFavoriteResponse200 & {
+  headers: Headers;
+};
+export type setMobileFavoriteResponseError = (
+  | setMobileFavoriteResponse401
+  | setMobileFavoriteResponse503
+) & {
+  headers: Headers;
+};
+
+export type setMobileFavoriteResponse =
+  | setMobileFavoriteResponseSuccess
+  | setMobileFavoriteResponseError;
+
+export const getSetMobileFavoriteUrl = () => {
+  return `/api/mobile/favorites`;
+};
+
+/**
+ * Add or remove a favorite for the signed-in native user.
+ */
+export const setMobileFavorite = async (
+  mobileFavoriteUpdateBody: MobileFavoriteUpdateBody,
+  options?: RequestInit,
+): Promise<setMobileFavoriteResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getSetMobileFavoriteUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobileFavoriteUpdateBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setMobileFavoriteResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as setMobileFavoriteResponse;
+};
+
+export type unlockMobileLocalStorageResponse200 = {
+  data: MobileLocalStorageUnlockResponse;
+  status: 200;
+};
+
+export type unlockMobileLocalStorageResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type unlockMobileLocalStorageResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type unlockMobileLocalStorageResponse429 = {
+  data: Error;
+  status: 429;
+};
+
+export type unlockMobileLocalStorageResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type unlockMobileLocalStorageResponseSuccess =
+  unlockMobileLocalStorageResponse200 & {
+    headers: Headers;
+  };
+export type unlockMobileLocalStorageResponseError = (
+  | unlockMobileLocalStorageResponse401
+  | unlockMobileLocalStorageResponse403
+  | unlockMobileLocalStorageResponse429
+  | unlockMobileLocalStorageResponse503
+) & {
+  headers: Headers;
+};
+
+export type unlockMobileLocalStorageResponse =
+  | unlockMobileLocalStorageResponseSuccess
+  | unlockMobileLocalStorageResponseError;
+
+export const getUnlockMobileLocalStorageUrl = () => {
+  return `/api/mobile/local-storage/unlock`;
+};
+
+/**
+ * Verify local storage access for a signed-in native client and return a short-lived token for SecureStore-backed requests.
+ */
+export const unlockMobileLocalStorage = async (
+  mobileLocalStorageUnlockBody: MobileLocalStorageUnlockBody,
+  options?: RequestInit,
+): Promise<unlockMobileLocalStorageResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getUnlockMobileLocalStorageUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobileLocalStorageUnlockBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: unlockMobileLocalStorageResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as unlockMobileLocalStorageResponse;
+};
+
 export type completeMobileOAuthGetResponse302 = {
   data: void;
   status: 302;
@@ -5008,7 +5468,7 @@ export const getCompleteMobileOAuthPostUrl = () => {
 };
 
 /**
- * Redeem exchange token from the custom-scheme callback; returns bootstrap material for the shell.
+ * Redeem the one-time exchange token returned through the native OAuth callback.
  */
 export const completeMobileOAuthPost = async (
   mobileOAuthCompleteBody: MobileOAuthCompleteBody,
@@ -5075,7 +5535,7 @@ export const getCreateMobileOAuthStateUrl = () => {
 };
 
 /**
- * Create a one-time OAuth state for Capacitor native Google sign-in.
+ * Create a one-time OAuth state for React Native Google sign-in through the system browser.
  */
 export const createMobileOAuthState = async (
   options?: RequestInit,
@@ -5095,6 +5555,225 @@ export const createMobileOAuthState = async (
     status: res.status,
     headers: res.headers,
   } as createMobileOAuthStateResponse;
+};
+
+export type listMobilePinnedFoldersResponse200 = {
+  data: MobilePinnedFoldersResponse;
+  status: 200;
+};
+
+export type listMobilePinnedFoldersResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listMobilePinnedFoldersResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type listMobilePinnedFoldersResponseSuccess =
+  listMobilePinnedFoldersResponse200 & {
+    headers: Headers;
+  };
+export type listMobilePinnedFoldersResponseError = (
+  | listMobilePinnedFoldersResponse401
+  | listMobilePinnedFoldersResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMobilePinnedFoldersResponse =
+  | listMobilePinnedFoldersResponseSuccess
+  | listMobilePinnedFoldersResponseError;
+
+export const getListMobilePinnedFoldersUrl = () => {
+  return `/api/mobile/pins`;
+};
+
+/**
+ * List pinned folders for the signed-in native user.
+ */
+export const listMobilePinnedFolders = async (
+  options?: RequestInit,
+): Promise<listMobilePinnedFoldersResponse> => {
+  const res = await fetch(getListMobilePinnedFoldersUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listMobilePinnedFoldersResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listMobilePinnedFoldersResponse;
+};
+
+export type addMobilePinResponse200 = {
+  data: MobilePinMutationResponse;
+  status: 200;
+};
+
+export type addMobilePinResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type addMobilePinResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type addMobilePinResponseSuccess = addMobilePinResponse200 & {
+  headers: Headers;
+};
+export type addMobilePinResponseError = (
+  | addMobilePinResponse401
+  | addMobilePinResponse403
+) & {
+  headers: Headers;
+};
+
+export type addMobilePinResponse =
+  | addMobilePinResponseSuccess
+  | addMobilePinResponseError;
+
+export const getAddMobilePinUrl = () => {
+  return `/api/mobile/pins`;
+};
+
+/**
+ * Pin a folder. Requires the server administrator role.
+ */
+export const addMobilePin = async (
+  mobilePinBody: MobilePinBody,
+  options?: RequestInit,
+): Promise<addMobilePinResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getAddMobilePinUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobilePinBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addMobilePinResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as addMobilePinResponse;
+};
+
+export type removeMobilePinResponse200 = {
+  data: MobilePinMutationResponse;
+  status: 200;
+};
+
+export type removeMobilePinResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type removeMobilePinResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type removeMobilePinResponseSuccess = removeMobilePinResponse200 & {
+  headers: Headers;
+};
+export type removeMobilePinResponseError = (
+  | removeMobilePinResponse401
+  | removeMobilePinResponse403
+) & {
+  headers: Headers;
+};
+
+export type removeMobilePinResponse =
+  | removeMobilePinResponseSuccess
+  | removeMobilePinResponseError;
+
+export const getRemoveMobilePinUrl = () => {
+  return `/api/mobile/pins`;
+};
+
+/**
+ * Unpin a folder. Requires the server administrator role.
+ */
+export const removeMobilePin = async (
+  mobilePinBody: MobilePinBody,
+  options?: RequestInit,
+): Promise<removeMobilePinResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getRemoveMobilePinUrl(), {
+    ...options,
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobilePinBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: removeMobilePinResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as removeMobilePinResponse;
 };
 
 export type bootstrapMobileSessionGetResponse302 = {
@@ -5135,7 +5814,7 @@ export const getBootstrapMobileSessionGetUrl = (
 };
 
 /**
- * Redeem bootstrap token via redirect and set the NextAuth session cookie in the WebView.
+ * Legacy cookie bootstrap for existing web clients. React Native clients use the POST bearer-session exchange.
  */
 export const bootstrapMobileSessionGet = async (
   params: BootstrapMobileSessionGetParams,
@@ -5188,7 +5867,7 @@ export const getBootstrapMobileSessionPostUrl = () => {
 };
 
 /**
- * Mint a bootstrap URL from a session token, or redeem a bootstrap token for a session token (native shell).
+ * Mint a one-time bootstrap URL or redeem a one-time bootstrap token for a React Native bearer session.
  */
 export const bootstrapMobileSessionPost = async (
   mobileSessionBootstrapMintBodyMobileSessionBootstrapRedeemBody:
@@ -5239,6 +5918,235 @@ export const bootstrapMobileSessionPost = async (
     status: res.status,
     headers: res.headers,
   } as bootstrapMobileSessionPostResponse;
+};
+
+export type listMobileTagsResponse200 = {
+  data: MobileTagsResponse;
+  status: 200;
+};
+
+export type listMobileTagsResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type listMobileTagsResponse503 = {
+  data: Error;
+  status: 503;
+};
+
+export type listMobileTagsResponseSuccess = listMobileTagsResponse200 & {
+  headers: Headers;
+};
+export type listMobileTagsResponseError = (
+  | listMobileTagsResponse401
+  | listMobileTagsResponse503
+) & {
+  headers: Headers;
+};
+
+export type listMobileTagsResponse =
+  | listMobileTagsResponseSuccess
+  | listMobileTagsResponseError;
+
+export const getListMobileTagsUrl = (params: ListMobileTagsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/mobile/tags?${stringifiedParams}`
+    : `/api/mobile/tags`;
+};
+
+/**
+ * Read tags for a file available to the signed-in native user.
+ */
+export const listMobileTags = async (
+  params: ListMobileTagsParams,
+  options?: RequestInit,
+): Promise<listMobileTagsResponse> => {
+  const res = await fetch(getListMobileTagsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listMobileTagsResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listMobileTagsResponse;
+};
+
+export type addMobileTagResponse200 = {
+  data: MobileTagMutationResponse;
+  status: 200;
+};
+
+export type addMobileTagResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type addMobileTagResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type addMobileTagResponseSuccess = addMobileTagResponse200 & {
+  headers: Headers;
+};
+export type addMobileTagResponseError = (
+  | addMobileTagResponse401
+  | addMobileTagResponse403
+) & {
+  headers: Headers;
+};
+
+export type addMobileTagResponse =
+  | addMobileTagResponseSuccess
+  | addMobileTagResponseError;
+
+export const getAddMobileTagUrl = () => {
+  return `/api/mobile/tags`;
+};
+
+/**
+ * Add a file tag. Requires the server administrator role.
+ */
+export const addMobileTag = async (
+  mobileTagBody: MobileTagBody,
+  options?: RequestInit,
+): Promise<addMobileTagResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getAddMobileTagUrl(), {
+    ...options,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobileTagBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addMobileTagResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as addMobileTagResponse;
+};
+
+export type removeMobileTagResponse200 = {
+  data: MobileTagMutationResponse;
+  status: 200;
+};
+
+export type removeMobileTagResponse401 = {
+  data: Error;
+  status: 401;
+};
+
+export type removeMobileTagResponse403 = {
+  data: Error;
+  status: 403;
+};
+
+export type removeMobileTagResponseSuccess = removeMobileTagResponse200 & {
+  headers: Headers;
+};
+export type removeMobileTagResponseError = (
+  | removeMobileTagResponse401
+  | removeMobileTagResponse403
+) & {
+  headers: Headers;
+};
+
+export type removeMobileTagResponse =
+  | removeMobileTagResponseSuccess
+  | removeMobileTagResponseError;
+
+export const getRemoveMobileTagUrl = () => {
+  return `/api/mobile/tags`;
+};
+
+/**
+ * Remove a file tag. Requires the server administrator role.
+ */
+export const removeMobileTag = async (
+  mobileTagBody: MobileTagBody,
+  options?: RequestInit,
+): Promise<removeMobileTagResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<
+      string | readonly string[] | undefined
+    >(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  const res = await fetch(getRemoveMobileTagUrl(), {
+    ...options,
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...getHeaders(options?.headers),
+    },
+    body: JSON.stringify(mobileTagBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: removeMobileTagResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as removeMobileTagResponse;
 };
 
 export type getOpenGraphImageResponse200 = {
@@ -6141,11 +7049,21 @@ export type searchFilesResponse200 = {
   status: 200;
 };
 
+export type searchFilesResponse401 = {
+  data: Error;
+  status: 401;
+};
+
 export type searchFilesResponseSuccess = searchFilesResponse200 & {
   headers: Headers;
 };
+export type searchFilesResponseError = searchFilesResponse401 & {
+  headers: Headers;
+};
 
-export type searchFilesResponse = searchFilesResponseSuccess;
+export type searchFilesResponse =
+  | searchFilesResponseSuccess
+  | searchFilesResponseError;
 
 export const getSearchFilesUrl = (params: SearchFilesParams) => {
   const normalizedParams = new URLSearchParams();
@@ -6353,6 +7271,97 @@ export const finishServiceAccountSetup = async (
     status: res.status,
     headers: res.headers,
   } as finishServiceAccountSetupResponse;
+};
+
+export type nativeSetupOAuthCallbackResponse302 = {
+  data: void;
+  status: 302;
+};
+
+export type nativeSetupOAuthCallbackResponse400 = {
+  data: ErrorResponse;
+  status: 400;
+};
+export type nativeSetupOAuthCallbackResponseError = (
+  | nativeSetupOAuthCallbackResponse302
+  | nativeSetupOAuthCallbackResponse400
+) & {
+  headers: Headers;
+};
+
+export type nativeSetupOAuthCallbackResponse =
+  nativeSetupOAuthCallbackResponseError;
+
+export const getNativeSetupOAuthCallbackUrl = (
+  params: NativeSetupOAuthCallbackParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/setup/native-callback?${stringifiedParams}`
+    : `/api/setup/native-callback`;
+};
+
+export const nativeSetupOAuthCallback = async (
+  params: NativeSetupOAuthCallbackParams,
+  options?: RequestInit,
+): Promise<nativeSetupOAuthCallbackResponse> => {
+  const res = await fetch(getNativeSetupOAuthCallbackUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: nativeSetupOAuthCallbackResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as nativeSetupOAuthCallbackResponse;
+};
+
+export type getSetupStatusResponse200 = {
+  data: SetupStatusResponse;
+  status: 200;
+};
+
+export type getSetupStatusResponseSuccess = getSetupStatusResponse200 & {
+  headers: Headers;
+};
+
+export type getSetupStatusResponse = getSetupStatusResponseSuccess;
+
+export const getGetSetupStatusUrl = () => {
+  return `/api/setup/status`;
+};
+
+export const getSetupStatus = async (
+  options?: RequestInit,
+): Promise<getSetupStatusResponse> => {
+  const res = await fetch(getGetSetupStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getSetupStatusResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getSetupStatusResponse;
 };
 
 export type createShareLinkResponse200 = {

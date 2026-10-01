@@ -825,6 +825,8 @@ paths:
         - Files
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/auth/2fa/disable:
     post:
       operationId: disable2fa
@@ -913,7 +915,7 @@ paths:
   /api/auth/folder:
     post:
       operationId: authenticateFolder
-      description: Submit credentials to access a protected folder.
+      description: Validate a protected-folder ID and password and return a one-hour folder-scoped access token.
       parameters: []
       responses:
         '200':
@@ -928,6 +930,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       tags:
         - Auth
       requestBody:
@@ -936,6 +950,10 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AuthenticateFolderRequest'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/auth/local/check:
     post:
       operationId: localAuthCheck
@@ -1047,6 +1065,7 @@ paths:
   /api/bulk-download:
     post:
       operationId: bulkDownload
+      description: Download selected files as a ZIP archive. The aggregate uncompressed response is limited to 50 MiB.
       parameters: []
       responses:
         '200':
@@ -1056,6 +1075,12 @@ paths:
               schema: {}
         '401':
           description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Client error
           content:
             application/json:
               schema:
@@ -1215,6 +1240,16 @@ paths:
           schema:
             type: string
           explode: false
+        - name: X-Folder-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Local-Storage-Token
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: The request has succeeded.
@@ -1237,6 +1272,10 @@ paths:
                 $ref: '#/components/schemas/Error'
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/events:
     get:
       operationId: getEvents
@@ -1365,6 +1404,22 @@ paths:
           schema:
             type: string
           explode: false
+        - name: share_token
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: X-Folder-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Local-Storage-Token
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: The request has succeeded.
@@ -1372,8 +1427,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DriveFile'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/files:
     get:
       operationId: listFiles
@@ -1404,6 +1475,16 @@ paths:
           schema:
             type: string
           explode: false
+        - name: X-Folder-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Local-Storage-Token
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: The request has succeeded.
@@ -1425,6 +1506,10 @@ paths:
                 $ref: '#/components/schemas/Error'
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/files/bulk-delete:
     post:
       operationId: bulkDeleteFiles
@@ -1450,6 +1535,7 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/bulk-move:
     post:
       operationId: bulkMoveFiles
@@ -1475,6 +1561,7 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/copy:
     post:
       operationId: copyFile
@@ -1500,10 +1587,11 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/delete:
     delete:
       operationId: deleteFile
-      description: Move file to trash (Admin only).
+      description: Move a file to trash with the required server-side permission.
       parameters: []
       responses:
         '200':
@@ -1522,6 +1610,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/DeleteFileRequest'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/move:
     post:
       operationId: moveFile
@@ -1547,10 +1638,11 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/rename:
     patch:
       operationId: renameFile
-      description: Rename a file or folder (Admin only).
+      description: Rename a file or folder with the required server-side permission.
       parameters: []
       responses:
         '200':
@@ -1569,6 +1661,9 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/RenameFileRequest'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/update:
     patch:
       operationId: updateFileMetadata
@@ -1594,6 +1689,7 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/update-media:
     patch:
       operationId: updateFileMedia
@@ -1619,10 +1715,11 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/upload:
     post:
       operationId: uploadFile
-      description: Upload a file to Google Drive (Admin only).
+      description: Initialize or send a chunk for an upload by an authenticated user with upload access.
       parameters:
         - name: type
           in: query
@@ -1643,6 +1740,16 @@ paths:
             type: string
           explode: false
         - name: content-range
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Folder-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Local-Storage-Token
           in: header
           required: false
           schema:
@@ -1679,6 +1786,9 @@ paths:
                 - $ref: '#/components/schemas/ResumableUploadInitBody'
                 - type: string
                   format: byte
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/files/{fileId}/revisions:
     get:
       operationId: listFileRevisions
@@ -1704,6 +1814,7 @@ paths:
         - Files
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/folder/create:
     post:
       operationId: createFolder
@@ -1729,6 +1840,7 @@ paths:
             schema: {}
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
   /api/folderpath:
     get:
       operationId: getFolderPath
@@ -1747,6 +1859,10 @@ paths:
               schema: {}
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/health:
     get:
       operationId: healthCheck
@@ -1787,6 +1903,163 @@ paths:
               schema: {}
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
+  /api/mobile/drives:
+    get:
+      operationId: listMobileDrives
+      description: List the configured file roots available to the signed-in mobile user.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileDrivesResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+  /api/mobile/favorites:
+    get:
+      operationId: listMobileFavorites
+      description: List a page of the signed-in user's favorite files, or only their IDs for native-client state.
+      parameters:
+        - name: idsOnly
+          in: query
+          required: false
+          schema:
+            type: boolean
+          explode: false
+        - name: pageToken
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/MobileFavoritesResponse'
+                  - $ref: '#/components/schemas/MobileFavoriteIdsResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+    post:
+      operationId: setMobileFavorite
+      description: Add or remove a favorite for the signed-in native user.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileFavoriteUpdateResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileFavoriteUpdateBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+  /api/mobile/local-storage/unlock:
+    post:
+      operationId: unlockMobileLocalStorage
+      description: Verify local storage access for a signed-in native client and return a short-lived token for SecureStore-backed requests.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileLocalStorageUnlockResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileLocalStorageUnlockBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/mobile/oauth-complete:
     get:
       operationId: completeMobileOAuthGet
@@ -1813,7 +2086,7 @@ paths:
         - ApiKeyAuth: []
     post:
       operationId: completeMobileOAuthPost
-      description: Redeem exchange token from the custom-scheme callback; returns bootstrap material for the shell.
+      description: Redeem the one-time exchange token returned through the native OAuth callback.
       parameters: []
       responses:
         '200':
@@ -1839,7 +2112,7 @@ paths:
   /api/mobile/oauth-state:
     get:
       operationId: createMobileOAuthState
-      description: Create a one-time OAuth state for Capacitor native Google sign-in.
+      description: Create a one-time OAuth state for React Native Google sign-in through the system browser.
       parameters: []
       responses:
         '200':
@@ -1850,10 +2123,107 @@ paths:
                 $ref: '#/components/schemas/MobileOAuthStateResponse'
       tags:
         - Mobile
+  /api/mobile/pins:
+    get:
+      operationId: listMobilePinnedFolders
+      description: List pinned folders for the signed-in native user.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilePinnedFoldersResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+    post:
+      operationId: addMobilePin
+      description: Pin a folder. Requires the server administrator role.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilePinMutationResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilePinBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+    delete:
+      operationId: removeMobilePin
+      description: Unpin a folder. Requires the server administrator role.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobilePinMutationResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobilePinBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/mobile/session-bootstrap:
     get:
       operationId: bootstrapMobileSessionGet
-      description: Redeem bootstrap token via redirect and set the NextAuth session cookie in the WebView.
+      description: Legacy cookie bootstrap for existing web clients. React Native clients use the POST bearer-session exchange.
       parameters:
         - name: token
           in: query
@@ -1880,7 +2250,7 @@ paths:
         - Mobile
     post:
       operationId: bootstrapMobileSessionPost
-      description: Mint a bootstrap URL from a session token, or redeem a bootstrap token for a session token (native shell).
+      description: Mint a one-time bootstrap URL or redeem a one-time bootstrap token for a React Native bearer session.
       parameters: []
       responses:
         '200':
@@ -1907,6 +2277,109 @@ paths:
               anyOf:
                 - $ref: '#/components/schemas/MobileSessionBootstrapMintBody'
                 - $ref: '#/components/schemas/MobileSessionBootstrapRedeemBody'
+  /api/mobile/tags:
+    get:
+      operationId: listMobileTags
+      description: Read tags for a file available to the signed-in native user.
+      parameters:
+        - name: fileId
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTagsResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+    post:
+      operationId: addMobileTag
+      description: Add a file tag. Requires the server administrator role.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTagMutationResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTagBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+    delete:
+      operationId: removeMobileTag
+      description: Remove a file tag. Requires the server administrator role.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTagMutationResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Mobile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTagBody'
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/og:
     get:
       operationId: getOpenGraphImage
@@ -2406,6 +2879,22 @@ paths:
           schema:
             $ref: '#/components/schemas/SearchType'
           explode: false
+        - name: share_token
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: X-Folder-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+        - name: X-Local-Storage-Token
+          in: header
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: The request has succeeded.
@@ -2415,8 +2904,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DriveFile'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
+        - {}
   /api/search/global:
     get:
       operationId: globalSearch
@@ -2435,6 +2934,9 @@ paths:
               schema: {}
       tags:
         - Files
+      security:
+        - ApiKeyAuth: []
+        - BearerAuth: []
   /api/setup/finish:
     post:
       operationId: finishSetup
@@ -2469,6 +2971,57 @@ paths:
         content:
           application/json:
             schema: {}
+  /api/setup/native-callback:
+    get:
+      operationId: nativeSetupOAuthCallback
+      parameters:
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          explode: false
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+        - name: error
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '302':
+          description: Redirection
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Setup
+  /api/setup/status:
+    get:
+      operationId: getSetupStatus
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupStatusResponse'
+      tags:
+        - Setup
   /api/share:
     post:
       operationId: createShareLink
@@ -2664,6 +3217,7 @@ paths:
         - Files
       security:
         - ApiKeyAuth: []
+        - BearerAuth: []
 components:
   schemas:
     AccessRequestCreateRequest:
@@ -2749,6 +3303,7 @@ components:
       type: object
       required:
         - folderId
+        - id
         - password
       properties:
         folderId:
@@ -2759,7 +3314,12 @@ components:
           type: string
     AuthenticateFolderResponse:
       type: object
+      required:
+        - success
+        - token
       properties:
+        success:
+          type: boolean
         token:
           type: string
     CacheBackend:
@@ -3064,6 +3624,123 @@ components:
       enum:
         - ok
         - error
+    MobileDrive:
+      type: object
+      required:
+        - id
+        - name
+        - isProtected
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        isProtected:
+          type: boolean
+    MobileDrivesResponse:
+      type: object
+      required:
+        - rootFolderId
+        - drives
+        - role
+      properties:
+        rootFolderId:
+          type: string
+        drives:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileDrive'
+        role:
+          type: string
+    MobileFavoriteFile:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: string
+        modifiedTime:
+          type: string
+        createdTime:
+          type: string
+        isFolder:
+          type: boolean
+        isProtected:
+          type: boolean
+        protectedFolderId:
+          type: string
+          description: The nearest protected folder that gates access to this favorite, when applicable.
+        parents:
+          type: array
+          items:
+            type: string
+        trashed:
+          type: boolean
+    MobileFavoriteIdsResponse:
+      type: object
+      required:
+        - favoriteIds
+      properties:
+        favoriteIds:
+          type: array
+          items:
+            type: string
+    MobileFavoriteUpdateBody:
+      type: object
+      required:
+        - fileId
+        - isFavorite
+      properties:
+        fileId:
+          type: string
+        isFavorite:
+          type: boolean
+    MobileFavoriteUpdateResponse:
+      type: object
+      required:
+        - success
+        - isFavorite
+      properties:
+        success:
+          type: boolean
+        isFavorite:
+          type: boolean
+    MobileFavoritesResponse:
+      type: object
+      required:
+        - files
+      properties:
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobileFavoriteFile'
+        nextPageToken:
+          type: string
+    MobileLocalStorageUnlockBody:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+    MobileLocalStorageUnlockResponse:
+      type: object
+      required:
+        - success
+        - protected
+      properties:
+        success:
+          type: boolean
+        protected:
+          type: boolean
+        token:
+          type: string
     MobileOAuthCompleteBody:
       type: object
       required:
@@ -3088,6 +3765,47 @@ components:
       properties:
         state:
           type: string
+    MobilePinBody:
+      type: object
+      required:
+        - folderId
+      properties:
+        folderId:
+          type: string
+    MobilePinMutationResponse:
+      type: object
+      required:
+        - success
+        - isPinned
+      properties:
+        success:
+          type: boolean
+        isPinned:
+          type: boolean
+    MobilePinnedFolder:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mimeType:
+          type: string
+        parents:
+          type: array
+          items:
+            type: string
+    MobilePinnedFoldersResponse:
+      type: object
+      required:
+        - folders
+      properties:
+        folders:
+          type: array
+          items:
+            $ref: '#/components/schemas/MobilePinnedFolder'
     MobileSessionBootstrapMintBody:
       type: object
       required:
@@ -3116,6 +3834,32 @@ components:
       properties:
         sessionToken:
           type: string
+    MobileTagBody:
+      type: object
+      required:
+        - fileId
+        - tag
+      properties:
+        fileId:
+          type: string
+        tag:
+          type: string
+    MobileTagMutationResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+    MobileTagsResponse:
+      type: object
+      required:
+        - tags
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
     NotFoundResponse:
       type: object
     RenameFileRequest:
@@ -3495,13 +4239,13 @@ components:
         - healthy
         - unhealthy
         - not_configured
-    ServiceUnavailableErrorResponse:
+    SetupStatusResponse:
       type: object
       required:
-        - body
+        - requiresSetupToken
       properties:
-        body:
-          $ref: '#/components/schemas/Error'
+        requiresSetupToken:
+          type: boolean
     ShareDeleteRequest:
       type: object
       required:
@@ -3639,6 +4383,9 @@ components:
       type: apiKey
       in: cookie
       name: next-auth.session-token
+    BearerAuth:
+      type: http
+      scheme: Bearer
 servers:
   - url: https://zee-index.duckdns.org
     description: Production server

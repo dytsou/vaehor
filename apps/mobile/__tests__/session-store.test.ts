@@ -1,11 +1,31 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  },
+}));
+vi.mock("expo-secure-store", () => ({
+  setItemAsync: vi.fn(),
+  getItemAsync: vi.fn(),
+  deleteItemAsync: vi.fn(),
+}));
+
 import {
   MAX_BIOMETRIC_FAILURES,
   clearSessionForServer,
   issueBootstrapPath,
   loadSessionForServer,
+  clearLocalStorageAccessTokenForServer,
+  loadLocalStorageAccessTokenForServer,
   recordBiometricFailure,
+  saveLocalStorageAccessTokenForServer,
   saveSessionForServer,
+  serverCredentialKey,
+  localStorageAccessTokenKey,
+  type LocalStorageAccessStoreDeps,
   type SessionStoreDeps,
 } from "../src/lib/session-store";
 
@@ -56,6 +76,74 @@ describe("session-store", () => {
     await expect(
       loadSessionForServer("https://a.example", deps),
     ).resolves.toBeNull();
+  });
+
+  it("uses one normalized-origin namespace and clears only that server", async () => {
+    const deps = memoryDeps();
+    await saveSessionForServer(
+      "https://a.example/path?discard=1",
+      "token-a",
+      deps,
+    );
+    await saveSessionForServer("https://b.example", "token-b", deps);
+
+    await expect(loadSessionForServer("https://a.example", deps)).resolves.toBe(
+      "token-a",
+    );
+    await clearSessionForServer("https://a.example/another-path", deps);
+
+    await expect(
+      loadSessionForServer("https://a.example", deps),
+    ).resolves.toBeNull();
+    await expect(loadSessionForServer("https://b.example", deps)).resolves.toBe(
+      "token-b",
+    );
+  });
+
+  it("uses SecureStore-safe characters for server credential keys", () => {
+    const key = serverCredentialKey("https://a.example/path?discard=1");
+    expect(key).toMatch(/^[A-Za-z0-9._-]+$/);
+    expect(key).toBe(serverCredentialKey("https://a.example/other-path"));
+  });
+
+  it("keeps local-storage unlock tokens in a server-scoped SecureStore key", async () => {
+    const tokens = new Map<string, string>();
+    const deps: LocalStorageAccessStoreDeps = {
+      async setToken(key, token) {
+        tokens.set(key, token);
+      },
+      async getToken(key) {
+        return tokens.get(key) ?? null;
+      },
+      async deleteToken(key) {
+        tokens.delete(key);
+      },
+    };
+
+    await saveLocalStorageAccessTokenForServer(
+      "https://a.example/path",
+      "local-token-a",
+      deps,
+    );
+    await saveLocalStorageAccessTokenForServer(
+      "https://b.example",
+      "local-token-b",
+      deps,
+    );
+
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://a.example", deps),
+    ).resolves.toBe("local-token-a");
+    await clearLocalStorageAccessTokenForServer("https://a.example", deps);
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://a.example", deps),
+    ).resolves.toBeNull();
+    await expect(
+      loadLocalStorageAccessTokenForServer("https://b.example", deps),
+    ).resolves.toBe("local-token-b");
+    expect(localStorageAccessTokenKey("https://a.example")).toMatch(
+      /^[A-Za-z0-9._-]+$/,
+    );
   });
 
   it("wipes session after repeated biometric failures", async () => {

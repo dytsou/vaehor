@@ -6,6 +6,11 @@ import { getAccessToken } from "@/lib/drive";
 import JSZip from "jszip";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { z } from "zod";
+import {
+  BulkDownloadLimitError,
+  MAX_BULK_DOWNLOAD_BYTES,
+  readResponseWithinByteLimit,
+} from "@/lib/bulk-download-limits";
 
 const bulkDownloadSchema = z.object({
   fileIds: z
@@ -13,6 +18,37 @@ const bulkDownloadSchema = z.object({
     .min(1, "Parameter fileIds tidak valid.")
     .max(20, "Maksimal 20 file per unduhan sekaligus."),
 });
+
+async function addFileToArchive(
+  zip: JSZip,
+  fileId: string,
+  accessToken: string,
+  remainingBytes: number,
+  role: string | undefined,
+  email: string | undefined,
+): Promise<number | null> {
+  if (role !== "ADMIN" && (await isAccessRestricted(fileId, [], email))) {
+    return null;
+  }
+
+  const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+  const detailsUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?fields=name`;
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  const detailsResponse = await fetch(detailsUrl, { headers });
+  if (!detailsResponse.ok) return null;
+
+  const fileDetails = await detailsResponse.json();
+  const fileName = fileDetails.name || fileId;
+  const fileResponse = await fetch(driveUrl, { headers });
+  if (!fileResponse.ok) return null;
+
+  const fileBuffer = await readResponseWithinByteLimit(
+    fileResponse,
+    remainingBytes,
+  );
+  zip.file(fileName, fileBuffer);
+  return fileBuffer.byteLength;
+}
 
 export const POST = createPublicRoute(
   async ({ body, session }) => {
@@ -29,38 +65,20 @@ export const POST = createPublicRoute(
       const accessToken = await getAccessToken();
       const zip = new JSZip();
       let addedCount = 0;
+      let totalBytes = 0;
 
       for (const fileId of fileIds) {
-        if (session?.user?.role !== "ADMIN") {
-          const isRestricted = await isAccessRestricted(
-            fileId,
-            [],
-            session?.user?.email,
-          );
-          if (isRestricted) continue;
-        }
-
-        const driveUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
-        const detailsUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?fields=name`;
-
-        const detailsResponse = await fetch(detailsUrl, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (!detailsResponse.ok) continue;
-
-        const fileDetails = await detailsResponse.json();
-        const fileName = fileDetails.name || fileId;
-
-        const fileResponse = await fetch(driveUrl, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (fileResponse.ok) {
-          const fileBuffer = await fileResponse.arrayBuffer();
-          zip.file(fileName, fileBuffer);
-          addedCount += 1;
-        }
+        const addedBytes = await addFileToArchive(
+          zip,
+          fileId,
+          accessToken,
+          MAX_BULK_DOWNLOAD_BYTES - totalBytes,
+          session.user.role,
+          session.user.email ?? undefined,
+        );
+        if (addedBytes === null) continue;
+        totalBytes += addedBytes;
+        addedCount += 1;
       }
 
       if (addedCount === 0) {
@@ -78,6 +96,9 @@ export const POST = createPublicRoute(
 
       return new NextResponse(zipBlob, { status: 200, headers });
     } catch (error: unknown) {
+      if (error instanceof BulkDownloadLimitError) {
+        return NextResponse.json({ error: error.message }, { status: 413 });
+      }
       const errorMessage =
         error instanceof Error
           ? error.message

@@ -1,0 +1,61 @@
+name: Mobile CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "app/api/mobile/**"
+      - "app/api/setup/native-callback/**"
+      - "app/api/files/upload/**"
+      - "app/api/download/**"
+      - "docs/api/**"
+      - "lib/**"
+      - "packages/sdk/**"
+      - "pnpm-lock.yaml"
+      - ".github/actions/setup-project/**"
+      - ".github/workflows/mobile-ci.yml"
+  push:
+    branches: [trunk, main, master]
+    paths:
+      - "apps/mobile/**"
+      - "app/api/mobile/**"
+      - "app/api/setup/native-callback/**"
+      - "app/api/files/upload/**"
+      - "app/api/download/**"
+      - "docs/api/**"
+      - "lib/**"
+      - "packages/sdk/**"
+      - "pnpm-lock.yaml"
+      - ".github/actions/setup-project/**"
+      - ".github/workflows/mobile-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-source:
+    name: React Native source checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-project
+        with:
+          node-version: "26"
+
+      - name: Typecheck workspace and mobile app
+        run: pnpm typecheck
+
+      - name: Test mobile utilities and mobile APIs
+        run: >-
+          pnpm exec vitest run apps/mobile/__tests__
+          __tests__/unit/app/api/mobile-pins-route.test.ts
+          __tests__/unit/app/api/mobile-tags-route.test.ts
+          __tests__/unit/app/api/setup-native-callback-route.test.ts
+
+      - name: Export Android React Native bundle
+        run: pnpm --filter @vaehor/mobile run export:android
+
+      - name: Export iOS React Native bundle
+        run: pnpm --filter @vaehor/mobile run export:ios

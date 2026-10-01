@@ -1,4 +1,21 @@
 import { describe, it, expect, vi } from "vitest";
+
+vi.mock("expo-local-authentication", () => ({}));
+vi.mock("expo-linking", () => ({ createURL: vi.fn() }));
+vi.mock("expo-web-browser", () => ({ openAuthSessionAsync: vi.fn() }));
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+  },
+}));
+vi.mock("expo-secure-store", () => ({
+  setItemAsync: vi.fn(),
+  getItemAsync: vi.fn(),
+  deleteItemAsync: vi.fn(),
+}));
+
 import {
   isBiometricAvailable,
   promptBiometricUnlock,

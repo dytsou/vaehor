@@ -52,7 +52,9 @@ export const POST = createPublicRoute(
         return secretCheck;
       }
 
-      if (!isAllowedSetupRequestOrigin(request)) {
+      if (
+        !isAllowedSetupRequestOrigin(request, { setupSecretVerified: true })
+      ) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
 
