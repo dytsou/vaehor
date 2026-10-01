@@ -57,6 +57,7 @@ function releaseClaim(
     schedule: {
       id: "schedule-1",
       creatorEmail: "owner@example.com",
+      creatorAccessEmail: null,
       destinationId: "destination-1",
       scheduledAt: new Date(now.getTime() - 1_000),
       status: "RELEASING",
@@ -130,6 +131,7 @@ function workerHarness(
     drive,
     storage,
     resolveRole: vi.fn().mockResolvedValue("EDITOR"),
+    canAccessDestination: vi.fn().mockResolvedValue(true),
     assertEncryptionAvailable: vi.fn(),
     encryptSession: vi.fn().mockReturnValue({
       ciphertext: "opaque-ciphertext",
@@ -271,6 +273,95 @@ describe("scheduled upload worker", () => {
     expect(harness.drive.getFileMetadata).not.toHaveBeenCalled();
     expect(harness.drive.generateFileId).not.toHaveBeenCalled();
     expect(harness.drive.startResumableUpload).not.toHaveBeenCalled();
+  });
+
+  it("pauses and alerts before Drive when destination access was revoked", async () => {
+    const harness = workerHarness(releaseClaim());
+    const canAccessDestination = vi.fn().mockResolvedValue(false);
+    const worker = createScheduledUploadWorker({
+      ...harness.dependencies,
+      canAccessDestination,
+    });
+
+    await worker.runTick();
+
+    expect(canAccessDestination).toHaveBeenCalledWith(
+      "owner@example.com",
+      "destination-1",
+      "EDITOR",
+    );
+    expect(harness.store.finishClaim).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "NEEDS_ATTENTION",
+        errorCode: "DESTINATION_ACCESS_REVOKED",
+        adminAlertReason: "DESTINATION_ACCESS_REVOKED",
+      }),
+    );
+    expect(harness.drive.getFileMetadata).not.toHaveBeenCalled();
+    expect(harness.drive.generateFileId).not.toHaveBeenCalled();
+    expect(harness.drive.createFolder).not.toHaveBeenCalled();
+    expect(harness.drive.startResumableUpload).not.toHaveBeenCalled();
+    expect(harness.drive.uploadChunk).not.toHaveBeenCalled();
+  });
+
+  it("rechecks destination access after preflight before the first Drive write", async () => {
+    const harness = workerHarness(releaseClaim());
+    const canAccessDestination = vi
+      .fn()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    const worker = createScheduledUploadWorker({
+      ...harness.dependencies,
+      canAccessDestination,
+    });
+
+    await worker.runTick();
+
+    expect(canAccessDestination).toHaveBeenCalledTimes(2);
+    expect(harness.store.finishClaim).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "NEEDS_ATTENTION",
+        errorCode: "DESTINATION_ACCESS_REVOKED",
+        adminAlertReason: "DESTINATION_ACCESS_REVOKED",
+      }),
+    );
+    expect(harness.drive.startResumableUpload).not.toHaveBeenCalled();
+    expect(harness.drive.uploadChunk).not.toHaveBeenCalled();
+    expect(harness.drive.createFolder).not.toHaveBeenCalled();
+  });
+
+  it("uses the persisted mixed-case grant email after the package is staged", async () => {
+    const claim = releaseClaim([releaseItem()], {
+      creatorAccessEmail: "Owner@Example.com",
+    });
+    const canAccessDestination = vi.fn().mockResolvedValue(true);
+    const resolveRole = vi.fn().mockResolvedValue("EDITOR");
+    const harness = workerHarness(claim, {
+      canAccessDestination,
+      resolveRole,
+    });
+
+    await harness.worker.runTick();
+
+    expect(claim.schedule.stageCompleteAt).not.toBeNull();
+    expect(claim.schedule.items[0]?.status).toBe("STAGED");
+    expect(canAccessDestination).toHaveBeenCalledTimes(2);
+    expect(canAccessDestination).toHaveBeenNthCalledWith(
+      1,
+      "Owner@Example.com",
+      "destination-1",
+      "EDITOR",
+    );
+    expect(canAccessDestination).toHaveBeenNthCalledWith(
+      2,
+      "Owner@Example.com",
+      "destination-1",
+      "EDITOR",
+    );
+    expect(resolveRole).toHaveBeenCalledTimes(2);
+    expect(resolveRole).toHaveBeenNthCalledWith(1, "owner@example.com");
+    expect(resolveRole).toHaveBeenNthCalledWith(2, "owner@example.com");
+    expect(harness.drive.startResumableUpload).toHaveBeenCalledOnce();
   });
 
   it("pauses without a Drive request when encryption material is missing", async () => {

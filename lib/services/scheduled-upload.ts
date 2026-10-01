@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { ApiRouteError } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
+import { kv } from "@/lib/kv";
 import { resolveRole } from "@/lib/services/auth-jwt";
+import { getPrivateFolderIds } from "@/lib/utils";
 import {
   getScheduledUploadLimits,
   privateScheduledUploadStorage,
@@ -58,6 +60,7 @@ export interface ScheduledUploadReleaseItem {
 export interface ScheduledUploadReleaseSchedule {
   id: string;
   creatorEmail: string;
+  creatorAccessEmail: string | null;
   destinationId: string;
   scheduledAt: Date;
   status: ScheduledUploadStatus;
@@ -451,18 +454,60 @@ export async function purgePendingScheduledUploadBlobs(limit = 100) {
   return pending.length;
 }
 
+export async function canAccessScheduledUploadDestination(
+  email: string,
+  destinationId: string,
+  role: "ADMIN" | "EDITOR" | "USER",
+) {
+  if (role === "ADMIN") return true;
+
+  const cleanFolderId = destinationId.trim();
+  if (!cleanFolderId) return false;
+  const accessEmail = email.trim();
+  const [hasExplicitAccess, isProtected] = await Promise.all([
+    kv
+      .sismember(`folder:access:${cleanFolderId}`, accessEmail)
+      .then((result) => result === 1)
+      .catch(() => false),
+    db.protectedFolder
+      .findUnique({
+        where: { folderId: cleanFolderId },
+        select: { folderId: true },
+      })
+      .then((folder) => folder !== null)
+      .catch(() => true),
+  ]);
+
+  const isPrivate = getPrivateFolderIds().includes(cleanFolderId);
+  return hasExplicitAccess || (!isPrivate && !isProtected);
+}
+
 export async function createScheduledUpload(
   value: unknown,
   actor: ScheduledUploadActor,
 ) {
   const email = actorEmail(actor);
+  const accessEmail = actor.email.trim();
   const input = parseCreateInput(value);
-  if (!(await ["EDITOR", "ADMIN"].includes(await resolveRole(email)))) {
+  const role = await resolveRole(email);
+  if (role !== "EDITOR" && role !== "ADMIN") {
     throw new ApiRouteError(403, "Editor or administrator access is required.");
   }
   const creator = await getActorUser(email);
   if (!creator)
     throw new ApiRouteError(403, "A registered Vaehor account is required.");
+  if (
+    !(await canAccessScheduledUploadDestination(
+      accessEmail,
+      input.destinationId,
+      role,
+    ))
+  ) {
+    throw new ApiRouteError(
+      403,
+      "You do not have access to the selected destination folder.",
+    );
+  }
 
   let scheduledAt: Date;
   try {
@@ -494,6 +539,7 @@ export async function createScheduledUpload(
     data: {
       creatorId: creator.id,
       creatorEmail: email,
+      creatorAccessEmail: accessEmail,
       destinationId: input.destinationId,
       scheduledAt,
       scheduledTimeZone: input.timeZone,

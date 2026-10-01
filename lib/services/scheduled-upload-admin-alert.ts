@@ -121,11 +121,17 @@ export async function deliverNextScheduledUploadAdminAlertEmail() {
 
   let sent = false;
   try {
+    const reason =
+      claim.reasonCode === "DESTINATION_ACCESS_REVOKED"
+        ? "the creator no longer has access to the selected destination folder."
+        : claim.reasonCode === "CREATOR_ROLE_REVOKED"
+          ? "the creator no longer has editor access."
+          : "the scheduled upload needs administrator attention.";
     sent = await sendMail({
       to: recipients,
       subject: "[vaehor Alert] Scheduled upload needs attention",
       html: [
-        "<p>A scheduled Drive upload is paused because the creator no longer has editor access.</p>",
+        `<p>A scheduled Drive upload is paused because ${reason}</p>`,
         "<p>Schedule reference: " + claim.scheduleId + "</p>",
         "<p>Sign in and open Admin &gt; Scheduled uploads to acknowledge or cancel it.</p>",
       ].join(""),

@@ -97,6 +97,7 @@ model ScheduledUpload {
   id                  String                       @id @default(cuid())
   creatorId           String
   creatorEmail        String
+  creatorAccessEmail  String?
   destinationId       String
   scheduledAt         DateTime                     @db.Timestamptz(3)
   scheduledTimeZone   String

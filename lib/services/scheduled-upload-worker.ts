@@ -7,6 +7,7 @@ import { resolveRole } from "@/lib/services/auth-jwt";
 import { deliverNextScheduledUploadAdminAlertEmail } from "@/lib/services/scheduled-upload-admin-alert";
 import {
   claimDueScheduledUploadForRelease,
+  canAccessScheduledUploadDestination,
   finishScheduledUploadReleaseClaim,
   markScheduledUploadFirstWriteAttempt,
   recordScheduledUploadFirstWriteResponse,
@@ -127,6 +128,11 @@ export interface ScheduledUploadWorkerDependencies {
   drive: ScheduledUploadDriveAdapter;
   storage: ScheduledUploadWorkerStorage;
   resolveRole(email: string): Promise<ScheduledUploadWorkerRole>;
+  canAccessDestination(
+    email: string,
+    destinationId: string,
+    role: ScheduledUploadWorkerRole,
+  ): Promise<boolean>;
   assertEncryptionAvailable(): void;
   encryptSession(
     sessionUri: string,
@@ -502,6 +508,7 @@ export function createScheduledUploadWorker(
     drive: createDriveAdapter(),
     storage: privateScheduledUploadStorage,
     resolveRole,
+    canAccessDestination: canAccessScheduledUploadDestination,
     assertEncryptionAvailable: assertScheduledUploadSessionEncryptionAvailable,
     encryptSession: (uri, context) =>
       encryptScheduledUploadSession(uri, context),
@@ -612,6 +619,7 @@ async function pauseForAttention(
   dependencies: ScheduledUploadWorkerDependencies,
   code: string,
   message: string,
+  adminAlertReason?: string,
 ) {
   await dependencies.store.finishClaim({
     scheduleId: claim.schedule.id,
@@ -621,8 +629,56 @@ async function pauseForAttention(
     errorCode: code,
     errorMessage: message,
     adminAlertReason:
-      code === "CREATOR_ROLE_REVOKED" ? "CREATOR_ROLE_REVOKED" : undefined,
+      adminAlertReason ??
+      (code === "CREATOR_ROLE_REVOKED" ? "CREATOR_ROLE_REVOKED" : undefined),
   });
+}
+
+function scheduledUploadAccessEmail(
+  schedule: ScheduledUploadReleaseClaim["schedule"],
+) {
+  return schedule.creatorAccessEmail ?? schedule.creatorEmail;
+}
+
+async function ensureFirstWriteAuthorization(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  if (claim.schedule.firstWriteAttemptAt !== null) return true;
+
+  const role = await dependencies.resolveRole(claim.schedule.creatorEmail);
+  if (role !== "EDITOR" && role !== "ADMIN") {
+    await pauseForAttention(
+      claim,
+      dependencies,
+      "CREATOR_ROLE_REVOKED",
+      "The creator no longer has editor access.",
+    );
+    return false;
+  }
+
+  let canAccessDestination = false;
+  try {
+    canAccessDestination = await dependencies.canAccessDestination(
+      scheduledUploadAccessEmail(claim.schedule),
+      claim.schedule.destinationId,
+      role,
+    );
+  } catch {
+    canAccessDestination = false;
+  }
+  if (!canAccessDestination) {
+    await pauseForAttention(
+      claim,
+      dependencies,
+      "DESTINATION_ACCESS_REVOKED",
+      "The creator no longer has access to the selected destination folder.",
+      "DESTINATION_ACCESS_REVOKED",
+    );
+    return false;
+  }
+
+  return true;
 }
 
 async function markFirstWriteAttempt(
@@ -944,6 +1000,9 @@ async function processFolder(
     assertRemoteFileMatches(existing, claim.schedule.id, item, parentId);
   } else {
     try {
+      if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+        return { operation: "none" as const, chunks: 0 };
+      }
       await markFirstWriteAttempt(claim, dependencies);
       await dependencies.drive.createFolder({
         id: remoteFileId,
@@ -1060,6 +1119,9 @@ async function processFile(
 
   let sessionUri = sessionUris.get(item.id) ?? null;
   if (!sessionUri) {
+    if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+      return { operation: "none" as const, chunks: 0 };
+    }
     await markFirstWriteAttempt(claim, dependencies);
     sessionUri = await dependencies.drive.startResumableUpload({
       id: remoteFileId,
@@ -1182,6 +1244,9 @@ async function processFile(
     totalBytes - acknowledgedBytes,
   );
   if (length === 0 && totalBytes === 0) {
+    if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+      return { operation: "none" as const, chunks: 0 };
+    }
     await markFirstWriteAttempt(claim, dependencies);
     const result = await dependencies.drive.uploadChunk({
       sessionUri,
@@ -1227,6 +1292,9 @@ async function processFile(
     acknowledgedBytes,
     length,
   );
+  if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+    return { operation: "none" as const, chunks: 0 };
+  }
   await markFirstWriteAttempt(claim, dependencies);
   const result = await dependencies.drive.uploadChunk({
     sessionUri,
@@ -1373,6 +1441,27 @@ async function processClaim(
       return { completed: false, operation: "item" as const, chunks: 0 };
     }
 
+    let canAccessDestination = false;
+    try {
+      canAccessDestination = await dependencies.canAccessDestination(
+        scheduledUploadAccessEmail(claim.schedule),
+        claim.schedule.destinationId,
+        role,
+      );
+    } catch {
+      canAccessDestination = false;
+    }
+    if (!canAccessDestination) {
+      await pauseForAttention(
+        claim,
+        dependencies,
+        "DESTINATION_ACCESS_REVOKED",
+        "The creator no longer has access to the selected destination folder.",
+        "DESTINATION_ACCESS_REVOKED",
+      );
+      return { completed: false, operation: "none" as const, chunks: 0 };
+    }
+
     try {
       await validateDestinationChain(
         claim.schedule.destinationId,
@@ -1435,11 +1524,13 @@ async function processClaim(
   }
 
   if (item.kind === "FOLDER") {
-    await processFolder(claim, item, dependencies);
+    const result = await processFolder(claim, item, dependencies);
+    if (result.operation === "none") return { completed: false, ...result };
     await releaseProgressClaim(claim, dependencies);
-    return { completed: false, operation: "item" as const, chunks: 0 };
+    return { completed: false, ...result };
   }
   const result = await processFile(claim, item, sessionUris, dependencies);
+  if (result.operation === "none") return { completed: false, ...result };
   await releaseProgressClaim(claim, dependencies);
   return { completed: false, ...result };
 }
