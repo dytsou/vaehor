@@ -332,21 +332,24 @@ export function resolveScheduledInstant(
   return new Date(instant);
 }
 
-function itemToResponse(item: Record<string, unknown>) {
+function itemToResponse(item: Record<string, unknown>, scheduleStatus: string) {
   return {
     id: item.id,
     path: item.manifestPath,
     kind: item.kind,
     size: String(item.size ?? 0),
-    uploadedBytes: String(item.uploadedBytes ?? 0),
+    uploadedBytes: String(
+      scheduleStatus === "STAGING"
+        ? (item.uploadedBytes ?? 0)
+        : (item.remoteUploadOffset ?? 0),
+    ),
     status: item.status,
     contentType: item.contentType ?? null,
     stagedAt: item.stagedAt ?? null,
   };
 }
 
-function scheduleToResponse(schedule: Record<string, unknown>) {
-  const items = Array.isArray(schedule.items) ? schedule.items : [];
+function scheduleSummaryToResponse(schedule: Record<string, unknown>) {
   return {
     id: schedule.id,
     creatorEmail: schedule.creatorEmail,
@@ -376,7 +379,16 @@ function scheduleToResponse(schedule: Record<string, unknown>) {
     cleanupStatus: schedule.cleanupStatus,
     createdAt: schedule.createdAt,
     updatedAt: schedule.updatedAt,
-    items: items.map((item) => itemToResponse(item as Record<string, unknown>)),
+  };
+}
+
+function scheduleToResponse(schedule: Record<string, unknown>) {
+  const items = Array.isArray(schedule.items) ? schedule.items : [];
+  return {
+    ...scheduleSummaryToResponse(schedule),
+    items: items.map((item) =>
+      itemToResponse(item as Record<string, unknown>, String(schedule.status)),
+    ),
   };
 }
 
@@ -437,6 +449,31 @@ export async function retryScheduledUploadCleanup(scheduleId: string) {
   } catch {
     return false;
   }
+}
+
+export async function retryPendingScheduledUploadCleanupBatch(limit = 2) {
+  const boundedLimit = Number.isSafeInteger(limit)
+    ? Math.min(Math.max(limit, 1), 10)
+    : 2;
+  const pending = await db.scheduledUpload.findMany({
+    where: {
+      status: { in: [...TERMINAL_STATUS_VALUES] },
+      cleanupStatus: "PENDING",
+    },
+    select: { id: true },
+    orderBy: { updatedAt: "asc" },
+    take: boundedLimit,
+  });
+
+  let cleaned = 0;
+  for (const schedule of pending) {
+    try {
+      if (await retryScheduledUploadCleanup(schedule.id)) cleaned += 1;
+    } catch {
+      // Leave failed cleanup pending for a later worker tick.
+    }
+  }
+  return cleaned;
 }
 
 export async function purgePendingScheduledUploadBlobs(limit = 100) {
@@ -566,7 +603,13 @@ export async function createScheduledUpload(
   return scheduleToResponse(schedule as unknown as Record<string, unknown>);
 }
 
-export async function listScheduledUploads(actor: ScheduledUploadActor) {
+const SCHEDULED_UPLOAD_LIST_PAGE_SIZE = 20;
+
+export async function listScheduledUploads(
+  actor: ScheduledUploadActor,
+  options: { cursor?: string } = {},
+) {
+  const { cursor } = options;
   const email = actorEmail(actor);
   const admin = await isAdmin(email);
   const user = admin ? null : await getActorUser(email);
@@ -574,20 +617,67 @@ export async function listScheduledUploads(actor: ScheduledUploadActor) {
     where: admin
       ? undefined
       : { creatorId: user?.id ?? "__no_matching_user__" },
-    include: { items: { orderBy: { manifestPath: "asc" } } },
-    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      creatorEmail: true,
+      destinationId: true,
+      scheduledAt: true,
+      scheduledLocalTime: true,
+      scheduledTimeZone: true,
+      scheduledUtcOffset: true,
+      status: true,
+      itemCount: true,
+      totalBytes: true,
+      stagedBytes: true,
+      stageCompleteAt: true,
+      firstWriteAt: true,
+      firstWriteAttemptAt: true,
+      claimedAt: true,
+      completedAt: true,
+      pollerLagMs: true,
+      leaseRecoveryCount: true,
+      workerRetryCount: true,
+      retryAfter: true,
+      lastErrorCode: true,
+      lastErrorMessage: true,
+      cleanupStatus: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: SCHEDULED_UPLOAD_LIST_PAGE_SIZE + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
-  for (const schedule of schedules) {
-    if (
-      TERMINAL_STATUSES.has(schedule.status) &&
-      schedule.cleanupStatus === "PENDING"
-    ) {
-      await retryScheduledUploadCleanup(schedule.id);
-    }
-  }
-  return schedules.map((schedule) =>
-    scheduleToResponse(schedule as unknown as Record<string, unknown>),
+  const hasMore = schedules.length > SCHEDULED_UPLOAD_LIST_PAGE_SIZE;
+  const page = schedules.slice(0, SCHEDULED_UPLOAD_LIST_PAGE_SIZE);
+  const scheduleIds = page.map((schedule) => schedule.id);
+  const uploadedBytes = scheduleIds.length
+    ? await db.scheduledUploadItem.groupBy({
+        by: ["scheduleId"],
+        where: { scheduleId: { in: scheduleIds } },
+        _sum: { remoteUploadOffset: true },
+      })
+    : [];
+  const uploadedBytesBySchedule = new Map(
+    uploadedBytes.map((group) => [
+      group.scheduleId,
+      group._sum.remoteUploadOffset ?? 0n,
+    ]),
   );
+
+  return {
+    items: page.map((schedule) => ({
+      ...scheduleSummaryToResponse(
+        schedule as unknown as Record<string, unknown>,
+      ),
+      uploadedBytes: String(
+        schedule.status === "STAGING"
+          ? (schedule.stagedBytes ?? 0n)
+          : (uploadedBytesBySchedule.get(schedule.id) ?? 0n),
+      ),
+    })),
+    nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
+  };
 }
 
 export async function getScheduledUpload(

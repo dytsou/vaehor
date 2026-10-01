@@ -14,7 +14,11 @@ vi.mock("@/lib/db", () => ({
       findUnique: vi.fn(),
       updateMany: vi.fn(),
     },
-    scheduledUploadItem: { count: vi.fn(), updateMany: vi.fn() },
+    scheduledUploadItem: {
+      count: vi.fn(),
+      groupBy: vi.fn(),
+      updateMany: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }));
@@ -38,7 +42,9 @@ import {
   commitScheduledUpload,
   createScheduledUpload,
   getScheduledUpload,
+  listScheduledUploads,
   readScheduledUploadItemContent,
+  retryPendingScheduledUploadCleanupBatch,
   retryScheduledUpload,
   resolveScheduledInstant,
   stageScheduledUploadItem,
@@ -63,6 +69,7 @@ const mocks = db as unknown as {
   };
   scheduledUploadItem: {
     count: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
     updateMany: ReturnType<typeof vi.fn>;
   };
   $transaction: ReturnType<typeof vi.fn>;
@@ -106,6 +113,7 @@ function schedule(
         contentType: "text/plain",
         storageKey,
         uploadedBytes: itemStatus === "STAGED" ? 4n : 0n,
+        remoteUploadOffset: 0n,
         stagedAt:
           itemStatus === "STAGED" ? new Date("2026-09-30T00:00:00.000Z") : null,
       },
@@ -125,6 +133,7 @@ describe("scheduled upload service", () => {
     });
     mocks.scheduledUpload.findMany.mockResolvedValue([]);
     mocks.scheduledUploadItem.count.mockResolvedValue(0);
+    mocks.scheduledUploadItem.groupBy.mockResolvedValue([]);
     mocks.scheduledUploadItem.updateMany.mockResolvedValue({ count: 1 });
     mocks.scheduledUpload.updateMany.mockResolvedValue({ count: 1 });
     mocks.$transaction.mockImplementation(async (callback) => callback(db));
@@ -287,6 +296,83 @@ describe("scheduled upload service", () => {
       "folder:access:shared-folder-id",
       "Owner@Example.com",
     );
+  });
+
+  it("retries bounded terminal cleanup on a later worker pass", async () => {
+    mocks.scheduledUpload.findMany.mockResolvedValue([{ id: "cleanup-1" }]);
+    mocks.scheduledUpload.findUnique.mockResolvedValue({
+      status: "CANCELED",
+      cleanupStatus: "PENDING",
+    });
+    mocks.scheduledUploadItem.count.mockResolvedValue(0);
+    const removeSchedule = vi
+      .spyOn(privateScheduledUploadStorage, "removeSchedule")
+      .mockRejectedValueOnce(new Error("temporary filesystem failure"))
+      .mockResolvedValueOnce(undefined);
+
+    await expect(retryPendingScheduledUploadCleanupBatch(2)).resolves.toBe(0);
+    await expect(retryPendingScheduledUploadCleanupBatch(2)).resolves.toBe(1);
+
+    expect(mocks.scheduledUpload.findMany).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ take: 2 }),
+    );
+    expect(removeSchedule).toHaveBeenCalledTimes(2);
+    expect(mocks.scheduledUpload.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns compact schedule pages and a stable next cursor", async () => {
+    const records = Array.from({ length: 21 }, (_, index) => ({
+      ...schedule("WAITING", "STAGED"),
+      id: `schedule-${String(index).padStart(2, "0")}`,
+      createdAt: new Date(
+        `2026-09-${String(30 - index).padStart(2, "0")}T00:00:00Z`,
+      ),
+    }));
+    records[0]!.status = "STAGING";
+    mocks.scheduledUpload.findMany
+      .mockResolvedValueOnce(records)
+      .mockResolvedValueOnce([records[20]]);
+    mocks.scheduledUploadItem.groupBy
+      .mockResolvedValueOnce([
+        { scheduleId: records[1]!.id, _sum: { remoteUploadOffset: 3n } },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const firstPage = await listScheduledUploads(actor);
+    const secondPage = await listScheduledUploads(actor, {
+      cursor: "schedule-19",
+    });
+
+    expect(firstPage.items).toHaveLength(20);
+    expect(firstPage.items[0]).not.toHaveProperty("items");
+    expect(firstPage.items[0]?.uploadedBytes).toBe("4");
+    expect(firstPage.items[1]?.uploadedBytes).toBe("3");
+    expect(firstPage.nextCursor).toBe("schedule-19");
+    expect(secondPage.items).toHaveLength(1);
+    expect(secondPage.nextCursor).toBeNull();
+    expect(mocks.scheduledUpload.findMany.mock.calls[0]?.[0]).toMatchObject({
+      take: 21,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    });
+    expect(
+      mocks.scheduledUpload.findMany.mock.calls[0]?.[0],
+    ).not.toHaveProperty("include");
+    expect(mocks.scheduledUpload.findMany.mock.calls[1]?.[0]).toMatchObject({
+      cursor: { id: "schedule-19" },
+      skip: 1,
+    });
+  });
+
+  it("reports Drive-acknowledged bytes instead of staged bytes during release", async () => {
+    const releasing = schedule("RELEASING", "UPLOADING");
+    releasing.items[0]!.uploadedBytes = 4n;
+    releasing.items[0]!.remoteUploadOffset = 2n;
+    mocks.scheduledUpload.findUnique.mockResolvedValue(releasing);
+
+    const response = await getScheduledUpload(scheduleId, actor);
+
+    expect(response.items[0]?.uploadedBytes).toBe("2");
   });
 
   it("stores the mixed-case access email while keeping the creator email canonical", async () => {

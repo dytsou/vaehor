@@ -11,6 +11,7 @@ import {
   finishScheduledUploadReleaseClaim,
   markScheduledUploadFirstWriteAttempt,
   recordScheduledUploadFirstWriteResponse,
+  retryPendingScheduledUploadCleanupBatch,
   retryScheduledUploadCleanup,
   updateScheduledUploadReleaseItem,
   type ScheduledUploadReleaseClaim,
@@ -153,6 +154,7 @@ export interface ScheduledUploadWorkerDependencies {
     context: string,
   ): string;
   retryCleanup(scheduleId: string): Promise<unknown>;
+  retryPendingCleanup(): Promise<number>;
   now(): Date;
   maxSchedulesPerTick: number;
   maxItemsPerTick: number;
@@ -452,6 +454,7 @@ export function createDriveAdapter(): ScheduledUploadDriveAdapter {
       assertAllowedSessionUri(input.sessionUri);
       if (
         input.start < 0 ||
+        (input.bytes.byteLength === 0 && input.totalBytes !== 0) ||
         input.start + input.bytes.byteLength > input.totalBytes ||
         (input.start + input.bytes.byteLength < input.totalBytes &&
           input.bytes.byteLength % GOOGLE_CHUNK_ALIGNMENT_BYTES !== 0)
@@ -468,7 +471,11 @@ export function createDriveAdapter(): ScheduledUploadDriveAdapter {
         method: "PUT",
         headers: {
           "Content-Length": String(input.bytes.byteLength),
-          "Content-Range": `bytes ${input.start}-${end}/${input.totalBytes}`,
+          ...(input.bytes.byteLength > 0
+            ? {
+                "Content-Range": `bytes ${input.start}-${end}/${input.totalBytes}`,
+              }
+            : {}),
         },
         body,
       });
@@ -515,6 +522,7 @@ export function createScheduledUploadWorker(
     decryptSession: (encrypted, context) =>
       decryptScheduledUploadSession(encrypted, context),
     retryCleanup: retryScheduledUploadCleanup,
+    retryPendingCleanup: retryPendingScheduledUploadCleanupBatch,
     now: () => new Date(),
     maxSchedulesPerTick: 2,
     maxItemsPerTick: 2,
@@ -1589,12 +1597,20 @@ async function runWorkerTick(dependencies: ScheduledUploadWorkerDependencies) {
   const summary = {
     claimedSchedules: 0,
     completedSchedules: 0,
+    cleanedSchedules: 0,
+    cleanupFailures: 0,
     processedItems: 0,
     uploadedChunks: 0,
     leaseRecoveries: 0,
     pausedSchedules: 0,
     elapsedMs: 0,
   };
+
+  try {
+    summary.cleanedSchedules = await dependencies.retryPendingCleanup();
+  } catch {
+    summary.cleanupFailures += 1;
+  }
 
   while (
     summary.claimedSchedules < dependencies.maxSchedulesPerTick &&

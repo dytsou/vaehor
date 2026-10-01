@@ -141,6 +141,7 @@ function workerHarness(
     }),
     decryptSession: vi.fn().mockReturnValue(sessionUri),
     retryCleanup: vi.fn().mockResolvedValue(true),
+    retryPendingCleanup: vi.fn().mockResolvedValue(0),
     now: vi.fn(() => new Date(now)),
     maxSchedulesPerTick: 2,
     maxItemsPerTick: 2,
@@ -194,6 +195,36 @@ describe("scheduled upload worker", () => {
     }
   });
 
+  it("uploads an empty file without a negative Content-Range", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: "remote-empty-file" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const adapter = createDriveAdapter();
+      const result = await adapter.uploadChunk({
+        sessionUri,
+        start: 0,
+        totalBytes: 0,
+        bytes: new Uint8Array(0),
+      });
+
+      expect(result).toEqual({
+        kind: "complete",
+        file: { id: "remote-empty-file" },
+      });
+      const requestHeaders = fetchMock.mock.calls[0]?.[1]?.headers as Headers;
+      expect(requestHeaders.get("Content-Length")).toBe("0");
+      expect(requestHeaders.get("Content-Range")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("does not contact Drive when the database has no due lease", async () => {
     const harness = workerHarness(null);
 
@@ -207,6 +238,28 @@ describe("scheduled upload worker", () => {
     expect(harness.drive.startResumableUpload).not.toHaveBeenCalled();
     expect(harness.drive.queryUploadStatus).not.toHaveBeenCalled();
     expect(harness.drive.uploadChunk).not.toHaveBeenCalled();
+  });
+
+  it("keeps processing when cleanup fails and retries cleanup on the next tick", async () => {
+    const harness = workerHarness(null);
+    const retryPendingCleanup = vi
+      .fn<() => Promise<number>>()
+      .mockRejectedValueOnce(new Error("temporary cleanup failure"))
+      .mockResolvedValueOnce(1);
+    const worker = createScheduledUploadWorker({
+      ...harness.dependencies,
+      retryPendingCleanup,
+    });
+
+    await expect(worker.runTick()).resolves.toMatchObject({
+      cleanupFailures: 1,
+    });
+    await expect(worker.runTick()).resolves.toMatchObject({
+      cleanedSchedules: 1,
+    });
+
+    expect(retryPendingCleanup).toHaveBeenCalledTimes(2);
+    expect(harness.store.claimNextScheduledUpload).toHaveBeenCalledTimes(2);
   });
 
   it("allows one racing worker to obtain the due lease and create a session", async () => {
@@ -622,6 +675,59 @@ describe("scheduled upload worker", () => {
       expect.objectContaining({
         status: "COMPLETE",
         remoteUploadOffset: 262_145n,
+      }),
+    );
+  });
+
+  it("completes a zero-byte file through the empty upload path", async () => {
+    const item = releaseItem({
+      id: "empty-item",
+      manifestPath: "empty.bin",
+      size: 0n,
+      status: "UPLOADING",
+      uploadedBytes: 0n,
+      remoteFileId: "remote-empty-file",
+      encryptedUploadSession: "opaque-ciphertext",
+      uploadSessionNonce: "opaque-nonce",
+      uploadSessionTag: "opaque-tag",
+      uploadSessionKeyVersion: "v1",
+    });
+    const harness = workerHarness(
+      releaseClaim([item], {
+        totalBytes: 0n,
+        stagedBytes: 0n,
+        firstWriteAttemptAt: now,
+      }),
+      {
+        drive: {
+          ...workerHarness(null).drive,
+          queryUploadStatus: vi.fn().mockResolvedValue({
+            kind: "incomplete",
+            acknowledgedBytes: 0,
+          }),
+          uploadChunk: vi.fn().mockResolvedValue({
+            kind: "complete",
+            file: { id: "remote-empty-file" },
+          }),
+        },
+      },
+    );
+
+    await harness.worker.runTick();
+
+    expect(harness.drive.uploadChunk).toHaveBeenCalledWith({
+      sessionUri,
+      start: 0,
+      totalBytes: 0,
+      bytes: new Uint8Array(0),
+    });
+    expect(harness.store.updateItem).toHaveBeenCalledWith(
+      "schedule-1",
+      "empty-item",
+      "lease-1",
+      expect.objectContaining({
+        status: "COMPLETE",
+        remoteUploadOffset: 0n,
       }),
     );
   });
