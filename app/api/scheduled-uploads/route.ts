@@ -11,10 +11,14 @@ export const dynamic = "force-dynamic";
 
 const noStore = { "Cache-Control": "private, no-store" };
 
-export const GET = createUserRoute(async ({ session }) => {
-  const items = await listScheduledUploads({ email: session.user.email ?? "" });
+export const GET = createUserRoute(async ({ request, session }) => {
+  const cursor = new URL(request.url).searchParams.get("cursor") || undefined;
+  const { items, nextCursor } = await listScheduledUploads(
+    { email: session.user.email ?? "" },
+    { cursor },
+  );
   return NextResponse.json(
-    { items, limits: getScheduledUploadApiLimits() },
+    { items, nextCursor, limits: getScheduledUploadApiLimits() },
     { headers: noStore },
   );
 });

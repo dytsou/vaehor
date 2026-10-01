@@ -11,6 +11,7 @@ function toSdkUploadBody(body: string | Blob | object): BodyInit {
   return JSON.stringify(body) ?? "";
 }
 
+import { downloadFileFetch } from "../download-file-fetch";
 import { mixedUploadFetch } from "../mixed-upload-fetch";
 export interface AccessRequestCreateRequest {
   folderId: string;
@@ -588,8 +589,47 @@ export interface ScheduledUploadItemStageResponse {
   item: ScheduledUploadItemStageResponseItem;
 }
 
+export type ScheduledUploadSummaryCleanupStatus =
+  (typeof ScheduledUploadSummaryCleanupStatus)[keyof typeof ScheduledUploadSummaryCleanupStatus];
+
+export const ScheduledUploadSummaryCleanupStatus = {
+  NONE: "NONE",
+  PENDING: "PENDING",
+  COMPLETE: "COMPLETE",
+} as const;
+
+export interface ScheduledUploadSummary {
+  id: string;
+  creatorEmail: string;
+  destinationId: string;
+  scheduledAt: string;
+  scheduledLocalTime: string;
+  timeZone: string;
+  utcOffset: string;
+  status: ScheduledUploadStatus;
+  itemCount: number;
+  totalBytes: string;
+  stagedBytes: string;
+  uploadedBytes: string;
+  /** @nullable */
+  stageCompleteAt?: string | null;
+  /** @nullable */
+  firstWriteAt?: string | null;
+  /** @nullable */
+  retryAfter?: string | null;
+  /** @nullable */
+  lastErrorCode?: string | null;
+  /** @nullable */
+  lastErrorMessage?: string | null;
+  cleanupStatus: ScheduledUploadSummaryCleanupStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ScheduledUploadListResponse {
-  items: ScheduledUpload[];
+  items: ScheduledUploadSummary[];
+  /** @nullable */
+  nextCursor: string | null;
   limits: ScheduledUploadLimits;
 }
 
@@ -766,6 +806,10 @@ export type GetOpenGraphImageParams = {
 
 export type ProxyImageParams = {
   url: string;
+};
+
+export type ListScheduledUploadsParams = {
+  cursor?: string;
 };
 
 export type SearchFilesParams = {
@@ -3800,7 +3844,7 @@ export const getDataUsage = async (
 };
 
 export type downloadFileResponse200 = {
-  data: unknown;
+  data: Blob;
   status: 200;
 };
 
@@ -3855,21 +3899,12 @@ export const getDownloadFileUrl = (params: DownloadFileParams) => {
  */
 export const downloadFile = async (
   params: DownloadFileParams,
-  options?: RequestInit,
+  options?: Parameters<typeof downloadFileFetch>[1],
 ): Promise<downloadFileResponse> => {
-  const res = await fetch(getDownloadFileUrl(params), {
+  return downloadFileFetch<downloadFileResponse>(getDownloadFileUrl(params), {
     ...options,
     method: "GET",
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: downloadFileResponse["data"] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as downloadFileResponse;
 };
 
 export type getEventsResponse200 = {
@@ -6345,17 +6380,32 @@ export type listScheduledUploadsResponse =
   | listScheduledUploadsResponseSuccess
   | listScheduledUploadsResponseError;
 
-export const getListScheduledUploadsUrl = () => {
-  return `/api/scheduled-uploads`;
+export const getListScheduledUploadsUrl = (
+  params?: ListScheduledUploadsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/scheduled-uploads?${stringifiedParams}`
+    : `/api/scheduled-uploads`;
 };
 
 /**
  * List scheduled uploads visible to the authenticated owner or administrator.
  */
 export const listScheduledUploads = async (
+  params?: ListScheduledUploadsParams,
   options?: RequestInit,
 ): Promise<listScheduledUploadsResponse> => {
-  const res = await fetch(getListScheduledUploadsUrl(), {
+  const res = await fetch(getListScheduledUploadsUrl(params), {
     ...options,
     method: "GET",
   });

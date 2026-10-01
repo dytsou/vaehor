@@ -48,7 +48,7 @@ namespace VaehorApi {
     @header("X-Folder-Access-Token") xFolderAccessToken?: string,
     @header("X-Local-Storage-Token") xLocalStorageToken?: string,
   ):
-    | OkResponse<unknown>
+    | OkResponse<bytes>
     | RedirectResponse
     | UnauthorizedErrorResponse
     | NotFoundErrorResponse;

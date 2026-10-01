@@ -98,7 +98,10 @@ describe("scheduled upload API routes", () => {
     vi.clearAllMocks();
     mocks.email = "editor@example.com";
     mocks.getScheduledUploadApiLimits.mockReturnValue({ maxItems: 10 });
-    mocks.listScheduledUploads.mockResolvedValue([schedule]);
+    mocks.listScheduledUploads.mockResolvedValue({
+      items: [schedule],
+      nextCursor: "next-cursor",
+    });
     mocks.createScheduledUpload.mockResolvedValue(schedule);
     mocks.readBoundedJson.mockImplementation((input: Request) => input.json());
     mocks.getScheduledUpload.mockResolvedValue(schedule);
@@ -114,11 +117,19 @@ describe("scheduled upload API routes", () => {
   });
 
   it("lists and creates only through authenticated owner-scoped handlers", async () => {
-    const listed = await getList(request(""));
+    const listed = await getList(request("?cursor=older-cursor"));
     expect(listed.status).toBe(200);
     expect(listed.headers.get("cache-control")).toBe("private, no-store");
-    expect(mocks.listScheduledUploads).toHaveBeenCalledWith({
-      email: "editor@example.com",
+    expect(mocks.listScheduledUploads).toHaveBeenCalledWith(
+      {
+        email: "editor@example.com",
+      },
+      { cursor: "older-cursor" },
+    );
+    await expect(listed.json()).resolves.toEqual({
+      items: [schedule],
+      nextCursor: "next-cursor",
+      limits: { maxItems: 10 },
     });
 
     const created = await postCreate(

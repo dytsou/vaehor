@@ -34,4 +34,9 @@ for (const parameter of ["uploadToFileRequestBody", "uploadFileBody"]) {
   source = source.replace(generatedBody, normalizedBody);
 }
 
+source = source.replace(
+  /(export type downloadFileResponse200 = \{\n  data: )unknown(;\n  status: 200;\n\};)/,
+  "$1Blob$2",
+);
+
 await writeFile(sdkPath, source);
