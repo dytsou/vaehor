@@ -9,13 +9,23 @@ const fileSystem = vi.hoisted(() => {
     close: vi.fn(),
   };
   const open = vi.fn(() => handle);
+  const pickDirectoryAsync = vi.fn();
   const constructedUris: string[] = [];
   const openedModes: string[] = [];
 
-  return { handle, open, constructedUris, openedModes };
+  return { handle, open, pickDirectoryAsync, constructedUris, openedModes };
 });
 
 vi.mock("expo-file-system", () => ({
+  Directory: class MockDirectory {
+    static pickDirectoryAsync = fileSystem.pickDirectoryAsync;
+
+    constructor(readonly uri: string) {}
+
+    list() {
+      return [];
+    }
+  },
   File: class MockFile {
     constructor(uri: string) {
       fileSystem.constructedUris.push(uri);
@@ -28,6 +38,10 @@ vi.mock("expo-file-system", () => ({
   },
   FileMode: { ReadOnly: "read-only" },
   Paths: { cache: { uri: "file:///cache/" } },
+}));
+
+vi.mock("expo-document-picker", () => ({
+  getDocumentAsync: vi.fn(),
 }));
 
 const asset = (overrides: Record<string, unknown> = {}) =>
@@ -46,6 +60,7 @@ describe("openDocumentPickerUploadFile", () => {
     fileSystem.handle.readBytes.mockClear();
     fileSystem.handle.close.mockClear();
     fileSystem.open.mockClear();
+    fileSystem.pickDirectoryAsync.mockReset();
     fileSystem.constructedUris.length = 0;
     fileSystem.openedModes.length = 0;
   });

@@ -23,6 +23,7 @@ import {
   type ScheduledUploadAdminAlert,
   type ScheduledUploadLimits,
   type ScheduledUploadManifestItem,
+  type ScheduledUploadSummary,
 } from "@/packages/sdk/src/orval";
 import { useAppStore } from "@/lib/store";
 import {
@@ -166,7 +167,19 @@ export default function ScheduledUploads({
   const folderPickerRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [scheduledLocalTime, setScheduledLocalTime] = useState("");
-  const [schedules, setSchedules] = useState<ScheduledUpload[]>([]);
+  const [schedules, setSchedules] = useState<ScheduledUploadSummary[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [scheduleDetails, setScheduleDetails] = useState<
+    Record<string, ScheduledUpload>
+  >({});
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(
+    null,
+  );
+  const [detailsLoadingId, setDetailsLoadingId] = useState<string | null>(null);
+  const loadedOlderPage = useRef(false);
+  const reloadGeneration = useRef(0);
+  const activeActionReload = useRef<number | null>(null);
   const [alerts, setAlerts] = useState<ScheduledUploadAdminAlert[]>([]);
   const [limits, setLimits] = useState<ScheduledUploadLimits | null>(null);
   const [rescheduleValues, setRescheduleValues] = useState<
@@ -200,38 +213,63 @@ export default function ScheduledUploads({
     localDueDate && localDueDate.getTime() > Date.now() ? localDueDate : null;
   const minimumTime = formatLocalDateTime(new Date(Date.now() + 60_000));
 
-  const reload = useCallback(async () => {
-    try {
-      const response = await listScheduledUploads();
-      if (response.status !== 200) {
-        throw new Error(apiError(response.data, t("loadFailed")));
-      }
-      setSchedules(response.data.items);
-      setLimits(response.data.limits);
-    } catch (loadError) {
-      setError(errorText(loadError, t("loadFailed")));
-    }
+  const reload = useCallback(
+    async (mode: "poll" | "action" = "action") => {
+      if (mode === "poll" && activeActionReload.current !== null) return;
+      const generation = ++reloadGeneration.current;
+      if (mode === "action") activeActionReload.current = generation;
+      const isCurrent = () => generation === reloadGeneration.current;
 
-    if (isAdmin) {
       try {
-        const response = await fetch(
-          "/api/admin/scheduled-uploads/alerts?status=OPEN",
-          { cache: "no-store" },
+        const response = await listScheduledUploads();
+        if (!isCurrent()) return;
+        if (response.status !== 200) {
+          throw new Error(apiError(response.data, t("loadFailed")));
+        }
+        const firstPageIds = new Set(
+          response.data.items.map((item) => item.id),
         );
-        const data = (await response.json()) as {
-          alerts?: ScheduledUploadAdminAlert[];
-          error?: string;
-        };
-        if (!response.ok) throw new Error(data.error || t("alertsLoadFailed"));
-        setAlerts(data.alerts ?? []);
-      } catch (alertError) {
-        setError(errorText(alertError, t("alertsLoadFailed")));
+        setSchedules((current) => [
+          ...response.data.items,
+          ...current.filter((item) => !firstPageIds.has(item.id)),
+        ]);
+        if (!loadedOlderPage.current) setNextCursor(response.data.nextCursor);
+        setLimits(response.data.limits);
+      } catch (loadError) {
+        if (isCurrent()) setError(errorText(loadError, t("loadFailed")));
       }
-    } else {
-      setAlerts([]);
-    }
-    setLoading(false);
-  }, [isAdmin, t]);
+
+      if (isAdmin) {
+        try {
+          const response = await fetch(
+            "/api/admin/scheduled-uploads/alerts?status=OPEN",
+            { cache: "no-store" },
+          );
+          const data = (await response.json()) as {
+            alerts?: ScheduledUploadAdminAlert[];
+            error?: string;
+          };
+          if (!isCurrent()) return;
+          if (!response.ok)
+            throw new Error(data.error || t("alertsLoadFailed"));
+          setAlerts(data.alerts ?? []);
+        } catch (alertError) {
+          if (isCurrent())
+            setError(errorText(alertError, t("alertsLoadFailed")));
+        }
+      } else {
+        if (isCurrent()) setAlerts([]);
+      }
+
+      if (isCurrent()) {
+        setLoading(false);
+        if (activeActionReload.current === generation) {
+          activeActionReload.current = null;
+        }
+      }
+    },
+    [isAdmin, t],
+  );
 
   useEffect(() => {
     if (!user) fetchUser();
@@ -246,12 +284,17 @@ export default function ScheduledUploads({
       setLoading(false);
       return;
     }
-    void reload();
-    const timer = window.setInterval(() => void reload(), 15_000);
-    return () => window.clearInterval(timer);
+    void reload("action");
+    const timer = window.setInterval(() => void reload("poll"), 15_000);
+    return () => {
+      window.clearInterval(timer);
+      reloadGeneration.current += 1;
+      activeActionReload.current = null;
+    };
   }, [canScheduleUploads, reload, user]);
 
   const addSelectedFiles = (event: ChangeEvent<HTMLInputElement>) => {
+    if (busyId !== null) return;
     const nextFiles = Array.from(event.currentTarget.files ?? []);
     event.currentTarget.value = "";
     if (nextFiles.length === 0) return;
@@ -276,13 +319,68 @@ export default function ScheduledUploads({
   };
 
   const removeSelectedFile = (filePath: string) => {
+    if (busyId !== null) return;
     setSelectedFiles((current) =>
       current.filter((file) => getFilePath(file) !== filePath),
     );
   };
 
+  const loadOlderSchedules = async () => {
+    if (!nextCursor || loadingOlder) return;
+    const cursor = nextCursor;
+    loadedOlderPage.current = true;
+    setLoadingOlder(true);
+    try {
+      const response = await listScheduledUploads({ cursor });
+      if (response.status !== 200) {
+        throw new Error(apiError(response.data, t("loadFailed")));
+      }
+      setSchedules((current) => {
+        const existingIds = new Set(current.map((schedule) => schedule.id));
+        return [
+          ...current,
+          ...response.data.items.filter(
+            (schedule) => !existingIds.has(schedule.id),
+          ),
+        ];
+      });
+      setNextCursor(response.data.nextCursor);
+    } catch (loadError) {
+      setError(errorText(loadError, t("loadFailed")));
+    } finally {
+      setLoadingOlder(false);
+    }
+  };
+
+  const toggleScheduleDetails = async (scheduleId: string) => {
+    if (expandedScheduleId === scheduleId) {
+      setExpandedScheduleId(null);
+      return;
+    }
+    if (scheduleDetails[scheduleId]) {
+      setExpandedScheduleId(scheduleId);
+      return;
+    }
+    setDetailsLoadingId(scheduleId);
+    try {
+      const response = await getScheduledUpload(scheduleId);
+      if (response.status !== 200) {
+        throw new Error(apiError(response.data, t("loadFailed")));
+      }
+      setScheduleDetails((current) => ({
+        ...current,
+        [scheduleId]: response.data.schedule,
+      }));
+      setExpandedScheduleId(scheduleId);
+    } catch (loadError) {
+      setError(errorText(loadError, t("loadFailed")));
+    } finally {
+      setDetailsLoadingId(null);
+    }
+  };
+
   const stageAndCommit = async (
-    schedule: ScheduledUpload,
+    schedule: Pick<ScheduledUploadSummary, "id">,
     files: readonly File[],
   ) => {
     setBusyId(schedule.id);
@@ -436,7 +534,7 @@ export default function ScheduledUploads({
     );
   };
 
-  const resumeStaging = async (schedule: ScheduledUpload) => {
+  const resumeStaging = async (schedule: ScheduledUploadSummary) => {
     if (nativeBridgeAvailable && selectedFiles.length === 0) {
       await runNativeFolderUpload(
         { mode: "resume", scheduleId: schedule.id },
@@ -451,7 +549,9 @@ export default function ScheduledUploads({
     await stageAndCommit(schedule, selectedFiles);
   };
 
-  const cancelSchedule = async (schedule: ScheduledUpload) => {
+  const cancelSchedule = async (
+    schedule: Pick<ScheduledUploadSummary, "id">,
+  ) => {
     if (!window.confirm(t("cancelConfirm"))) return;
     setBusyId(schedule.id);
     setError("");
@@ -479,7 +579,7 @@ export default function ScheduledUploads({
     }
   };
 
-  const reschedule = async (schedule: ScheduledUpload) => {
+  const reschedule = async (schedule: ScheduledUploadSummary) => {
     const value =
       rescheduleValues[schedule.id] ??
       formatLocalDateTime(new Date(schedule.scheduledAt));
@@ -508,7 +608,7 @@ export default function ScheduledUploads({
     }
   };
 
-  const retrySchedule = async (schedule: ScheduledUpload) => {
+  const retrySchedule = async (schedule: ScheduledUploadSummary) => {
     setBusyId(schedule.id);
     setError("");
     try {
@@ -525,7 +625,7 @@ export default function ScheduledUploads({
     }
   };
 
-  const abandonSchedule = async (schedule: ScheduledUpload) => {
+  const abandonSchedule = async (schedule: ScheduledUploadSummary) => {
     if (!window.confirm(t("abandonConfirm"))) return;
     setBusyId(schedule.id);
     setError("");
@@ -745,6 +845,7 @@ export default function ScheduledUploads({
               ref={filePickerRef}
               type="file"
               multiple
+              disabled={busyId !== null}
               className="sr-only"
               onChange={addSelectedFiles}
               aria-label={t("chooseFiles")}
@@ -753,6 +854,7 @@ export default function ScheduledUploads({
               ref={folderPickerRef}
               type="file"
               multiple
+              disabled={busyId !== null}
               className="sr-only"
               onChange={addSelectedFiles}
               aria-label={t("chooseFolder")}
@@ -762,14 +864,16 @@ export default function ScheduledUploads({
               <button
                 type="button"
                 onClick={() => filePickerRef.current?.click()}
-                className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                disabled={busyId !== null}
+                className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
               >
                 {t("chooseFiles")}
               </button>
               <button
                 type="button"
                 onClick={() => folderPickerRef.current?.click()}
-                className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+                disabled={busyId !== null}
+                className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
               >
                 {t("chooseFolder")}
               </button>
@@ -777,7 +881,8 @@ export default function ScheduledUploads({
                 <button
                   type="button"
                   onClick={() => setSelectedFiles([])}
-                  className="inline-flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
+                  disabled={busyId !== null}
+                  className="inline-flex items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted disabled:opacity-50"
                 >
                   {t("clearSelection")}
                 </button>
@@ -818,7 +923,8 @@ export default function ScheduledUploads({
                       <button
                         type="button"
                         onClick={() => removeSelectedFile(getFilePath(file))}
-                        className="shrink-0 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                        disabled={busyId !== null}
+                        className="shrink-0 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
                         aria-label={t("removeFile", {
                           name: getFilePath(file),
                         })}
@@ -957,17 +1063,13 @@ export default function ScheduledUploads({
         ) : (
           <div className="space-y-4">
             {schedules.map((schedule) => {
-              const fileItems = schedule.items.filter(
-                (item) => item.kind === "FILE",
-              );
               const transferredBytes =
                 schedule.status === "STAGING"
                   ? Number(schedule.stagedBytes)
-                  : fileItems.reduce(
-                      (total, item) => total + Number(item.uploadedBytes),
-                      0,
-                    );
+                  : Number(schedule.uploadedBytes);
               const totalBytes = Number(schedule.totalBytes);
+              const details = scheduleDetails[schedule.id];
+              const detailsExpanded = expandedScheduleId === schedule.id;
               const progressPercent =
                 totalBytes > 0
                   ? Math.min(
@@ -1053,29 +1155,48 @@ export default function ScheduledUploads({
                       </p>
                     )}
 
-                    <ul className="max-h-40 divide-y overflow-auto rounded-lg border">
-                      {schedule.items.map((item) => (
-                        <li
-                          key={item.id}
-                          className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
-                        >
-                          <span
-                            className="min-w-0 flex-1 truncate"
-                            title={item.path}
-                          >
-                            {item.path}
-                          </span>
-                          <span className="shrink-0 text-muted-foreground">
-                            {item.kind === "FOLDER"
-                              ? t("folder")
-                              : formatBytes(Number(item.size), formatLocale)}
-                          </span>
-                          <span className="shrink-0 rounded bg-muted px-2 py-0.5">
-                            {itemStatusLabel(item.status)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => void toggleScheduleDetails(schedule.id)}
+                        disabled={detailsLoadingId !== null}
+                        className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                      >
+                        {detailsLoadingId === schedule.id
+                          ? t("loadingItems")
+                          : detailsExpanded
+                            ? t("hideItems")
+                            : t("showItems")}
+                      </button>
+                      {detailsExpanded && details && (
+                        <ul className="max-h-40 divide-y overflow-auto rounded-lg border">
+                          {details.items.map((item) => (
+                            <li
+                              key={item.id}
+                              className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
+                            >
+                              <span
+                                className="min-w-0 flex-1 truncate"
+                                title={item.path}
+                              >
+                                {item.path}
+                              </span>
+                              <span className="shrink-0 text-muted-foreground">
+                                {item.kind === "FOLDER"
+                                  ? t("folder")
+                                  : formatBytes(
+                                      Number(item.size),
+                                      formatLocale,
+                                    )}
+                              </span>
+                              <span className="shrink-0 rounded bg-muted px-2 py-0.5">
+                                {itemStatusLabel(item.status)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
 
                     {(canReschedule ||
                       canCancel ||
@@ -1164,6 +1285,16 @@ export default function ScheduledUploads({
                 </article>
               );
             })}
+            {nextCursor && (
+              <button
+                type="button"
+                onClick={() => void loadOlderSchedules()}
+                disabled={loadingOlder || busyId !== null}
+                className="w-full rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              >
+                {loadingOlder ? t("loadingOlder") : t("loadOlder")}
+              </button>
+            )}
           </div>
         )}
       </section>
