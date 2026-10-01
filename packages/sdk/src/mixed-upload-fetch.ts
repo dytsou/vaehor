@@ -14,7 +14,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function isJsonInitUpload(url: string) {
   try {
     return JSON_INIT_UPLOAD_PATHS.has(
-      new URL(url, "http://vaehor.invalid").pathname,
+      new URL(url, "https://vaehor.invalid").pathname,
     );
   } catch {
     return false;
