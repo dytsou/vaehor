@@ -7,8 +7,9 @@ import {
 } from "expo-file-system";
 import type { NativeUploadFile } from "./upload-bridge";
 
-export type NativeScheduledUploadFile = NativeUploadFile & {
+export type NativeScheduledUploadFile = Omit<NativeUploadFile, "close"> & {
   body?: Blob;
+  close: () => void;
 };
 
 export type NativeScheduledUploadEntry = Readonly<{
