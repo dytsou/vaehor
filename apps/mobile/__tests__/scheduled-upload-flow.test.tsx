@@ -264,7 +264,7 @@ describe("mobile scheduled upload flow", () => {
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({
         destinationId: "drive-root",
-        timeZone: "Asia/Taipei",
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
         items: [
           expect.objectContaining({
             path: "reports/summary.txt",
