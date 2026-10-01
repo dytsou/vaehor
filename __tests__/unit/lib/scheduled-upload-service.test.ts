@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const permissionMocks = vi.hoisted(() => ({
+  sismember: vi.fn(),
+}));
+
 vi.mock("@/lib/db", () => ({
   db: {
     user: { findUnique: vi.fn() },
+    protectedFolder: { findUnique: vi.fn() },
     scheduledUpload: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -16,10 +21,20 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/services/auth-jwt", () => ({ resolveRole: vi.fn() }));
 
+vi.mock("@/lib/auth", () => ({
+  hasUserAccess: async () => true,
+}));
+
+vi.mock("@/lib/kv", () => ({
+  kv: { sismember: permissionMocks.sismember },
+}));
+
 import { ApiRouteError } from "@/lib/api-middleware";
+import { hasUserAccess } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { resolveRole } from "@/lib/services/auth-jwt";
 import {
+  canAccessScheduledUploadDestination,
   commitScheduledUpload,
   createScheduledUpload,
   getScheduledUpload,
@@ -39,6 +54,7 @@ const storageKey = "blob-test-123";
 
 const mocks = db as unknown as {
   user: { findUnique: ReturnType<typeof vi.fn> };
+  protectedFolder: { findUnique: ReturnType<typeof vi.fn> };
   scheduledUpload: {
     create: ReturnType<typeof vi.fn>;
     findMany: ReturnType<typeof vi.fn>;
@@ -100,7 +116,9 @@ function schedule(
 describe("scheduled upload service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    permissionMocks.sismember.mockResolvedValue(0);
     vi.mocked(resolveRole).mockResolvedValue("EDITOR");
+    mocks.protectedFolder.findUnique.mockResolvedValue(null);
     mocks.user.findUnique.mockResolvedValue({
       id: ownerId,
       email: actor.email,
@@ -208,6 +226,116 @@ describe("scheduled upload service", () => {
       ),
     ).rejects.toMatchObject({ status: 403 });
     expect(mocks.scheduledUpload.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a protected destination when its cached grant has been revoked", async () => {
+    const destinationId = "protected-drive-folder-stale-grant";
+    const input = {
+      destinationId,
+      scheduledLocalTime: "2027-02-01T10:00",
+      timeZone: "Asia/Taipei",
+      utcOffset: "+08:00",
+      items: [
+        { path: "reports", kind: "folder" as const, size: 0 },
+        {
+          path: "reports/summary.txt",
+          kind: "file" as const,
+          size: 4,
+          sha256: "a".repeat(64),
+        },
+      ],
+    };
+    vi.spyOn(
+      privateScheduledUploadStorage,
+      "assertPackageCapacity",
+    ).mockResolvedValue();
+    mocks.protectedFolder.findUnique.mockResolvedValue({
+      folderId: destinationId,
+    });
+    mocks.scheduledUpload.create.mockResolvedValue({
+      ...schedule(),
+      destinationId,
+    });
+    permissionMocks.sismember.mockResolvedValue(0);
+
+    await expect(hasUserAccess(actor.email, destinationId)).resolves.toBe(true);
+
+    await expect(createScheduledUpload(input, actor)).rejects.toMatchObject({
+      status: 403,
+    });
+
+    expect(permissionMocks.sismember).toHaveBeenCalledTimes(1);
+    expect(mocks.protectedFolder.findUnique).toHaveBeenCalledWith({
+      where: { folderId: destinationId },
+      select: { folderId: true },
+    });
+    expect(mocks.scheduledUpload.create).not.toHaveBeenCalled();
+  });
+
+  it("uses the caller email verbatim for fresh folder grant checks", async () => {
+    permissionMocks.sismember.mockResolvedValue(1);
+
+    await expect(
+      canAccessScheduledUploadDestination(
+        "Owner@Example.com",
+        "shared-folder-id",
+        "EDITOR",
+      ),
+    ).resolves.toBe(true);
+
+    expect(permissionMocks.sismember).toHaveBeenCalledWith(
+      "folder:access:shared-folder-id",
+      "Owner@Example.com",
+    );
+  });
+
+  it("stores the mixed-case access email while keeping the creator email canonical", async () => {
+    const mixedCaseActor = { email: "Owner@Example.com" };
+    const destinationId = "mixed-case-shared-folder";
+    vi.spyOn(
+      privateScheduledUploadStorage,
+      "assertPackageCapacity",
+    ).mockResolvedValue();
+    permissionMocks.sismember.mockResolvedValue(1);
+    mocks.scheduledUpload.create.mockResolvedValue({
+      ...schedule(),
+      creatorEmail: "owner@example.com",
+      creatorAccessEmail: "Owner@Example.com",
+      destinationId,
+    });
+
+    const response = await createScheduledUpload(
+      {
+        destinationId,
+        scheduledLocalTime: "2027-02-01T10:00",
+        timeZone: "Asia/Taipei",
+        utcOffset: "+08:00",
+        items: [
+          { path: "reports", kind: "folder", size: 0 },
+          {
+            path: "reports/summary.txt",
+            kind: "file",
+            size: 4,
+            sha256: "a".repeat(64),
+          },
+        ],
+      },
+      mixedCaseActor,
+    );
+
+    expect(permissionMocks.sismember).toHaveBeenCalledWith(
+      "folder:access:" + destinationId,
+      "Owner@Example.com",
+    );
+    expect(mocks.scheduledUpload.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          creatorEmail: "owner@example.com",
+          creatorAccessEmail: "Owner@Example.com",
+        }),
+      }),
+    );
+    expect(response).not.toHaveProperty("creatorAccessEmail");
   });
 
   it("cannot commit an incomplete package to waiting", async () => {

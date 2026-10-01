@@ -152,6 +152,60 @@ describe("scheduled upload admin alerts", () => {
     expect(sentSql.join("")).toContain("\"emailStatus\" = 'SENT'");
   });
 
+  it("describes destination access revocation in the admin email", async () => {
+    mocks.queryRaw.mockResolvedValueOnce([
+      {
+        id: "alert-2",
+        scheduleId: "schedule-2",
+        occurrence: 1,
+        reasonCode: "DESTINATION_ACCESS_REVOKED",
+        emailAttempts: 1,
+      },
+    ]);
+
+    await expect(deliverNextScheduledUploadAdminAlertEmail()).resolves.toEqual({
+      processed: 1,
+      sent: 1,
+      failed: 0,
+    });
+
+    expect(mocks.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining(
+          "the creator no longer has access to the selected destination folder",
+        ),
+      }),
+    );
+    expect(mocks.sendMail.mock.calls[0]?.[0].html).not.toContain(
+      "no longer has editor access",
+    );
+  });
+
+  it("uses neutral copy for admin alerts with other reason codes", async () => {
+    mocks.queryRaw.mockResolvedValueOnce([
+      {
+        id: "alert-3",
+        scheduleId: "schedule-3",
+        occurrence: 1,
+        reasonCode: "STAGE_INTEGRITY_FAILED",
+        emailAttempts: 1,
+      },
+    ]);
+
+    await expect(deliverNextScheduledUploadAdminAlertEmail()).resolves.toEqual({
+      processed: 1,
+      sent: 1,
+      failed: 0,
+    });
+
+    expect(mocks.sendMail.mock.calls[0]?.[0].html).toContain(
+      "the scheduled upload needs administrator attention",
+    );
+    expect(mocks.sendMail.mock.calls[0]?.[0].html).not.toContain(
+      "no longer has editor access",
+    );
+  });
+
   it("lists only administrative metadata and supports durable acknowledgment", async () => {
     const alert = {
       id: "alert-1",
