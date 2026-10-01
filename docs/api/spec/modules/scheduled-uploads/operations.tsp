@@ -47,7 +47,7 @@ namespace VaehorApi {
   @route("/scheduled-uploads")
   @useAuth(SessionAuth)
   @doc("List scheduled uploads visible to the authenticated owner or administrator.")
-  op listScheduledUploads():
+  op listScheduledUploads(@query cursor?: string):
     | OkResponse<ScheduledUploadListResponse>
     | UnauthorizedErrorResponse;
 

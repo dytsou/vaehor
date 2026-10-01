@@ -106,8 +106,32 @@ namespace VaehorApi {
     reserveFreeBytes: string;
   }
 
+  model ScheduledUploadSummary {
+    id: string;
+    creatorEmail: string;
+    destinationId: string;
+    scheduledAt: utcDateTime;
+    scheduledLocalTime: string;
+    timeZone: string;
+    utcOffset: string;
+    status: ScheduledUploadStatus;
+    itemCount: int32;
+    totalBytes: string;
+    stagedBytes: string;
+    uploadedBytes: string;
+    stageCompleteAt?: utcDateTime | null;
+    firstWriteAt?: utcDateTime | null;
+    retryAfter?: utcDateTime | null;
+    lastErrorCode?: string | null;
+    lastErrorMessage?: string | null;
+    cleanupStatus: "NONE" | "PENDING" | "COMPLETE";
+    createdAt: utcDateTime;
+    updatedAt: utcDateTime;
+  }
+
   model ScheduledUploadListResponse {
-    items: ScheduledUpload[];
+    items: ScheduledUploadSummary[];
+    nextCursor: string | null;
     limits: ScheduledUploadLimits;
   }
 

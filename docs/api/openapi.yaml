@@ -1254,8 +1254,10 @@ paths:
         '200':
           description: The request has succeeded.
           content:
-            application/json:
-              schema: {}
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '302':
           description: Redirection
         '401':
@@ -2452,7 +2454,13 @@ paths:
     get:
       operationId: listScheduledUploads
       description: List scheduled uploads visible to the authenticated owner or administrator.
-      parameters: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
       responses:
         '200':
           description: The request has succeeded.
@@ -4165,12 +4173,16 @@ components:
       type: object
       required:
         - items
+        - nextCursor
         - limits
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/ScheduledUpload'
+            $ref: '#/components/schemas/ScheduledUploadSummary'
+        nextCursor:
+          type: string
+          nullable: true
         limits:
           $ref: '#/components/schemas/ScheduledUploadLimits'
     ScheduledUploadManifestItem:
@@ -4212,6 +4224,81 @@ components:
         - COMPLETED
         - CANCELED
         - ABANDONED
+    ScheduledUploadSummary:
+      type: object
+      required:
+        - id
+        - creatorEmail
+        - destinationId
+        - scheduledAt
+        - scheduledLocalTime
+        - timeZone
+        - utcOffset
+        - status
+        - itemCount
+        - totalBytes
+        - stagedBytes
+        - uploadedBytes
+        - cleanupStatus
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        creatorEmail:
+          type: string
+        destinationId:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        scheduledLocalTime:
+          type: string
+        timeZone:
+          type: string
+        utcOffset:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduledUploadStatus'
+        itemCount:
+          type: integer
+          format: int32
+        totalBytes:
+          type: string
+        stagedBytes:
+          type: string
+        uploadedBytes:
+          type: string
+        stageCompleteAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstWriteAt:
+          type: string
+          format: date-time
+          nullable: true
+        retryAfter:
+          type: string
+          format: date-time
+          nullable: true
+        lastErrorCode:
+          type: string
+          nullable: true
+        lastErrorMessage:
+          type: string
+          nullable: true
+        cleanupStatus:
+          type: string
+          enum:
+            - NONE
+            - PENDING
+            - COMPLETE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     SearchType:
       type: string
       enum:

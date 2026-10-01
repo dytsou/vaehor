@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   PrivateScheduledUploadStorage,
   normalizeManifestPath,
@@ -109,6 +109,63 @@ describe("private scheduled upload storage", () => {
 
     expect(manifest.items[0]?.sha256).toBeUndefined();
     expect(staged).toEqual({ size: bytes.byteLength, sha256: sha256(bytes) });
+  });
+
+  it("finishes writing a chunk after the file handle reports a short write", async () => {
+    const bytes = new TextEncoder().encode("short writes must be completed");
+    let reportShortWrite = true;
+    const writeChunk = vi.fn(
+      async (
+        handle: {
+          write(
+            buffer: Uint8Array,
+            offset?: number,
+            length?: number,
+            position?: number | null,
+          ): Promise<{ bytesWritten: number }>;
+        },
+        chunk: Uint8Array,
+        offset: number,
+      ) => {
+        const length = reportShortWrite
+          ? Math.min(3, chunk.byteLength - offset)
+          : chunk.byteLength - offset;
+        reportShortWrite = false;
+        const result = await handle.write(chunk, offset, length, null);
+        return result.bytesWritten;
+      },
+    );
+    const shortWriteStorage = new PrivateScheduledUploadStorage({
+      rootDirectory: path.join(root, "short-write-private"),
+      maxFileBytes: 1024,
+      maxPackageBytes: 2048,
+      reserveFreeBytes: 0,
+      freeBytes: async () => 1024 * 1024,
+      writeChunk,
+    });
+
+    await expect(
+      shortWriteStorage.writeStream({
+        scheduleId,
+        storageKey,
+        body: streamOf(bytes),
+        expectedSize: bytes.byteLength,
+        expectedSha256: sha256(bytes),
+      }),
+    ).resolves.toEqual({ size: bytes.byteLength, sha256: sha256(bytes) });
+
+    expect(writeChunk).toHaveBeenCalledTimes(2);
+    expect(
+      await readFile(
+        path.join(
+          root,
+          "short-write-private",
+          scheduleId,
+          `${storageKey}.blob`,
+        ),
+        "utf8",
+      ),
+    ).toBe(new TextDecoder().decode(bytes));
   });
 
   it.each([

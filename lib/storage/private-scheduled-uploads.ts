@@ -54,6 +54,11 @@ export interface PrivateScheduledUploadStorageOptions {
   maxItems?: number;
   reserveFreeBytes?: number;
   freeBytes?: (directory: string) => Promise<number>;
+  writeChunk?: (
+    fileHandle: Awaited<ReturnType<typeof open>>,
+    chunk: Uint8Array,
+    offset: number,
+  ) => Promise<number>;
 }
 
 export interface WriteScheduledUploadInput {
@@ -255,6 +260,9 @@ export class PrivateScheduledUploadStorage {
   private readonly rootDirectory: string;
   private readonly limits: ScheduledUploadLimits;
   private readonly freeBytes: (directory: string) => Promise<number>;
+  private readonly writeChunk: NonNullable<
+    PrivateScheduledUploadStorageOptions["writeChunk"]
+  >;
 
   constructor(options: PrivateScheduledUploadStorageOptions = {}) {
     const limits = getScheduledUploadLimits();
@@ -275,6 +283,17 @@ export class PrivateScheduledUploadStorage {
       (async (directory) => {
         const info = await statfs(directory);
         return info.bavail * info.bsize;
+      });
+    this.writeChunk =
+      options.writeChunk ??
+      (async (fileHandle, chunk, offset) => {
+        const result = await fileHandle.write(
+          chunk,
+          offset,
+          chunk.byteLength - offset,
+          null,
+        );
+        return result.bytesWritten;
       });
   }
 
@@ -351,7 +370,22 @@ export class PrivateScheduledUploadStorage {
               throw new Error("The streamed file exceeds its declared size.");
             }
             hash.update(chunk);
-            await fileHandle.write(chunk);
+            let chunkOffset = 0;
+            while (chunkOffset < chunk.byteLength) {
+              const bytesWritten = await this.writeChunk(
+                fileHandle,
+                chunk,
+                chunkOffset,
+              );
+              if (
+                !Number.isSafeInteger(bytesWritten) ||
+                bytesWritten <= 0 ||
+                bytesWritten > chunk.byteLength - chunkOffset
+              ) {
+                throw new Error("The private staging write made no progress.");
+              }
+              chunkOffset += bytesWritten;
+            }
           }
           await input.onProgress?.(receivedBytes);
         }

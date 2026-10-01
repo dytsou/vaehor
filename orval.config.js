@@ -24,6 +24,12 @@ module.exports = {
               name: "mixedUploadFetch",
             },
           },
+          downloadFile: {
+            mutator: {
+              path: "./packages/sdk/src/download-file-fetch.ts",
+              name: "downloadFileFetch",
+            },
+          },
         },
       },
     },
