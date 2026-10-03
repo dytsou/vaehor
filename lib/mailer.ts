@@ -6,18 +6,25 @@ interface MailOptions {
   html: string;
 }
 
-export async function sendMail({ to, subject, html }: MailOptions) {
+export async function sendMail({
+  to,
+  subject,
+  html,
+}: MailOptions): Promise<boolean> {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM } =
     process.env;
 
   if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
-    return;
+    return false;
   }
 
   const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
     port: Number.parseInt(SMTP_PORT, 10),
     secure: Number.parseInt(SMTP_PORT, 10) === 465,
+    connectionTimeout: 5_000,
+    greetingTimeout: 5_000,
+    socketTimeout: 5_000,
     auth: {
       user: SMTP_USER,
       pass: SMTP_PASS,
@@ -31,5 +38,8 @@ export async function sendMail({ to, subject, html }: MailOptions) {
       subject: subject,
       html: html,
     });
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }

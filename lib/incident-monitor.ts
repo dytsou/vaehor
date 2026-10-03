@@ -193,7 +193,7 @@ function getIndexField(ruleId: string, fingerprint: string): string {
   return `${ruleId}:${fingerprint}`;
 }
 
-async function collectAdminEmails(): Promise<string[]> {
+export async function collectAdminEmails(): Promise<string[]> {
   const fromEnv = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((value) => value.trim().toLowerCase())

@@ -2497,6 +2497,14 @@ export default function FilesRoute() {
           >
             <Text style={styles.actionText}>Favorites</Text>
           </Pressable>
+          {["EDITOR", "ADMIN"].includes(userRole.toUpperCase()) ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/scheduled-uploads")}
+            >
+              <Text style={styles.actionText}>Scheduled uploads</Text>
+            </Pressable>
+          ) : null}
           {["ADMIN", "EDITOR", "USER"].includes(userRole.toUpperCase()) &&
           !showingFavorites ? (
             <Pressable
