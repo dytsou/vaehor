@@ -877,9 +877,8 @@ function resolveParentId(
       candidate.kind === "FOLDER" && candidate.manifestPath === parent,
   );
   if (
-    !parentFolder ||
-    parentFolder.status !== "COMPLETE" ||
-    !parentFolder?.remoteFileId
+    !parentFolder?.remoteFileId ||
+    parentFolder.status !== "COMPLETE"
   ) {
     throw new ScheduledUploadWorkerError(
       "MANIFEST_PARENT_FOLDER_MISSING",
@@ -1458,6 +1457,37 @@ async function processClaim(
     return { completed: false, operation: "none" as const, chunks: 0 };
   }
 
+  const sessionUris = await getSessionUris(claim, dependencies);
+  if (!sessionUris) {
+    return { completed: false, operation: "none" as const, chunks: 0 };
+  }
+
+  if (claim.schedule.firstWriteAttemptAt === null) {
+    const firstWriteResult = await handleFirstWrite(claim, dependencies);
+    if (firstWriteResult) return firstWriteResult;
+  }
+
+  const item = chooseNextItem(claim);
+  if (!item) {
+    return await completeSchedule(claim, dependencies);
+  }
+
+  if (item.kind === "FOLDER") {
+    const result = await processFolder(claim, item, dependencies);
+    if (result.operation === "none") return { completed: false, ...result };
+    await releaseProgressClaim(claim, dependencies);
+    return { completed: false, ...result };
+  }
+  const result = await processFile(claim, item, sessionUris, dependencies);
+  if (result.operation === "none") return { completed: false, ...result };
+  await releaseProgressClaim(claim, dependencies);
+  return { completed: false, ...result };
+}
+
+async function getSessionUris(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+): Promise<Map<string, string> | null> {
   let sessionUris: Map<string, string>;
   try {
     sessionUris = currentSessionUris(claim, dependencies);
@@ -1474,135 +1504,149 @@ async function processClaim(
           : "SESSION_TAMPERED",
         error.message,
       );
+      return null;
+    }
+    throw error;
+  }
+  return sessionUris;
+}
+
+async function handleFirstWrite(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  const role = await dependencies.resolveRole(claim.schedule.creatorEmail);
+  if (role !== "EDITOR" && role !== "ADMIN") {
+    await pauseForAttention(
+      claim,
+      dependencies,
+      "CREATOR_ROLE_REVOKED",
+      "The creator no longer has editor access.",
+    );
+    return { completed: false, operation: "none" as const, chunks: 0 };
+  }
+
+  const verification = await verifyStagingBeforeRelease(claim, dependencies);
+  if (verification === "invalid") {
+    await pauseForAttention(
+      claim,
+      dependencies,
+      "STAGE_INTEGRITY_FAILED",
+      "Staged content no longer matches the committed package.",
+    );
+    return { completed: false, operation: "none" as const, chunks: 0 };
+  }
+  if (verification === "progress") {
+    await dependencies.store.finishClaim({
+      scheduleId: claim.schedule.id,
+      leaseToken: claim.leaseToken,
+      attemptId: claim.attemptId,
+      status: "RELEASING",
+    });
+    return { completed: false, operation: "item" as const, chunks: 0 };
+  }
+
+  const canAccessDestination = await checkDestinationAccess(claim, dependencies, role);
+  if (!canAccessDestination) {
+    await pauseForAttention(
+      claim,
+      dependencies,
+      "DESTINATION_ACCESS_REVOKED",
+      "The creator no longer has access to the selected destination folder.",
+      "DESTINATION_ACCESS_REVOKED",
+    );
+    return { completed: false, operation: "none" as const, chunks: 0 };
+  }
+
+  const destValidation = await validateDestination(claim, dependencies);
+  if (destValidation) return destValidation;
+  return null;
+}
+
+async function checkDestinationAccess(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+  role: ScheduledUploadWorkerRole,
+) {
+  let canAccessDestination = false;
+  try {
+    canAccessDestination = await dependencies.canAccessDestination(
+      scheduledUploadAccessEmail(claim.schedule),
+      claim.schedule.destinationId,
+      role,
+    );
+  } catch {
+    canAccessDestination = false;
+  }
+  return canAccessDestination;
+}
+
+async function validateDestination(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  try {
+    await validateDestinationChain(
+      claim.schedule.destinationId,
+      dependencies.drive,
+    );
+    return null;
+  } catch (error) {
+    if (error instanceof ScheduledUploadWorkerError) {
+      if (error.retryable) {
+        await pauseForRetry(claim, dependencies, error.code, error.message);
+      } else {
+        await pauseForAttention(
+          claim,
+          dependencies,
+          error.code,
+          error.message,
+        );
+      }
+      return { completed: false, operation: "none" as const, chunks: 0 };
+    }
+    if (error instanceof ScheduledUploadDriveError) {
+      if (isRetryableDriveStatus(error.status)) {
+        await pauseForRetry(
+          claim,
+          dependencies,
+          `DRIVE_HTTP_${error.status}`,
+          "Google Drive is temporarily unavailable.",
+          error.retryAfterSeconds,
+        );
+      } else {
+        await pauseForAttention(
+          claim,
+          dependencies,
+          `DRIVE_HTTP_${error.status}`,
+          "The Drive destination could not be verified.",
+        );
+      }
       return { completed: false, operation: "none" as const, chunks: 0 };
     }
     throw error;
   }
+}
 
-  if (claim.schedule.firstWriteAttemptAt === null) {
-    const role = await dependencies.resolveRole(claim.schedule.creatorEmail);
-    if (role !== "EDITOR" && role !== "ADMIN") {
-      await pauseForAttention(
-        claim,
-        dependencies,
-        "CREATOR_ROLE_REVOKED",
-        "The creator no longer has editor access.",
-      );
-      return { completed: false, operation: "none" as const, chunks: 0 };
-    }
-
-    const verification = await verifyStagingBeforeRelease(claim, dependencies);
-    if (verification === "invalid") {
-      await pauseForAttention(
-        claim,
-        dependencies,
-        "STAGE_INTEGRITY_FAILED",
-        "Staged content no longer matches the committed package.",
-      );
-      return { completed: false, operation: "none" as const, chunks: 0 };
-    }
-    if (verification === "progress") {
-      await dependencies.store.finishClaim({
-        scheduleId: claim.schedule.id,
-        leaseToken: claim.leaseToken,
-        attemptId: claim.attemptId,
-        status: "RELEASING",
-      });
-      return { completed: false, operation: "item" as const, chunks: 0 };
-    }
-
-    let canAccessDestination = false;
-    try {
-      canAccessDestination = await dependencies.canAccessDestination(
-        scheduledUploadAccessEmail(claim.schedule),
-        claim.schedule.destinationId,
-        role,
-      );
-    } catch {
-      canAccessDestination = false;
-    }
-    if (!canAccessDestination) {
-      await pauseForAttention(
-        claim,
-        dependencies,
-        "DESTINATION_ACCESS_REVOKED",
-        "The creator no longer has access to the selected destination folder.",
-        "DESTINATION_ACCESS_REVOKED",
-      );
-      return { completed: false, operation: "none" as const, chunks: 0 };
-    }
-
-    try {
-      await validateDestinationChain(
-        claim.schedule.destinationId,
-        dependencies.drive,
-      );
-    } catch (error) {
-      if (error instanceof ScheduledUploadWorkerError) {
-        if (error.retryable) {
-          await pauseForRetry(claim, dependencies, error.code, error.message);
-        } else {
-          await pauseForAttention(
-            claim,
-            dependencies,
-            error.code,
-            error.message,
-          );
-        }
-        return { completed: false, operation: "none" as const, chunks: 0 };
-      }
-      if (error instanceof ScheduledUploadDriveError) {
-        if (isRetryableDriveStatus(error.status)) {
-          await pauseForRetry(
-            claim,
-            dependencies,
-            `DRIVE_HTTP_${error.status}`,
-            "Google Drive is temporarily unavailable.",
-            error.retryAfterSeconds,
-          );
-        } else {
-          await pauseForAttention(
-            claim,
-            dependencies,
-            `DRIVE_HTTP_${error.status}`,
-            "The Drive destination could not be verified.",
-          );
-        }
-        return { completed: false, operation: "none" as const, chunks: 0 };
-      }
-      throw error;
-    }
+async function completeSchedule(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  const finished = await dependencies.store.finishClaim({
+    scheduleId: claim.schedule.id,
+    leaseToken: claim.leaseToken,
+    attemptId: claim.attemptId,
+    status: "COMPLETED",
+  });
+  if (!finished) {
+    throw new ScheduledUploadWorkerError(
+      "RELEASE_LEASE_LOST",
+      "The scheduled upload release lease expired.",
+      true,
+    );
   }
-
-  const item = chooseNextItem(claim);
-  if (!item) {
-    const finished = await dependencies.store.finishClaim({
-      scheduleId: claim.schedule.id,
-      leaseToken: claim.leaseToken,
-      attemptId: claim.attemptId,
-      status: "COMPLETED",
-    });
-    if (!finished) {
-      throw new ScheduledUploadWorkerError(
-        "RELEASE_LEASE_LOST",
-        "The scheduled upload release lease expired.",
-        true,
-      );
-    }
-    await dependencies.retryCleanup(claim.schedule.id);
-    return { completed: true, operation: "none" as const, chunks: 0 };
-  }
-
-  if (item.kind === "FOLDER") {
-    const result = await processFolder(claim, item, dependencies);
-    if (result.operation === "none") return { completed: false, ...result };
-    await releaseProgressClaim(claim, dependencies);
-    return { completed: false, ...result };
-  }
-  const result = await processFile(claim, item, sessionUris, dependencies);
-  if (result.operation === "none") return { completed: false, ...result };
-  await releaseProgressClaim(claim, dependencies);
-  return { completed: false, ...result };
+  await dependencies.retryCleanup(claim.schedule.id);
+  return { completed: true, operation: "none" as const, chunks: 0 };
 }
 
 async function handleClaimError(
@@ -1656,7 +1700,23 @@ async function handleClaimError(
 
 async function runWorkerTick(dependencies: ScheduledUploadWorkerDependencies) {
   const startedAt = dependencies.now().getTime();
-  const summary = {
+  const summary = createSummary();
+
+  await runCleanup(dependencies, summary);
+
+  while (shouldContinue(summary, dependencies, startedAt)) {
+    const claim = await claimNextSchedule(dependencies, summary);
+    if (!claim) break;
+
+    await processClaimWithSummary(claim, dependencies, summary);
+  }
+
+  summary.elapsedMs = Math.max(0, dependencies.now().getTime() - startedAt);
+  return summary;
+}
+
+function createSummary() {
+  return {
     claimedSchedules: 0,
     completedSchedules: 0,
     cleanedSchedules: 0,
@@ -1667,43 +1727,62 @@ async function runWorkerTick(dependencies: ScheduledUploadWorkerDependencies) {
     pausedSchedules: 0,
     elapsedMs: 0,
   };
+}
 
+async function runCleanup(dependencies: ScheduledUploadWorkerDependencies, summary: ReturnType<typeof createSummary>) {
   try {
     summary.cleanedSchedules = await dependencies.retryPendingCleanup();
   } catch {
     summary.cleanupFailures += 1;
   }
+}
 
-  while (
+function shouldContinue(
+  summary: ReturnType<typeof createSummary>,
+  dependencies: ScheduledUploadWorkerDependencies,
+  startedAt: number,
+) {
+  return (
     summary.claimedSchedules < dependencies.maxSchedulesPerTick &&
     summary.processedItems < dependencies.maxItemsPerTick &&
     summary.uploadedChunks < dependencies.maxChunksPerTick &&
     dependencies.now().getTime() - startedAt < dependencies.maxDurationMs
-  ) {
-    let claim: ScheduledUploadReleaseClaim | null;
-    try {
-      claim = await dependencies.store.claimNextScheduledUpload();
-    } catch {
-      summary.pausedSchedules += 1;
-      break;
-    }
-    if (!claim) break;
+  );
+}
 
-    summary.claimedSchedules += 1;
-    if (claim.leaseRecovered) summary.leaseRecoveries += 1;
-    try {
-      const result = await processClaim(claim, dependencies);
-      if (result.operation !== "none") summary.processedItems += 1;
-      summary.uploadedChunks += result.chunks;
-      if (result.completed) summary.completedSchedules += 1;
-      else if (result.operation === "none") summary.pausedSchedules += 1;
-    } catch (error) {
-      summary.pausedSchedules += 1;
-      await handleClaimError(claim, error, dependencies);
-    }
+async function claimNextSchedule(
+  dependencies: ScheduledUploadWorkerDependencies,
+  summary: ReturnType<typeof createSummary>,
+) {
+  let claim: ScheduledUploadReleaseClaim | null;
+  try {
+    claim = await dependencies.store.claimNextScheduledUpload();
+  } catch {
+    summary.pausedSchedules += 1;
+    return null;
   }
-  summary.elapsedMs = Math.max(0, dependencies.now().getTime() - startedAt);
-  return summary;
+  if (!claim) return null;
+
+  summary.claimedSchedules += 1;
+  if (claim.leaseRecovered) summary.leaseRecoveries += 1;
+  return claim;
+}
+
+async function processClaimWithSummary(
+  claim: ScheduledUploadReleaseClaim,
+  dependencies: ScheduledUploadWorkerDependencies,
+  summary: ReturnType<typeof createSummary>,
+) {
+  try {
+    const result = await processClaim(claim, dependencies);
+    if (result.operation !== "none") summary.processedItems += 1;
+    summary.uploadedChunks += result.chunks;
+    if (result.completed) summary.completedSchedules += 1;
+    else if (result.operation === "none") summary.pausedSchedules += 1;
+  } catch (error) {
+    summary.pausedSchedules += 1;
+    await handleClaimError(claim, error, dependencies);
+  }
 }
 
 export async function runScheduledUploadWorkerTick() {

@@ -1080,7 +1080,9 @@ export default function ScheduledUploads({
                       100,
                       Math.round((transferredBytes / totalBytes) * 100),
                     )
-                  : emptyProgressPercent;
+                  : isStaging
+                    ? 0
+                    : 100;
               const ownsSchedule = schedule.creatorEmail === user?.email;
               const canReschedule =
                 ownsSchedule &&

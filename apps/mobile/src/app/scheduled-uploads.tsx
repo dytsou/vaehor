@@ -323,19 +323,24 @@ function updateDashboardWithSchedule(
   };
 }
 
-async function refreshActiveStagingSession(
-  api: ScheduledUploadApi,
-  active: { schedule: ScheduledUpload; stagedPaths: Set<string> },
-  copy: Record<string, string>,
-  clearSelection: () => void,
-  setNewUploadOpen: (open: boolean) => void,
+interface StagingContext {
+  api: ScheduledUploadApi;
+  active: { schedule: ScheduledUpload; stagedPaths: Set<string> };
+  copy: Record<string, string>;
+  clearSelection: () => void;
+  setNewUploadOpen: (open: boolean) => void;
   setScheduleDetails: React.Dispatch<
     React.SetStateAction<Record<string, ScheduledUpload>>
-  >,
-  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>,
-  refresh: () => void,
-  setNotice: (notice: string | null) => void,
+  >;
+  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
+  refresh: () => void;
+  setNotice: (notice: string | null) => void;
+}
+
+async function refreshActiveStagingSession(
+  context: StagingContext,
 ): Promise<{ schedule: ScheduledUpload; stagedPaths: Set<string> } | null> {
+  const { api, active, copy, clearSelection, setNewUploadOpen, setScheduleDetails, setDashboard, refresh, setNotice } = context;
   const latest = (await api.get(active.schedule.id)).schedule;
   active.schedule = latest;
   for (const item of latest.items) {
@@ -424,24 +429,27 @@ async function stageFiles(
   await staging;
 }
 
-async function commitSchedule(
-  api: ScheduledUploadApi,
-  activeSchedule: { schedule: ScheduledUpload; stagedPaths: Set<string> },
-  copy: Record<string, string>,
-  clearSelection: () => void,
-  setNewUploadOpen: (open: boolean) => void,
+interface CommitContext {
+  api: ScheduledUploadApi;
+  activeSchedule: { schedule: ScheduledUpload; stagedPaths: Set<string> };
+  copy: Record<string, string>;
+  clearSelection: () => void;
+  setNewUploadOpen: (open: boolean) => void;
   setScheduleDetails: React.Dispatch<
     React.SetStateAction<Record<string, ScheduledUpload>>
-  >,
-  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>,
-  refresh: () => void,
-  setNotice: (notice: string | null) => void,
-  setStagingScheduleId: (id: string | null) => void,
+  >;
+  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>;
+  refresh: () => void;
+  setNotice: (notice: string | null) => void;
+  setStagingScheduleId: (id: string | null) => void;
   stagingRef: React.MutableRefObject<{
     schedule: ScheduledUpload;
     stagedPaths: Set<string>;
-  } | null>,
-) {
+  } | null>;
+}
+
+async function commitSchedule(context: CommitContext) {
+  const { api, activeSchedule, copy, clearSelection, setNewUploadOpen, setScheduleDetails, setDashboard, refresh, setNotice, setStagingScheduleId, stagingRef } = context;
   const committed = await api.commit(activeSchedule.schedule.id);
   if (committed.schedule.status !== ScheduledUploadStatus.WAITING) {
     activeSchedule.schedule = committed.schedule;
@@ -718,7 +726,7 @@ export function ScheduledUploadsScreen({
       let active = stagingRef.current;
 
       if (active) {
-        const refreshed = await refreshActiveStagingSession(
+        const refreshed = await refreshActiveStagingSession({
           api,
           active,
           copy,
@@ -728,7 +736,7 @@ export function ScheduledUploadsScreen({
           setDashboard,
           refresh,
           setNotice,
-        );
+        });
         if (!refreshed) return;
         active = refreshed;
       }
@@ -757,9 +765,9 @@ export function ScheduledUploadsScreen({
         setNotice,
       );
 
-      await commitSchedule(
+      await commitSchedule({
         api,
-        active,
+        activeSchedule: active,
         copy,
         clearSelection,
         setNewUploadOpen,
@@ -769,7 +777,7 @@ export function ScheduledUploadsScreen({
         setNotice,
         setStagingScheduleId,
         stagingRef,
-      );
+      });
     } catch (cause) {
       setActionError(errorMessage(cause));
     } finally {

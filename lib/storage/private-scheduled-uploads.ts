@@ -144,89 +144,90 @@ export function normalizeManifestPath(value: string): string {
   return segments.join("/");
 }
 
-export function validateScheduledUploadManifest(
-  input: readonly ScheduledUploadManifestEntryInput[],
-  limits: Pick<
-    ScheduledUploadLimits,
-    "maxFileBytes" | "maxPackageBytes" | "maxItems"
-  > = getScheduledUploadLimits(),
-): ValidatedScheduledUploadManifest {
-  if (!Array.isArray(input) || input.length === 0) {
+function validateEntry(
+  entry: ScheduledUploadManifestEntryInput,
+  limits: Pick<ScheduledUploadLimits, "maxFileBytes" | "maxPackageBytes" | "maxItems">,
+  totalBytes: { value: number },
+  paths: Map<string, ScheduledUploadManifestEntry>,
+) {
+  if (!entry || (entry.kind !== "file" && entry.kind !== "folder")) {
+    throw new Error("Every manifest item must be a file or folder.");
+  }
+  const normalizedPath = normalizeManifestPath(entry.path);
+  if (!Number.isSafeInteger(entry.size) || entry.size < 0) {
+    throw new Error(`Manifest item ${normalizedPath} has an invalid size.`);
+  }
+
+  const item: ScheduledUploadManifestEntry = {
+    path: normalizedPath,
+    kind: entry.kind,
+    size: entry.size,
+  };
+
+  if (entry.kind === "file") {
+    validateFileEntry(entry, normalizedPath, limits, totalBytes, item);
+  } else if (entry.size !== 0 || entry.sha256 !== undefined) {
     throw new Error(
-      "A scheduled upload must contain at least one manifest item.",
+      `Folder manifest item ${normalizedPath} must have size zero and no hash.`,
     );
   }
-  if (input.length > limits.maxItems) {
-    throw new Error(`The package exceeds the ${limits.maxItems} item limit.`);
+
+  const existing = paths.get(normalizedPath);
+  if (existing) {
+    throw new Error(`Duplicate normalized manifest path: ${normalizedPath}.`);
   }
+  paths.set(normalizedPath, item);
+  return item;
+}
 
-  let totalBytes = 0;
-  const paths = new Map<string, ScheduledUploadManifestEntry>();
-  const items = input.map((entry) => {
-    if (!entry || (entry.kind !== "file" && entry.kind !== "folder")) {
-      throw new Error("Every manifest item must be a file or folder.");
-    }
-    const normalizedPath = normalizeManifestPath(entry.path);
-    if (!Number.isSafeInteger(entry.size) || entry.size < 0) {
-      throw new Error(`Manifest item ${normalizedPath} has an invalid size.`);
-    }
-
-    const item: ScheduledUploadManifestEntry = {
-      path: normalizedPath,
-      kind: entry.kind,
-      size: entry.size,
-    };
-
-    if (entry.kind === "file") {
-      if (entry.size > limits.maxFileBytes) {
-        throw new Error(
-          `Manifest item ${normalizedPath} exceeds the file size limit.`,
-        );
-      }
-      if (
-        entry.sha256 !== undefined &&
-        (typeof entry.sha256 !== "string" ||
-          !/^[a-f\d]{64}$/i.test(entry.sha256))
-      ) {
-        throw new Error(
-          `Manifest item ${normalizedPath} must include a SHA-256 hash.`,
-        );
-      }
-      if (entry.sha256 !== undefined) {
-        item.sha256 = entry.sha256.toLowerCase();
-      }
-      if (entry.contentType !== undefined) {
-        if (
-          typeof entry.contentType !== "string" ||
-          entry.contentType.length > 255
-        ) {
-          throw new Error(
-            `Manifest item ${normalizedPath} has an invalid content type.`,
-          );
-        }
-        item.contentType = entry.contentType;
-      }
-      totalBytes += entry.size;
-      if (
-        !Number.isSafeInteger(totalBytes) ||
-        totalBytes > limits.maxPackageBytes
-      ) {
-        throw new Error("The package exceeds the configured size limit.");
-      }
-    } else if (entry.size !== 0 || entry.sha256 !== undefined) {
+function validateFileEntry(
+  entry: ScheduledUploadManifestEntryInput,
+  normalizedPath: string,
+  limits: Pick<ScheduledUploadLimits, "maxFileBytes" | "maxPackageBytes" | "maxItems">,
+  totalBytes: { value: number },
+  item: ScheduledUploadManifestEntry,
+) {
+  if (entry.size > limits.maxFileBytes) {
+    throw new Error(
+      `Manifest item ${normalizedPath} exceeds the file size limit.`,
+    );
+  }
+  if (
+    entry.sha256 !== undefined &&
+    (typeof entry.sha256 !== "string" ||
+      !/^[a-f\d]{64}$/i.test(entry.sha256))
+  ) {
+    throw new Error(
+      `Manifest item ${normalizedPath} must include a SHA-256 hash.`,
+    );
+  }
+  if (entry.sha256 !== undefined) {
+    item.sha256 = entry.sha256.toLowerCase();
+  }
+  if (entry.contentType !== undefined) {
+    if (
+      typeof entry.contentType !== "string" ||
+      entry.contentType.length > 255
+    ) {
       throw new Error(
-        `Folder manifest item ${normalizedPath} must have size zero and no hash.`,
+        `Manifest item ${normalizedPath} has an invalid content type.`,
       );
     }
+    item.contentType = entry.contentType;
+  }
+  totalBytes.value += entry.size;
+  if (
+    !Number.isSafeInteger(totalBytes.value) ||
+    totalBytes.value > limits.maxPackageBytes
+  ) {
+    throw new Error("The package exceeds the configured size limit.");
+  }
+}
 
-    const existing = paths.get(normalizedPath);
-    if (existing) {
-      throw new Error(`Duplicate normalized manifest path: ${normalizedPath}.`);
-    }
-    paths.set(normalizedPath, item);
-    return item;
-  });
-
+function validatePathHierarchy(
+  items: ScheduledUploadManifestEntry[],
+  paths: Map<string, ScheduledUploadManifestEntry>,
+) {
   for (const item of items) {
     const segments = item.path.split("/");
     for (let index = 1; index < segments.length; index += 1) {
@@ -252,8 +253,33 @@ export function validateScheduledUploadManifest(
       }
     }
   }
+}
 
-  return { items, totalBytes };
+export function validateScheduledUploadManifest(
+  input: readonly ScheduledUploadManifestEntryInput[],
+  limits: Pick<
+    ScheduledUploadLimits,
+    "maxFileBytes" | "maxPackageBytes" | "maxItems"
+  > = getScheduledUploadLimits(),
+): ValidatedScheduledUploadManifest {
+  if (!Array.isArray(input) || input.length === 0) {
+    throw new Error(
+      "A scheduled upload must contain at least one manifest item.",
+    );
+  }
+  if (input.length > limits.maxItems) {
+    throw new Error(`The package exceeds the ${limits.maxItems} item limit.`);
+  }
+
+  let totalBytes = { value: 0 };
+  const paths = new Map<string, ScheduledUploadManifestEntry>();
+  const items = input.map((entry) =>
+    validateEntry(entry, limits, totalBytes, paths),
+  );
+
+  validatePathHierarchy(items, paths);
+
+  return { items, totalBytes: totalBytes.value };
 }
 
 export class PrivateScheduledUploadStorage {
@@ -319,112 +345,37 @@ export class PrivateScheduledUploadStorage {
   }
 
   async writeStream(input: WriteScheduledUploadInput) {
-    assertOpaqueKey(input.scheduleId, "schedule key");
-    assertOpaqueKey(input.storageKey, "storage key");
-    if (!input.body) throw new Error("A streamed file body is required.");
-    if (
-      !Number.isSafeInteger(input.expectedSize) ||
-      input.expectedSize < 0 ||
-      input.expectedSize > this.limits.maxFileBytes
-    ) {
-      throw new Error("The file size is outside the configured limit.");
-    }
-    if (
-      input.expectedSha256 !== undefined &&
-      !/^[a-f\d]{64}$/i.test(input.expectedSha256)
-    ) {
-      throw new Error("A valid expected SHA-256 hash is required.");
-    }
-
-    const directory = await this.ensureScheduleDirectory(input.scheduleId);
-    await this.assertPackageCapacity(input.expectedSize);
-    const temporaryPath = path.join(directory, `.${randomUUID()}.partial`);
-    const finalPath = path.join(directory, `${input.storageKey}.blob`);
-    let fileHandle: Awaited<ReturnType<typeof open>> | undefined;
-    let receivedBytes = 0;
+    const { directory, temporaryPath, finalPath, fileHandle } = await prepareWrite(
+      this,
+      input,
+      this.limits.maxFileBytes,
+      (id) => this.ensureScheduleDirectory(id),
+      (bytes) => this.assertPackageCapacity(bytes),
+    );
+    const reader = input.body!.getReader();
     const hash = createHash("sha256");
 
     try {
-      fileHandle = await open(
-        temporaryPath,
-        constants.O_CREAT |
-          constants.O_EXCL |
-          constants.O_WRONLY |
-          constants.O_NOFOLLOW,
-        0o600,
+      const receivedBytes = await writeChunks(
+        fileHandle,
+        reader,
+        input.expectedSize,
+        hash,
+        input.onProgress,
+        this.writeChunk,
       );
-
-      const reader = input.body.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          for (
-            let offset = 0;
-            offset < value.byteLength;
-            offset += MAX_IO_CHUNK_BYTES
-          ) {
-            const chunk = value.subarray(offset, offset + MAX_IO_CHUNK_BYTES);
-            receivedBytes += chunk.byteLength;
-            if (receivedBytes > input.expectedSize) {
-              throw new Error("The streamed file exceeds its declared size.");
-            }
-            hash.update(chunk);
-            let chunkOffset = 0;
-            while (chunkOffset < chunk.byteLength) {
-              const bytesWritten = await this.writeChunk(
-                fileHandle,
-                chunk,
-                chunkOffset,
-              );
-              if (
-                !Number.isSafeInteger(bytesWritten) ||
-                bytesWritten <= 0 ||
-                bytesWritten > chunk.byteLength - chunkOffset
-              ) {
-                throw new Error("The private staging write made no progress.");
-              }
-              chunkOffset += bytesWritten;
-            }
-          }
-          await input.onProgress?.(receivedBytes);
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      if (receivedBytes !== input.expectedSize) {
-        throw new Error("The streamed file size does not match its manifest.");
-      }
       const actualHash = hash.digest("hex");
-      if (
-        input.expectedSha256 !== undefined &&
-        actualHash !== input.expectedSha256.toLowerCase()
-      ) {
-        throw new Error(
-          "The streamed file SHA-256 hash does not match its manifest.",
-        );
-      }
-
-      await fileHandle.sync();
-      await fileHandle.close();
-      fileHandle = undefined;
-
-      const checkedDirectory = await this.ensureScheduleDirectory(
-        input.scheduleId,
+      return finalizeWrite(
+        fileHandle,
+        temporaryPath,
+        finalPath,
+        directory,
+        input.expectedSize,
+        input.expectedSha256,
+        actualHash,
+        receivedBytes,
+        (id) => this.ensureScheduleDirectory(id),
       );
-      if (checkedDirectory !== directory) {
-        throw new Error("The private staging directory changed while writing.");
-      }
-      await rename(temporaryPath, finalPath);
-      const directoryHandle = await open(directory, constants.O_RDONLY);
-      try {
-        await directoryHandle.sync();
-      } finally {
-        await directoryHandle.close();
-      }
-
-      return { size: receivedBytes, sha256: actualHash };
     } catch (error) {
       await fileHandle?.close().catch(() => undefined);
       await unlink(temporaryPath).catch(() => undefined);
@@ -582,6 +533,139 @@ export class PrivateScheduledUploadStorage {
     }
     return resolvedDirectory;
   }
+}
+
+async function prepareWrite(
+  storage: PrivateScheduledUploadStorage,
+  input: WriteScheduledUploadInput,
+  maxFileBytes: number,
+  ensureScheduleDirectory: (scheduleId: string) => Promise<string>,
+  assertPackageCapacity: (requiredBytes: number) => Promise<void>,
+) {
+  assertOpaqueKey(input.scheduleId, "schedule key");
+  assertOpaqueKey(input.storageKey, "storage key");
+  if (!input.body) throw new Error("A streamed file body is required.");
+  if (
+    !Number.isSafeInteger(input.expectedSize) ||
+    input.expectedSize < 0 ||
+    input.expectedSize > maxFileBytes
+  ) {
+    throw new Error("The file size is outside the configured limit.");
+  }
+  if (
+    input.expectedSha256 !== undefined &&
+    !/^[a-f\d]{64}$/i.test(input.expectedSha256)
+  ) {
+    throw new Error("A valid expected SHA-256 hash is required.");
+  }
+
+  const directory = await ensureScheduleDirectory(input.scheduleId);
+  await assertPackageCapacity(input.expectedSize);
+  const temporaryPath = path.join(directory, `.${randomUUID()}.partial`);
+  const finalPath = path.join(directory, `${input.storageKey}.blob`);
+
+  const fileHandle = await open(
+    temporaryPath,
+    constants.O_CREAT |
+      constants.O_EXCL |
+      constants.O_WRONLY |
+      constants.O_NOFOLLOW,
+    0o600,
+  );
+
+  return { directory, temporaryPath, finalPath, fileHandle };
+}
+
+async function writeChunks(
+  fileHandle: Awaited<ReturnType<typeof open>>,
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  expectedSize: number,
+  hash: ReturnType<typeof createHash>,
+  onProgress: ((bytes: number) => void) | undefined,
+  writeChunk: (
+    fileHandle: Awaited<ReturnType<typeof open>>,
+    chunk: Uint8Array,
+    offset: number,
+  ) => Promise<number>,
+) {
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    for (
+      let offset = 0;
+      offset < value.byteLength;
+      offset += MAX_IO_CHUNK_BYTES
+    ) {
+      const chunk = value.subarray(offset, offset + MAX_IO_CHUNK_BYTES);
+      receivedBytes += chunk.byteLength;
+      if (receivedBytes > expectedSize) {
+        throw new Error("The streamed file exceeds its declared size.");
+      }
+      hash.update(chunk);
+      let chunkOffset = 0;
+      while (chunkOffset < chunk.byteLength) {
+        const bytesWritten = await writeChunk(
+          fileHandle,
+          chunk,
+          chunkOffset,
+        );
+        if (
+          !Number.isSafeInteger(bytesWritten) ||
+          bytesWritten <= 0 ||
+          bytesWritten > chunk.byteLength - chunkOffset
+        ) {
+          throw new Error("The private staging write made no progress.");
+        }
+        chunkOffset += bytesWritten;
+      }
+    }
+    await onProgress?.(receivedBytes);
+  }
+  return receivedBytes;
+}
+
+async function finalizeWrite(
+  fileHandle: Awaited<ReturnType<typeof open>>,
+  temporaryPath: string,
+  finalPath: string,
+  directory: string,
+  expectedSize: number,
+  expectedSha256: string | undefined,
+  actualHash: string,
+  receivedBytes: number,
+  ensureScheduleDirectory: (scheduleId: string) => Promise<string>,
+) {
+  if (receivedBytes !== expectedSize) {
+    throw new Error("The streamed file size does not match its manifest.");
+  }
+  if (
+    expectedSha256 !== undefined &&
+    actualHash !== expectedSha256.toLowerCase()
+  ) {
+    throw new Error(
+      "The streamed file SHA-256 hash does not match its manifest.",
+    );
+  }
+
+  await fileHandle.sync();
+  await fileHandle.close();
+
+  const checkedDirectory = await ensureScheduleDirectory(
+    path.basename(directory),
+  );
+  if (checkedDirectory !== directory) {
+    throw new Error("The private staging directory changed while writing.");
+  }
+  await rename(temporaryPath, finalPath);
+  const directoryHandle = await open(directory, constants.O_RDONLY);
+  try {
+    await directoryHandle.sync();
+  } finally {
+    await directoryHandle.close();
+  }
+
+  return { size: receivedBytes, sha256: actualHash };
 }
 
 export const privateScheduledUploadStorage =
