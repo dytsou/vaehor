@@ -133,6 +133,15 @@ function errorText(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function computeProgressPercent(
+  transferredBytes: number,
+  totalBytes: number,
+  isStaging: boolean,
+) {
+  if (totalBytes <= 0) return isStaging ? 0 : 100;
+  return Math.min(100, Math.round((transferredBytes / totalBytes) * 100));
+}
+
 function formatBytes(bytes: number, locale: string) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -155,6 +164,88 @@ const folderPickerAttributes = {
   webkitdirectory?: string;
   directory?: string;
 };
+
+function validateCreateInputs({
+  manifest,
+  duePreview,
+  t,
+  setError,
+}: Readonly<{
+  manifest: Readonly<{
+    items: ScheduledUploadManifestItem[];
+    error: string;
+  }>;
+  duePreview: Date | null;
+  t: (key: string) => string;
+  setError: (message: string) => void;
+}>): Date | null {
+  if (manifest.error) {
+    setError(manifest.error);
+    return null;
+  }
+  if (manifest.items.length === 0) {
+    setError(t("selectFilesFirst"));
+    return null;
+  }
+  if (!duePreview) {
+    setError(t("chooseFutureTime"));
+    return null;
+  }
+  return duePreview;
+}
+
+async function loadAdminAlerts({
+  isCurrent,
+  setAlerts,
+  setError,
+  t,
+}: Readonly<{
+  isCurrent: () => boolean;
+  setAlerts: React.Dispatch<React.SetStateAction<ScheduledUploadAdminAlert[]>>;
+  setError: React.Dispatch<React.SetStateAction<string>>;
+  t: (key: string) => string;
+}>) {
+  try {
+    const response = await fetch(
+      "/api/admin/scheduled-uploads/alerts?status=OPEN",
+      { cache: "no-store" },
+    );
+    const data = (await response.json()) as {
+      alerts?: ScheduledUploadAdminAlert[];
+      error?: string;
+    };
+    if (!isCurrent()) return;
+    if (!response.ok) throw new Error(data.error || t("alertsLoadFailed"));
+    setAlerts(data.alerts ?? []);
+  } catch (alertError) {
+    if (isCurrent()) setError(errorText(alertError, t("alertsLoadFailed")));
+  }
+}
+
+async function requestCancel({
+  scheduleId,
+  isAdmin,
+  t,
+}: Readonly<{
+  scheduleId: string;
+  isAdmin: boolean;
+  t: (key: string) => string;
+}>) {
+  if (isAdmin) {
+    const response = await fetch("/api/admin/scheduled-uploads/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scheduleId }),
+    });
+    const data = (await response.json()) as { error?: string };
+    if (!response.ok) throw new Error(data.error || t("cancelFailed"));
+    return;
+  }
+  const response = await cancelScheduledUpload(scheduleId);
+  if (response.status !== 200) {
+    throw new Error(apiError(response.data, t("cancelFailed")));
+  }
+}
 
 export default function ScheduledUploads({
   destinationId,
@@ -240,24 +331,12 @@ export default function ScheduledUploads({
       }
 
       if (isAdmin) {
-        try {
-          const response = await fetch(
-            "/api/admin/scheduled-uploads/alerts?status=OPEN",
-            { cache: "no-store" },
-          );
-          const data = (await response.json()) as {
-            alerts?: ScheduledUploadAdminAlert[];
-            error?: string;
-          };
-          if (!isCurrent()) return;
-          if (!response.ok)
-            throw new Error(data.error || t("alertsLoadFailed"));
-          setAlerts(data.alerts ?? []);
-        } catch (alertError) {
-          if (isCurrent()) {
-            setError(errorText(alertError, t("alertsLoadFailed")));
-          }
-        }
+        await loadAdminAlerts({
+          isCurrent,
+          setAlerts,
+          setError,
+          t,
+        });
       } else if (isCurrent()) {
         setAlerts([]);
       }
@@ -423,6 +502,8 @@ export default function ScheduledUploads({
           total: pendingItems.length,
           path: item.path,
         });
+        // NOSONAR: sequential by design - each file is staged individually and
+        // the loop reports per-item progress, so uploads must not overlap.
         const response = await stageScheduledUploadItemContent(
           schedule.id,
           item.id,
@@ -456,18 +537,8 @@ export default function ScheduledUploads({
 
   const createAndStage = async () => {
     if (!destinationId || !canScheduleUploads) return;
-    if (manifest.error) {
-      setError(manifest.error);
-      return;
-    }
-    if (manifest.items.length === 0) {
-      setError(t("selectFilesFirst"));
-      return;
-    }
-    if (!duePreview) {
-      setError(t("chooseFutureTime"));
-      return;
-    }
+    const dueAt = validateCreateInputs({ manifest, duePreview, t, setError });
+    if (!dueAt) return;
     setBusyId("creating");
     setError("");
     setNotice("");
@@ -476,7 +547,7 @@ export default function ScheduledUploads({
         destinationId,
         scheduledLocalTime,
         timeZone,
-        utcOffset: getUtcOffset(duePreview),
+        utcOffset: getUtcOffset(dueAt),
         items: manifest.items,
       });
       if (response.status !== 201) {
@@ -557,20 +628,7 @@ export default function ScheduledUploads({
     setBusyId(schedule.id);
     setError("");
     try {
-      if (isAdmin) {
-        const response = await fetch("/api/admin/scheduled-uploads/cancel", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scheduleId: schedule.id }),
-        });
-        const data = (await response.json()) as { error?: string };
-        if (!response.ok) throw new Error(data.error || t("cancelFailed"));
-      } else {
-        const response = await cancelScheduledUpload(schedule.id);
-        if (response.status !== 200) {
-          throw new Error(apiError(response.data, t("cancelFailed")));
-        }
-      }
+      await requestCancel({ scheduleId: schedule.id, isAdmin, t });
       setNotice(t("scheduleCanceled"));
     } catch (cancelError) {
       setError(errorText(cancelError, t("cancelFailed")));
@@ -1073,16 +1131,11 @@ export default function ScheduledUploads({
               const details = scheduleDetails[schedule.id];
               const detailsExpanded = expandedScheduleId === schedule.id;
               const isStaging = schedule.status === "STAGING";
-              const emptyProgressPercent = isStaging ? 0 : 100;
-              const progressPercent =
-                totalBytes > 0
-                  ? Math.min(
-                      100,
-                      Math.round((transferredBytes / totalBytes) * 100),
-                    )
-                  : isStaging
-                    ? 0
-                    : 100;
+              const progressPercent = computeProgressPercent(
+                transferredBytes,
+                totalBytes,
+                isStaging,
+              );
               const ownsSchedule = schedule.creatorEmail === user?.email;
               const canReschedule =
                 ownsSchedule &&

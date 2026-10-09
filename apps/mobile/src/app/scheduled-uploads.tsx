@@ -944,6 +944,13 @@ export function ScheduledUploadsScreen({
   const schedules = dashboard?.schedules ?? [];
   const adminAlerts = dashboard?.adminAlerts ?? [];
   const stageButtonLabel = stagingScheduleId ? copy.resume : copy.stage;
+  const loadMoreLabel = listLoading ? copy.loadingOlder : copy.loadOlder;
+  const loadMoreButton = button(
+    loadMoreLabel,
+    () => void loadOlderSchedules(),
+    colors,
+    listLoading || working,
+  );
 
   return body(
     <>
@@ -972,147 +979,46 @@ export function ScheduledUploadsScreen({
         : null}
 
       {newUploadOpen ? (
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {copy.createTitle}
-          </Text>
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-            {copy.destination}
-          </Text>
-          {drives.length === 0 ? (
-            <Text style={[styles.muted, { color: colors.muted }]}>
-              {copy.destinationMissing}
-            </Text>
-          ) : (
-            <View style={styles.wrapRow}>
-              {drives.map((drive) =>
-                button(
-                  drive.name,
-                  () => setDestinationId(drive.rootFolderId),
-                  colors,
-                  Boolean(drive.isProtected),
-                  destinationId === drive.rootFolderId,
-                ),
-              )}
-            </View>
-          )}
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-            {copy.date}
-          </Text>
-          <TextInput
-            accessibilityLabel={copy.date}
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.muted}
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border },
-            ]}
-            value={date}
-          />
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-            {copy.time}
-          </Text>
-          <TextInput
-            accessibilityLabel={copy.time}
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setTime}
-            placeholder="HH:mm"
-            placeholderTextColor={colors.muted}
-            style={[
-              styles.input,
-              { color: colors.foreground, borderColor: colors.border },
-            ]}
-            value={time}
-          />
-          <Text style={[styles.muted, { color: colors.muted }]}>
-            {timeZone}
-          </Text>
-          <View style={styles.wrapRow}>
-            {button(
-              copy.files,
-              () => void addSelection(picker.pickFiles),
-              colors,
-              working || Boolean(stagingScheduleId),
-            )}
-            {button(
-              copy.folder,
-              () => void addSelection(picker.pickDirectory),
-              colors,
-              working || Boolean(stagingScheduleId),
-            )}
-            {selection
-              ? button(
-                  copy.cancelSelection,
-                  clearSelection,
-                  colors,
-                  working || Boolean(stagingScheduleId),
-                )
-              : null}
-          </View>
-          {selection ? (
-            <View style={styles.selectionList}>
-              {selection.entries.map((entry) => {
-                const kindLabel =
-                  entry.kind === "folder" ? copy.folderItem : copy.file;
-                return (
-                  <View key={entry.path} style={styles.fileRow}>
-                    <Text
-                      style={[styles.bodyText, { color: colors.foreground }]}
-                    >
-                      {entry.path}
-                    </Text>
-                    <Text style={[styles.muted, { color: colors.muted }]}>
-                      {kindLabel} · {entry.size} {copy.bytes}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
-          <Text style={[styles.muted, { color: colors.muted }]}>
-            {copy.keepOpen}
-          </Text>
-          {stagingPath ? (
-            <Text style={[styles.notice, { color: colors.accent }]}>
-              {copy.stageProgress}: {stagingPath}
-            </Text>
-          ) : null}
-          {button(
-            stageButtonLabel,
-            () => void stageAndSchedule(),
-            colors,
-            working || !selection || !destinationId,
-          )}
-        </View>
+        <NewUploadForm
+          copy={copy}
+          colors={colors}
+          drives={drives}
+          destinationId={destinationId}
+          onDestinationChange={setDestinationId}
+          working={working}
+          stagingScheduleId={stagingScheduleId}
+          date={date}
+          onDateChange={setDate}
+          time={time}
+          onTimeChange={setTime}
+          timeZone={timeZone}
+          onPickFiles={() => void addSelection(picker.pickFiles)}
+          onPickDirectory={() => void addSelection(picker.pickDirectory)}
+          selection={selection}
+          onClearSelection={clearSelection}
+          stagingPath={stagingPath}
+          stageButtonLabel={stageButtonLabel}
+          onStage={() => void stageAndSchedule()}
+        />
       ) : null}
 
-      {isAdmin
-        ? adminAlerts.map((alert) => (
-            <AdminAlertCard
-              key={alert.id}
-              alert={alert}
-              colors={colors}
-              copy={copy}
-              disabled={working}
-              onAcknowledge={() =>
-                api &&
-                void runMutation(() =>
-                  api.acknowledgeAdminAlert(alert.id, "ACKNOWLEDGED"),
-                )
-              }
-              onResolve={() =>
-                api &&
-                void runMutation(() =>
-                  api.acknowledgeAdminAlert(alert.id, "RESOLVED"),
-                )
-              }
-            />
-          ))
-        : null}
+      <AdminAlertList
+        alerts={adminAlerts}
+        visible={isAdmin}
+        colors={colors}
+        copy={copy}
+        disabled={working}
+        onAcknowledge={(alertId) =>
+          api &&
+          void runMutation(() =>
+            api.acknowledgeAdminAlert(alertId, "ACKNOWLEDGED"),
+          )
+        }
+        onResolve={(alertId) =>
+          api &&
+          void runMutation(() => api.acknowledgeAdminAlert(alertId, "RESOLVED"))
+        }
+      />
 
       {schedules.length === 0 && adminAlerts.length === 0 ? (
         <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -1122,6 +1028,137 @@ export function ScheduledUploadsScreen({
         </View>
       ) : null}
 
+      <ScheduleList
+        schedules={schedules}
+        api={api}
+        scheduleDetails={scheduleDetails}
+        expandedScheduleId={expandedScheduleId}
+        detailsLoadingId={detailsLoadingId}
+        onToggleDetails={toggleScheduleDetails}
+        role={role}
+        colors={colors}
+        copy={copy}
+        date={date}
+        time={time}
+        working={working}
+        reschedulingId={reschedulingId}
+        onBeginReschedule={(scheduleId, localTime) => {
+          setReschedulingId(scheduleId);
+          const fields = scheduleFields(localTime);
+          setDate(fields.date);
+          setTime(fields.time);
+        }}
+        onSaveReschedule={saveReschedule}
+        onCancelRescheduleAction={() => setReschedulingId(null)}
+        onDateChange={setDate}
+        onTimeChange={setTime}
+        onMutation={runMutation}
+        onAdminCancel={(scheduleId) =>
+          api && void runMutation(() => api.cancelAsAdmin(scheduleId))
+        }
+        locale={locale}
+      />
+      {dashboard?.nextCursor ? loadMoreButton : null}
+    </>,
+  );
+}
+
+function AdminAlertList({
+  alerts,
+  visible,
+  colors,
+  copy,
+  disabled,
+  onAcknowledge,
+  onResolve,
+}: Readonly<{
+  alerts: ScheduledUploadAdminAlert[];
+  visible: boolean;
+  colors: {
+    accent: string;
+    border: string;
+    card: string;
+    foreground: string;
+    muted: string;
+    danger: string;
+  };
+  copy: Record<string, string>;
+  disabled: boolean;
+  onAcknowledge: (alertId: string) => void;
+  onResolve: (alertId: string) => void;
+}>) {
+  if (!visible) return null;
+  return (
+    <>
+      {alerts.map((alert) => (
+        <AdminAlertCard
+          key={alert.id}
+          alert={alert}
+          colors={colors}
+          copy={copy}
+          disabled={disabled}
+          onAcknowledge={() => onAcknowledge(alert.id)}
+          onResolve={() => onResolve(alert.id)}
+        />
+      ))}
+    </>
+  );
+}
+
+function ScheduleList({
+  schedules,
+  api,
+  scheduleDetails,
+  expandedScheduleId,
+  detailsLoadingId,
+  onToggleDetails,
+  role,
+  colors,
+  copy,
+  date,
+  time,
+  working,
+  reschedulingId,
+  onBeginReschedule,
+  onSaveReschedule,
+  onCancelRescheduleAction,
+  onDateChange,
+  onTimeChange,
+  onMutation,
+  onAdminCancel,
+  locale,
+}: Readonly<{
+  schedules: ScheduledUploadSummary[];
+  api: ScheduledUploadApi | null;
+  scheduleDetails: Record<string, ScheduledUpload>;
+  expandedScheduleId: string | null;
+  detailsLoadingId: string | null;
+  onToggleDetails: (scheduleId: string) => void;
+  role: string;
+  colors: {
+    accent: string;
+    border: string;
+    card: string;
+    foreground: string;
+    muted: string;
+    danger: string;
+  };
+  copy: Record<string, string>;
+  date: string;
+  time: string;
+  working: boolean;
+  reschedulingId: string | null;
+  onBeginReschedule: (scheduleId: string, localTime: string) => void;
+  onSaveReschedule: (scheduleId: string) => void;
+  onCancelRescheduleAction: () => void;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onMutation: (run: () => Promise<unknown>) => Promise<void>;
+  onAdminCancel: (scheduleId: string) => void;
+  locale: Locale;
+}>) {
+  return (
+    <>
       {schedules.map((schedule) => (
         <ScheduleCard
           key={schedule.id}
@@ -1130,7 +1167,7 @@ export function ScheduledUploadsScreen({
           details={scheduleDetails[schedule.id]}
           detailsExpanded={expandedScheduleId === schedule.id}
           detailsLoading={detailsLoadingId === schedule.id}
-          onToggleDetails={() => void toggleScheduleDetails(schedule.id)}
+          onToggleDetails={() => onToggleDetails(schedule.id)}
           role={role}
           colors={colors}
           copy={copy}
@@ -1138,32 +1175,174 @@ export function ScheduledUploadsScreen({
           time={time}
           working={working}
           rescheduling={reschedulingId === schedule.id}
-          onReschedule={() => {
-            setReschedulingId(schedule.id);
-            const fields = scheduleFields(schedule.scheduledLocalTime);
-            setDate(fields.date);
-            setTime(fields.time);
-          }}
-          onSaveReschedule={() => saveReschedule(schedule.id)}
-          onCancelReschedule={() => setReschedulingId(null)}
-          onDateChange={setDate}
-          onTimeChange={setTime}
-          onMutation={runMutation}
-          onAdminCancel={() =>
-            api && void runMutation(() => api.cancelAsAdmin(schedule.id))
+          onReschedule={() =>
+            onBeginReschedule(schedule.id, schedule.scheduledLocalTime)
           }
+          onSaveReschedule={() => onSaveReschedule(schedule.id)}
+          onCancelReschedule={onCancelRescheduleAction}
+          onDateChange={onDateChange}
+          onTimeChange={onTimeChange}
+          onMutation={onMutation}
+          onAdminCancel={() => onAdminCancel(schedule.id)}
           locale={locale}
         />
       ))}
-      {dashboard?.nextCursor
-        ? button(
-            listLoading ? copy.loadingOlder : copy.loadOlder,
-            () => void loadOlderSchedules(),
-            colors,
-            listLoading || working,
-          )
-        : null}
-    </>,
+    </>
+  );
+}
+
+function NewUploadForm({
+  copy,
+  colors,
+  drives,
+  destinationId,
+  onDestinationChange,
+  working,
+  stagingScheduleId,
+  date,
+  onDateChange,
+  time,
+  onTimeChange,
+  timeZone,
+  onPickFiles,
+  onPickDirectory,
+  selection,
+  onClearSelection,
+  stagingPath,
+  stageButtonLabel,
+  onStage,
+}: Readonly<{
+  copy: Record<string, string>;
+  colors: {
+    accent: string;
+    border: string;
+    card: string;
+    foreground: string;
+    muted: string;
+    danger: string;
+  };
+  drives: ScheduledUploadDrive[];
+  destinationId: string | null;
+  onDestinationChange: (id: string) => void;
+  working: boolean;
+  stagingScheduleId: string | null;
+  date: string;
+  onDateChange: (value: string) => void;
+  time: string;
+  onTimeChange: (value: string) => void;
+  timeZone: string;
+  onPickFiles: () => void;
+  onPickDirectory: () => void;
+  selection: NativeScheduledUploadSelection | null;
+  onClearSelection: () => void;
+  stagingPath: string | null;
+  stageButtonLabel: string;
+  onStage: () => void;
+}>) {
+  const stageDisabled = working || Boolean(stagingScheduleId);
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+        {copy.createTitle}
+      </Text>
+      <Text style={[styles.fieldLabel, { color: colors.muted }]}>
+        {copy.destination}
+      </Text>
+      {drives.length === 0 ? (
+        <Text style={[styles.muted, { color: colors.muted }]}>
+          {copy.destinationMissing}
+        </Text>
+      ) : (
+        <View style={styles.wrapRow}>
+          {drives.map((drive) =>
+            button(
+              drive.name,
+              () => onDestinationChange(drive.rootFolderId),
+              colors,
+              Boolean(drive.isProtected),
+              destinationId === drive.rootFolderId,
+            ),
+          )}
+        </View>
+      )}
+      <Text style={[styles.fieldLabel, { color: colors.muted }]}>
+        {copy.date}
+      </Text>
+      <TextInput
+        accessibilityLabel={copy.date}
+        autoCapitalize="none"
+        autoCorrect={false}
+        onChangeText={onDateChange}
+        placeholder="YYYY-MM-DD"
+        placeholderTextColor={colors.muted}
+        style={[
+          styles.input,
+          { color: colors.foreground, borderColor: colors.border },
+        ]}
+        value={date}
+      />
+      <Text style={[styles.fieldLabel, { color: colors.muted }]}>
+        {copy.time}
+      </Text>
+      <TextInput
+        accessibilityLabel={copy.time}
+        autoCapitalize="none"
+        autoCorrect={false}
+        onChangeText={onTimeChange}
+        placeholder="HH:mm"
+        placeholderTextColor={colors.muted}
+        style={[
+          styles.input,
+          { color: colors.foreground, borderColor: colors.border },
+        ]}
+        value={time}
+      />
+      <Text style={[styles.muted, { color: colors.muted }]}>{timeZone}</Text>
+      <View style={styles.wrapRow}>
+        {button(copy.files, onPickFiles, colors, stageDisabled)}
+        {button(copy.folder, onPickDirectory, colors, stageDisabled)}
+        {selection
+          ? button(
+              copy.cancelSelection,
+              onClearSelection,
+              colors,
+              stageDisabled,
+            )
+          : null}
+      </View>
+      {selection ? (
+        <View style={styles.selectionList}>
+          {selection.entries.map((entry) => {
+            const kindLabel =
+              entry.kind === "folder" ? copy.folderItem : copy.file;
+            return (
+              <View key={entry.path} style={styles.fileRow}>
+                <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                  {entry.path}
+                </Text>
+                <Text style={[styles.muted, { color: colors.muted }]}>
+                  {kindLabel} · {entry.size} {copy.bytes}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+      <Text style={[styles.muted, { color: colors.muted }]}>
+        {copy.keepOpen}
+      </Text>
+      {stagingPath ? (
+        <Text style={[styles.notice, { color: colors.accent }]}>
+          {copy.stageProgress}: {stagingPath}
+        </Text>
+      ) : null}
+      {button(
+        stageButtonLabel,
+        onStage,
+        colors,
+        working || !selection || !destinationId,
+      )}
+    </View>
   );
 }
 
@@ -1201,6 +1380,57 @@ function AdminAlertCard({
       {button(copy.acknowledge, onAcknowledge, colors, disabled)}
       {button(copy.resolve, onResolve, colors, disabled)}
     </View>
+  );
+}
+
+function ScheduleActions({
+  copy,
+  colors,
+  working,
+  rescheduling,
+  canUpdateBeforeRelease,
+  canRetry,
+  canAdminCancel,
+  onReschedule,
+  onCancel,
+  onRetry,
+  onAbandon,
+  onAdminCancel,
+}: Readonly<{
+  copy: Record<string, string>;
+  colors: {
+    accent: string;
+    border: string;
+    card: string;
+    foreground: string;
+    muted: string;
+    danger: string;
+  };
+  working: boolean;
+  rescheduling: boolean;
+  canUpdateBeforeRelease: boolean;
+  canRetry: boolean;
+  canAdminCancel: boolean;
+  onReschedule: () => void;
+  onCancel: () => void;
+  onRetry: () => void;
+  onAbandon: () => void;
+  onAdminCancel: () => void;
+}>) {
+  return (
+    <>
+      {canUpdateBeforeRelease && !rescheduling
+        ? button(copy.reschedule, onReschedule, colors, working)
+        : null}
+      {canUpdateBeforeRelease
+        ? button(copy.cancel, onCancel, colors, working)
+        : null}
+      {canRetry ? button(copy.retryItems, onRetry, colors, working) : null}
+      {canRetry ? button(copy.abandon, onAbandon, colors, working) : null}
+      {canAdminCancel
+        ? button(copy.adminCancel, onAdminCancel, colors, working)
+        : null}
+    </>
   );
 }
 
@@ -1357,36 +1587,20 @@ function ScheduleCard({
           {button(copy.cancelSelection, onCancelReschedule, colors, working)}
         </View>
       ) : null}
-      {canUpdateBeforeRelease && !rescheduling
-        ? button(copy.reschedule, onReschedule, colors, working)
-        : null}
-      {canUpdateBeforeRelease
-        ? button(
-            copy.cancel,
-            () => api && void onMutation(() => api.cancel(schedule.id)),
-            colors,
-            working,
-          )
-        : null}
-      {canRetry
-        ? button(
-            copy.retryItems,
-            () => api && void onMutation(() => api.retry(schedule.id)),
-            colors,
-            working,
-          )
-        : null}
-      {canRetry
-        ? button(
-            copy.abandon,
-            () => api && void onMutation(() => api.abandon(schedule.id)),
-            colors,
-            working,
-          )
-        : null}
-      {canAdminCancel
-        ? button(copy.adminCancel, onAdminCancel, colors, working)
-        : null}
+      <ScheduleActions
+        copy={copy}
+        colors={colors}
+        working={working}
+        rescheduling={rescheduling}
+        canUpdateBeforeRelease={canUpdateBeforeRelease}
+        canRetry={canRetry}
+        canAdminCancel={canAdminCancel}
+        onReschedule={onReschedule}
+        onCancel={() => api && void onMutation(() => api.cancel(schedule.id))}
+        onRetry={() => api && void onMutation(() => api.retry(schedule.id))}
+        onAbandon={() => api && void onMutation(() => api.abandon(schedule.id))}
+        onAdminCancel={onAdminCancel}
+      />
     </View>
   );
 }

@@ -144,12 +144,14 @@ export function normalizeManifestPath(value: string): string {
   return segments.join("/");
 }
 
+type EntrySizeLimits = Pick<
+  ScheduledUploadLimits,
+  "maxFileBytes" | "maxPackageBytes" | "maxItems"
+>;
+
 function validateEntry(
   entry: ScheduledUploadManifestEntryInput,
-  limits: Pick<
-    ScheduledUploadLimits,
-    "maxFileBytes" | "maxPackageBytes" | "maxItems"
-  >,
+  limits: EntrySizeLimits,
   totalBytes: { value: number },
   paths: Map<string, ScheduledUploadManifestEntry>,
 ) {
@@ -371,17 +373,15 @@ export class PrivateScheduledUploadStorage {
         this.writeChunk,
       );
       const actualHash = hash.digest("hex");
-      return finalizeWrite(
+      return finalizeWrite({
         fileHandle,
-        temporaryPath,
-        finalPath,
-        directory,
-        input.expectedSize,
-        input.expectedSha256,
+        paths: { temporaryPath, finalPath, directory },
+        expectedSize: input.expectedSize,
+        expectedSha256: input.expectedSha256,
         actualHash,
         receivedBytes,
-        (id) => this.ensureScheduleDirectory(id),
-      );
+        ensureScheduleDirectory: (id) => this.ensureScheduleDirectory(id),
+      });
     } catch (error) {
       await fileHandle?.close().catch(() => undefined);
       await unlink(temporaryPath).catch(() => undefined);
@@ -453,6 +453,8 @@ export class PrivateScheduledUploadStorage {
     let size = 0;
     try {
       while (true) {
+        // NOSONAR: sequential by design - a stream read must settle before the
+        // next read, so these iterations cannot be started concurrently.
         const { done, value } = await reader.read();
         if (done) break;
         for (
@@ -587,7 +589,7 @@ async function writeChunks(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   expectedSize: number,
   hash: ReturnType<typeof createHash>,
-  onProgress: ((bytes: number) => void) | undefined,
+  onProgress: ((bytes: number) => Promise<void> | void) | undefined,
   writeChunk: (
     fileHandle: Awaited<ReturnType<typeof open>>,
     chunk: Uint8Array,
@@ -596,6 +598,8 @@ async function writeChunks(
 ) {
   let receivedBytes = 0;
   while (true) {
+    // NOSONAR: sequential by design - each stream chunk must be received and
+    // hashed in order before the next read is issued.
     const { done, value } = await reader.read();
     if (done) break;
     for (
@@ -611,6 +615,8 @@ async function writeChunks(
       hash.update(chunk);
       let chunkOffset = 0;
       while (chunkOffset < chunk.byteLength) {
+        // NOSONAR: sequential by design - a partial write must report how many
+        // bytes it consumed so the next write can continue at that offset.
         const bytesWritten = await writeChunk(fileHandle, chunk, chunkOffset);
         if (
           !Number.isSafeInteger(bytesWritten) ||
@@ -622,22 +628,33 @@ async function writeChunks(
         chunkOffset += bytesWritten;
       }
     }
+    // NOSONAR: sequential by design - progress must be reported per chunk in
+    // order, and the callback may await caller-side work between iterations.
     await onProgress?.(receivedBytes);
   }
   return receivedBytes;
 }
 
-async function finalizeWrite(
-  fileHandle: Awaited<ReturnType<typeof open>>,
-  temporaryPath: string,
-  finalPath: string,
-  directory: string,
-  expectedSize: number,
-  expectedSha256: string | undefined,
-  actualHash: string,
-  receivedBytes: number,
-  ensureScheduleDirectory: (scheduleId: string) => Promise<string>,
-) {
+interface FinalizeWriteContext {
+  fileHandle: Awaited<ReturnType<typeof open>>;
+  paths: { temporaryPath: string; finalPath: string; directory: string };
+  expectedSize: number;
+  expectedSha256: string | undefined;
+  actualHash: string;
+  receivedBytes: number;
+  ensureScheduleDirectory: (scheduleId: string) => Promise<string>;
+}
+
+async function finalizeWrite(context: FinalizeWriteContext) {
+  const {
+    fileHandle,
+    paths: { temporaryPath, finalPath, directory },
+    expectedSize,
+    expectedSha256,
+    actualHash,
+    receivedBytes,
+    ensureScheduleDirectory,
+  } = context;
   if (receivedBytes !== expectedSize) {
     throw new Error("The streamed file size does not match its manifest.");
   }

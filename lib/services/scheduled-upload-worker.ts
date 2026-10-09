@@ -849,6 +849,9 @@ async function validateDestinationChain(
         "The selected Drive destination has an unsupported parent chain.",
       );
     }
+    // NOSONAR: sequential by design - each ancestor folder must be resolved
+    // before its own parents are known, so the chain is walked one level at a
+    // time rather than concurrently.
     const parent = await drive.getFileMetadata(parentId);
     if (!parent || parent.trashed || parent.mimeType !== FOLDER_MIME_TYPE) {
       throw new ScheduledUploadWorkerError(
@@ -876,13 +879,14 @@ function resolveParentId(
     (candidate) =>
       candidate.kind === "FOLDER" && candidate.manifestPath === parent,
   );
-  if (!parentFolder?.remoteFileId || parentFolder.status !== "COMPLETE") {
+  const remoteFileId = parentFolder?.remoteFileId;
+  if (!parentFolder || parentFolder.status !== "COMPLETE" || !remoteFileId) {
     throw new ScheduledUploadWorkerError(
       "MANIFEST_PARENT_FOLDER_MISSING",
       "The staged package is missing a required parent folder.",
     );
   }
-  return parentFolder.remoteFileId;
+  return remoteFileId;
 }
 
 function chooseNextItem(claim: ScheduledUploadReleaseClaim) {
@@ -1704,6 +1708,8 @@ async function runWorkerTick(dependencies: ScheduledUploadWorkerDependencies) {
     const claim = await claimNextSchedule(dependencies, summary);
     if (!claim) break;
 
+    // NOSONAR: sequential by design - the worker claims and processes one
+    // package at a time; concurrent claims would race for the same schedule.
     await processClaimWithSummary(claim, dependencies, summary);
   }
 
