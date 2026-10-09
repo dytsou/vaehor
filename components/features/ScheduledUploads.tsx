@@ -254,11 +254,12 @@ export default function ScheduledUploads({
             throw new Error(data.error || t("alertsLoadFailed"));
           setAlerts(data.alerts ?? []);
         } catch (alertError) {
-          if (isCurrent())
+          if (isCurrent()) {
             setError(errorText(alertError, t("alertsLoadFailed")));
+          }
         }
-      } else {
-        if (isCurrent()) setAlerts([]);
+      } else if (isCurrent()) {
+        setAlerts([]);
       }
 
       if (isCurrent()) {
@@ -703,17 +704,20 @@ export default function ScheduledUploads({
   };
 
   const editorRequired = user && !canScheduleUploads;
-  const nativeProgressText = nativeProgress
-    ? nativeProgress.phase === "scanning"
-      ? t("nativeScanning", { path: nativeProgress.path ?? "" })
-      : nativeProgress.phase === "staging"
-        ? t("nativeStaging", {
-            index: nativeProgress.index ?? 0,
-            total: nativeProgress.total ?? 0,
-            path: nativeProgress.path ?? "",
-          })
-        : t("nativeCommitting")
-    : "";
+  let nativeProgressText = "";
+  if (nativeProgress?.phase === "scanning") {
+    nativeProgressText = t("nativeScanning", {
+      path: nativeProgress.path ?? "",
+    });
+  } else if (nativeProgress?.phase === "staging") {
+    nativeProgressText = t("nativeStaging", {
+      index: nativeProgress.index ?? 0,
+      total: nativeProgress.total ?? 0,
+      path: nativeProgress.path ?? "",
+    });
+  } else if (nativeProgress) {
+    nativeProgressText = t("nativeCommitting");
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 pb-12">
@@ -742,20 +746,14 @@ export default function ScheduledUploads({
         </div>
       )}
       {notice && (
-        <div
-          role="status"
-          className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
-        >
+        <output className="block rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
           {notice}
-        </div>
+        </output>
       )}
       {nativeProgress && (
-        <div
-          role="status"
-          className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm"
-        >
+        <output className="block rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
           {nativeProgressText}
-        </div>
+        </output>
       )}
 
       {editorRequired && (
@@ -1051,12 +1049,13 @@ export default function ScheduledUploads({
             {t("refresh")}
           </button>
         </div>
-
-        {loading ? (
+        const showLoading = loading; const showEmpty = !loading &&
+        schedules.length === 0;
+        {showLoading ? (
           <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
             {t("loading")}
           </div>
-        ) : schedules.length === 0 ? (
+        ) : showEmpty ? (
           <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
             {t("noSchedules")}
           </div>
@@ -1070,13 +1069,14 @@ export default function ScheduledUploads({
               const totalBytes = Number(schedule.totalBytes);
               const details = scheduleDetails[schedule.id];
               const detailsExpanded = expandedScheduleId === schedule.id;
+              const isStaging = schedule.status === "STAGING";
               const progressPercent =
                 totalBytes > 0
                   ? Math.min(
                       100,
                       Math.round((transferredBytes / totalBytes) * 100),
                     )
-                  : schedule.status === "STAGING"
+                  : isStaging
                     ? 0
                     : 100;
               const ownsSchedule = schedule.creatorEmail === user?.email;
@@ -1122,19 +1122,12 @@ export default function ScheduledUploads({
                       </div>
                     </div>
 
-                    <div
-                      className="h-2 overflow-hidden rounded-full bg-muted"
-                      role="progressbar"
+                    <progress
+                      className="h-2 w-full overflow-hidden rounded-full bg-muted accent-primary"
                       aria-label={t("uploadProgress")}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={progressPercent}
-                    >
-                      <div
-                        className="h-full rounded-full bg-primary transition-[width]"
-                        style={{ width: progressPercent + "%" }}
-                      />
-                    </div>
+                      max={100}
+                      value={progressPercent}
+                    />
                     <p className="text-xs text-muted-foreground">
                       {formatBytes(transferredBytes, formatLocale)} /{" "}
                       {formatBytes(totalBytes, formatLocale)}
@@ -1146,13 +1139,13 @@ export default function ScheduledUploads({
                       </p>
                     )}
                     {progress?.scheduleId === schedule.id && (
-                      <p role="status" className="text-sm text-primary">
+                      <output className="block text-sm text-primary">
                         {t("stagingFile", {
                           index: progress.index,
                           total: progress.total,
                           path: progress.path,
                         })}
-                      </p>
+                      </output>
                     )}
 
                     <div className="space-y-2">
@@ -1170,30 +1163,31 @@ export default function ScheduledUploads({
                       </button>
                       {detailsExpanded && details && (
                         <ul className="max-h-40 divide-y overflow-auto rounded-lg border">
-                          {details.items.map((item) => (
-                            <li
-                              key={item.id}
-                              className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
-                            >
-                              <span
-                                className="min-w-0 flex-1 truncate"
-                                title={item.path}
+                          {details.items.map((item) => {
+                            const isFolder = item.kind === "FOLDER";
+                            const sizeLabel = isFolder
+                              ? t("folder")
+                              : formatBytes(Number(item.size), formatLocale);
+                            return (
+                              <li
+                                key={item.id}
+                                className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
                               >
-                                {item.path}
-                              </span>
-                              <span className="shrink-0 text-muted-foreground">
-                                {item.kind === "FOLDER"
-                                  ? t("folder")
-                                  : formatBytes(
-                                      Number(item.size),
-                                      formatLocale,
-                                    )}
-                              </span>
-                              <span className="shrink-0 rounded bg-muted px-2 py-0.5">
-                                {itemStatusLabel(item.status)}
-                              </span>
-                            </li>
-                          ))}
+                                <span
+                                  className="min-w-0 flex-1 truncate"
+                                  title={item.path}
+                                >
+                                  {item.path}
+                                </span>
+                                <span className="shrink-0 text-muted-foreground">
+                                  {sizeLabel}
+                                </span>
+                                <span className="shrink-0 rounded bg-muted px-2 py-0.5">
+                                  {itemStatusLabel(item.status)}
+                                </span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                     </div>

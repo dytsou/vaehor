@@ -35,7 +35,7 @@ for (const parameter of ["uploadToFileRequestBody", "uploadFileBody"]) {
 }
 
 source = source.replace(
-  /(export type downloadFileResponse200 = \{\n  data: )unknown(;\n  status: 200;\n\};)/,
+  /(export type downloadFileResponse200 = \{\n {2}data: )unknown(;\n {2}status: 200;\n\};)/,
   "$1Blob$2",
 );
 

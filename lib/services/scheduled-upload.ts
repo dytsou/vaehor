@@ -333,20 +333,29 @@ export function resolveScheduledInstant(
 }
 
 function itemToResponse(item: Record<string, unknown>, scheduleStatus: string) {
+  const uploadedBytes =
+    scheduleStatus === "STAGING"
+      ? (item.uploadedBytes as bigint)
+      : (item.remoteUploadOffset as bigint);
   return {
     id: item.id,
     path: item.manifestPath,
     kind: item.kind,
-    size: String(item.size ?? 0),
-    uploadedBytes: String(
-      scheduleStatus === "STAGING"
-        ? (item.uploadedBytes ?? 0)
-        : (item.remoteUploadOffset ?? 0),
-    ),
+    size: decimalString(item.size),
+    uploadedBytes: decimalString(uploadedBytes),
     status: item.status,
     contentType: item.contentType ?? null,
     stagedAt: item.stagedAt ?? null,
   };
+}
+
+function decimalString(value: unknown) {
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "number" && Number.isSafeInteger(value)) {
+    return String(value);
+  }
+  if (typeof value === "string" && /^\d+$/.test(value)) return value;
+  return "0";
 }
 
 function scheduleSummaryToResponse(schedule: Record<string, unknown>) {
@@ -360,8 +369,8 @@ function scheduleSummaryToResponse(schedule: Record<string, unknown>) {
     utcOffset: schedule.scheduledUtcOffset,
     status: schedule.status,
     itemCount: schedule.itemCount,
-    totalBytes: String(schedule.totalBytes ?? 0),
-    stagedBytes: String(schedule.stagedBytes ?? 0),
+    totalBytes: decimalString(schedule.totalBytes),
+    stagedBytes: decimalString(schedule.stagedBytes),
     stageCompleteAt: schedule.stageCompleteAt ?? null,
     firstWriteAt: schedule.firstWriteAt ?? null,
     firstWriteAttemptAt: schedule.firstWriteAttemptAt ?? null,
@@ -370,7 +379,7 @@ function scheduleSummaryToResponse(schedule: Record<string, unknown>) {
     pollerLagMs:
       schedule.pollerLagMs === null || schedule.pollerLagMs === undefined
         ? null
-        : String(schedule.pollerLagMs),
+        : decimalString(schedule.pollerLagMs),
     leaseRecoveryCount: schedule.leaseRecoveryCount ?? 0,
     workerRetryCount: schedule.workerRetryCount ?? 0,
     retryAfter: schedule.retryAfter ?? null,
@@ -393,7 +402,7 @@ function scheduleToResponse(schedule: Record<string, unknown>) {
 }
 
 async function getActorUser(email: string) {
-  return db.user.findUnique({ where: { email } });
+  return await db.user.findUnique({ where: { email } });
 }
 
 async function isAdmin(email: string) {
@@ -465,15 +474,17 @@ export async function retryPendingScheduledUploadCleanupBatch(limit = 2) {
     take: boundedLimit,
   });
 
-  let cleaned = 0;
-  for (const schedule of pending) {
-    try {
-      if (await retryScheduledUploadCleanup(schedule.id)) cleaned += 1;
-    } catch {
-      // Leave failed cleanup pending for a later worker tick.
-    }
-  }
-  return cleaned;
+  const results = await Promise.all(
+    pending.map(async (schedule) => {
+      try {
+        return await retryScheduledUploadCleanup(schedule.id);
+      } catch {
+        // Leave failed cleanup pending for a later worker tick.
+        return false;
+      }
+    }),
+  );
+  return results.filter(Boolean).length;
 }
 
 export async function purgePendingScheduledUploadBlobs(limit = 100) {
@@ -486,8 +497,9 @@ export async function purgePendingScheduledUploadBlobs(limit = 100) {
     take: Math.min(Math.max(limit, 1), 500),
     orderBy: { updatedAt: "asc" },
   });
-  for (const schedule of pending)
-    await retryScheduledUploadCleanup(schedule.id);
+  await Promise.all(
+    pending.map((schedule) => retryScheduledUploadCleanup(schedule.id)),
+  );
   return pending.length;
 }
 
@@ -1100,7 +1112,7 @@ export async function readScheduledUploadItemContent(
 export async function claimDueScheduledUploadForRelease(): Promise<ScheduledUploadReleaseClaim | null> {
   const leaseToken = randomUUID();
   const leaseMilliseconds = 30_000;
-  return db.$transaction(async (tx) => {
+  return await db.$transaction(async (tx) => {
     const claimed = await tx.$queryRaw<
       Array<{ id: string; leaseRecovered: boolean }>
     >`
@@ -1242,7 +1254,7 @@ export async function finishScheduledUploadReleaseClaim(input: {
   retryAfter?: Date | null;
   adminAlertReason?: string | null;
 }) {
-  return db.$transaction(async (tx) => {
+  return await db.$transaction(async (tx) => {
     const remaining =
       input.status === "COMPLETED"
         ? await tx.scheduledUploadItem.count({

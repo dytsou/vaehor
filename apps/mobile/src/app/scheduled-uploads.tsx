@@ -233,10 +233,14 @@ async function readFileAsBlob(
 ): Promise<Blob> {
   const chunks: Uint8Array[] = [];
   const chunkSize = 1024 * 1024;
+  let reads = Promise.resolve();
   for (let start = 0; start < file.size; start += chunkSize) {
     const end = Math.min(file.size, start + chunkSize);
-    chunks.push(await file.readChunk(start, end));
+    reads = reads.then(async () => {
+      chunks.push(await file.readChunk(start, end));
+    });
   }
+  await reads;
   return new Blob(
     chunks.map((chunk) => {
       const copy = new Uint8Array(chunk.byteLength);
@@ -611,33 +615,44 @@ export function ScheduledUploadsScreen({
       }
 
       const files = fileEntries(selection.entries);
+      const activeSchedule = active;
+      if (!activeSchedule) throw new Error(copy.waitingForServer);
       const itemsByPath = new Map<
         string,
-        (typeof active.schedule.items)[number]
+        (typeof activeSchedule.schedule.items)[number]
       >();
-      for (const item of active.schedule.items) {
+      for (const item of activeSchedule.schedule.items) {
         if (!itemsByPath.has(item.path)) itemsByPath.set(item.path, item);
       }
+      let staging = Promise.resolve();
       for (const [index, entry] of files.entries()) {
-        if (active.stagedPaths.has(entry.path)) continue;
-        setStagingPath(entry.path);
-        const item = itemsByPath.get(entry.path);
-        if (!item)
-          throw new Error(
-            `The server did not accept ${entry.path} into this schedule.`,
+        if (activeSchedule.stagedPaths.has(entry.path)) continue;
+        staging = staging.then(async () => {
+          setStagingPath(entry.path);
+          const item = itemsByPath.get(entry.path);
+          if (!item) {
+            throw new Error(
+              `The server did not accept ${entry.path} into this schedule.`,
+            );
+          }
+          await api.stage(
+            activeSchedule.schedule.id,
+            item.id,
+            await loadFileBlob(entry),
           );
-        await api.stage(active.schedule.id, item.id, await loadFileBlob(entry));
-        active.stagedPaths.add(entry.path);
-        setNotice(
-          `${copy.stageProgress}: ${Math.min(index + 1, files.length)} / ${files.length}`,
-        );
+          activeSchedule.stagedPaths.add(entry.path);
+          setNotice(
+            `${copy.stageProgress}: ${Math.min(index + 1, files.length)} / ${files.length}`,
+          );
+        });
       }
+      await staging;
 
-      const committed = await api.commit(active.schedule.id);
+      const committed = await api.commit(activeSchedule.schedule.id);
       if (committed.schedule.status !== ScheduledUploadStatus.WAITING) {
-        active.schedule = committed.schedule;
-        stagingRef.current = { ...active };
-        setStagingScheduleId(active.schedule.id);
+        activeSchedule.schedule = committed.schedule;
+        stagingRef.current = { ...activeSchedule };
+        setStagingScheduleId(activeSchedule.schedule.id);
         throw new Error(copy.waitingForServer);
       }
 
@@ -1028,7 +1043,7 @@ function AdminAlertCard({
   disabled,
   onAcknowledge,
   onResolve,
-}: {
+}: Readonly<{
   alert: ScheduledUploadAdminAlert;
   colors: {
     accent: string;
@@ -1042,7 +1057,7 @@ function AdminAlertCard({
   disabled: boolean;
   onAcknowledge: () => void;
   onResolve: () => void;
-}) {
+}>) {
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
       <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
@@ -1080,7 +1095,7 @@ function ScheduleCard({
   onMutation,
   onAdminCancel,
   locale,
-}: {
+}: Readonly<{
   api: ScheduledUploadApi | null;
   schedule: ScheduledUploadSummary;
   details?: ScheduledUpload;
@@ -1109,7 +1124,7 @@ function ScheduleCard({
   onMutation: (action: () => Promise<unknown>) => Promise<void>;
   onAdminCancel: () => void;
   locale: Locale;
-}) {
+}>) {
   const isAdmin = role.toUpperCase() === "ADMIN";
   const statusLabel =
     COPY[locale][statusLabels[schedule.status]] ?? schedule.status;
@@ -1130,6 +1145,9 @@ function ScheduleCard({
     beforeFirstWrite &&
     schedule.status !== ScheduledUploadStatus.CANCELED &&
     schedule.status !== ScheduledUploadStatus.ABANDONED;
+  let detailsButtonLabel = copy.showItems;
+  if (detailsLoading) detailsButtonLabel = copy.loadingItems;
+  else if (detailsExpanded) detailsButtonLabel = copy.hideItems;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -1146,16 +1164,13 @@ function ScheduleCard({
           {copy.owner}: {schedule.creatorEmail}
         </Text>
       ) : null}
+      const isStaging = schedule.status === ScheduledUploadStatus.STAGING; const
+      transferredBytes = isStaging ? schedule.stagedBytes :
+      schedule.uploadedBytes; const transferredLabel = isStaging ? copy.staged :
+      copy.uploaded;
       <Text style={[styles.muted, { color: colors.muted }]}>
-        {parseByteCount(
-          schedule.status === ScheduledUploadStatus.STAGING
-            ? schedule.stagedBytes
-            : schedule.uploadedBytes,
-        )}{" "}
-        / {parseByteCount(schedule.totalBytes)} {copy.bytes}{" "}
-        {schedule.status === ScheduledUploadStatus.STAGING
-          ? copy.staged
-          : copy.uploaded}
+        {parseByteCount(transferredBytes)} /{" "}
+        {parseByteCount(schedule.totalBytes)} {copy.bytes} {transferredLabel}
       </Text>
       {schedule.lastErrorMessage ? (
         <Text style={[styles.error, { color: colors.danger }]}>
@@ -1163,11 +1178,7 @@ function ScheduleCard({
         </Text>
       ) : null}
       {button(
-        detailsLoading
-          ? copy.loadingItems
-          : detailsExpanded
-            ? copy.hideItems
-            : copy.showItems,
+        detailsButtonLabel,
         onToggleDetails,
         colors,
         working || detailsLoading,
@@ -1185,7 +1196,6 @@ function ScheduleCard({
             </View>
           ))
         : null}
-
       {rescheduling ? (
         <View style={styles.rescheduleBox}>
           <TextInput
@@ -1214,7 +1224,6 @@ function ScheduleCard({
           {button(copy.cancelSelection, onCancelReschedule, colors, working)}
         </View>
       ) : null}
-
       {canUpdateBeforeRelease && !rescheduling
         ? button(copy.reschedule, onReschedule, colors, working)
         : null}

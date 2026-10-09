@@ -123,7 +123,7 @@ function openExpoFileUploadFile(
       if (signal?.aborted) throw new Error("Upload cancelled");
       if (closed) throw new Error("The selected file is no longer available.");
       handle.offset = start;
-      return handle.readBytes(end - start);
+      return await handle.readBytes(end - start);
     },
     close: () => {
       if (closed) return;

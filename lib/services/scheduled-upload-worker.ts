@@ -1098,6 +1098,61 @@ async function reconcileCompletedFile(
   return true;
 }
 
+async function initializeUploadSession(
+  claim: ScheduledUploadReleaseClaim,
+  item: ScheduledUploadReleaseItem,
+  remoteFileId: string,
+  parentId: string,
+  dependencies: ScheduledUploadWorkerDependencies,
+): Promise<string> {
+  if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+    throw new ScheduledUploadWorkerError(
+      "AUTHORIZATION_FAILED",
+      "First write authorization failed.",
+      false,
+    );
+  }
+  await markFirstWriteAttempt(claim, dependencies);
+  const sessionUri = await dependencies.drive.startResumableUpload({
+    id: remoteFileId,
+    name: item.manifestPath.split("/").at(-1) ?? item.manifestPath,
+    parentId,
+    size: Number(item.size),
+    contentType: item.contentType ?? "application/octet-stream",
+    scheduleId: claim.schedule.id,
+    itemId: item.id,
+  });
+  await recordFirstWriteResponse(claim, dependencies);
+  const encrypted = dependencies.encryptSession(
+    sessionUri,
+    sessionContext(claim.schedule.id, item.id),
+  );
+  const saved = await dependencies.store.updateItem(
+    claim.schedule.id,
+    item.id,
+    claim.leaseToken,
+    {
+      status: "UPLOADING",
+      remoteFileId,
+      encryptedUploadSession: encrypted.ciphertext,
+      uploadSessionNonce: encrypted.nonce,
+      uploadSessionTag: encrypted.tag,
+      uploadSessionKeyVersion: encrypted.keyVersion,
+      remoteUploadOffset: BigInt(0),
+      lastErrorCode: null,
+      lastErrorMessage: null,
+    },
+  );
+  if (!saved) {
+    throw new ScheduledUploadWorkerError(
+      "RELEASE_LEASE_LOST",
+      "The scheduled upload release lease expired.",
+      true,
+    );
+  }
+  return sessionUri;
+}
+
 async function processFile(
   claim: ScheduledUploadReleaseClaim,
   item: ScheduledUploadReleaseItem,
@@ -1130,44 +1185,13 @@ async function processFile(
     if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
       return { operation: "none" as const, chunks: 0 };
     }
-    await markFirstWriteAttempt(claim, dependencies);
-    sessionUri = await dependencies.drive.startResumableUpload({
-      id: remoteFileId,
-      name: item.manifestPath.split("/").at(-1) ?? item.manifestPath,
+    sessionUri = await initializeUploadSession(
+      claim,
+      item,
+      remoteFileId,
       parentId,
-      size: Number(item.size),
-      contentType: item.contentType ?? "application/octet-stream",
-      scheduleId: claim.schedule.id,
-      itemId: item.id,
-    });
-    await recordFirstWriteResponse(claim, dependencies);
-    const encrypted = dependencies.encryptSession(
-      sessionUri,
-      sessionContext(claim.schedule.id, item.id),
+      dependencies,
     );
-    const saved = await dependencies.store.updateItem(
-      claim.schedule.id,
-      item.id,
-      claim.leaseToken,
-      {
-        status: "UPLOADING",
-        remoteFileId,
-        encryptedUploadSession: encrypted.ciphertext,
-        uploadSessionNonce: encrypted.nonce,
-        uploadSessionTag: encrypted.tag,
-        uploadSessionKeyVersion: encrypted.keyVersion,
-        remoteUploadOffset: BigInt(0),
-        lastErrorCode: null,
-        lastErrorMessage: null,
-      },
-    );
-    if (!saved) {
-      throw new ScheduledUploadWorkerError(
-        "RELEASE_LEASE_LOST",
-        "The scheduled upload release lease expired.",
-        true,
-      );
-    }
     return { operation: "item" as const, chunks: 0 };
   }
 
@@ -1177,53 +1201,10 @@ async function processFile(
     totalBytes,
   );
   if (status.kind === "complete") {
-    const updated = await dependencies.store.updateItem(
-      claim.schedule.id,
-      item.id,
-      claim.leaseToken,
-      {
-        status: "COMPLETE",
-        remoteUploadOffset: item.size,
-        encryptedUploadSession: null,
-        uploadSessionNonce: null,
-        uploadSessionTag: null,
-        uploadSessionKeyVersion: null,
-        lastErrorCode: null,
-        lastErrorMessage: null,
-      },
-    );
-    if (!updated) {
-      throw new ScheduledUploadWorkerError(
-        "RELEASE_LEASE_LOST",
-        "The scheduled upload release lease expired.",
-        true,
-      );
-    }
-    await recordFirstWriteResponse(claim, dependencies);
-    return { operation: "item" as const, chunks: 0 };
+    return await handleCompleteStatus(claim, item, dependencies);
   }
   if (status.kind === "expired") {
-    const cleared = await dependencies.store.updateItem(
-      claim.schedule.id,
-      item.id,
-      claim.leaseToken,
-      {
-        status: "PENDING",
-        encryptedUploadSession: null,
-        uploadSessionNonce: null,
-        uploadSessionTag: null,
-        uploadSessionKeyVersion: null,
-        remoteUploadOffset: BigInt(0),
-      },
-    );
-    if (!cleared) {
-      throw new ScheduledUploadWorkerError(
-        "RELEASE_LEASE_LOST",
-        "The scheduled upload release lease expired.",
-        true,
-      );
-    }
-    return { operation: "item" as const, chunks: 0 };
+    return await handleExpiredStatus(claim, item, dependencies);
   }
 
   const acknowledgedBytes = status.acknowledgedBytes;
@@ -1252,51 +1233,139 @@ async function processFile(
     totalBytes - acknowledgedBytes,
   );
   if (length === 0 && totalBytes === 0) {
-    if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
-      return { operation: "none" as const, chunks: 0 };
-    }
-    await markFirstWriteAttempt(claim, dependencies);
-    const result = await dependencies.drive.uploadChunk({
-      sessionUri,
-      start: 0,
-      totalBytes: 0,
-      bytes: new Uint8Array(0),
-    });
-    if (result.kind !== "complete") {
-      throw new ScheduledUploadWorkerError(
-        "EMPTY_FILE_NOT_COMPLETED",
-        "Google Drive did not complete the empty file upload.",
-        true,
-      );
-    }
-    const completed = await dependencies.store.updateItem(
-      claim.schedule.id,
-      item.id,
-      claim.leaseToken,
-      {
-        status: "COMPLETE",
-        remoteUploadOffset: BigInt(0),
-        encryptedUploadSession: null,
-        uploadSessionNonce: null,
-        uploadSessionTag: null,
-        uploadSessionKeyVersion: null,
-      },
-    );
-    if (!completed) {
-      throw new ScheduledUploadWorkerError(
-        "RELEASE_LEASE_LOST",
-        "The scheduled upload release lease expired.",
-        true,
-      );
-    }
-    await recordFirstWriteResponse(claim, dependencies);
-    return { operation: "chunk" as const, chunks: 1 };
+    return await handleEmptyFileUpload(claim, item, sessionUri, dependencies);
   }
 
+  return await uploadFileChunk(
+    claim,
+    item,
+    sessionUri,
+    acknowledgedBytes,
+    length,
+    totalBytes,
+    dependencies,
+  );
+}
+
+async function handleCompleteStatus(
+  claim: ScheduledUploadReleaseClaim,
+  item: ScheduledUploadReleaseItem,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  const updated = await dependencies.store.updateItem(
+    claim.schedule.id,
+    item.id,
+    claim.leaseToken,
+    {
+      status: "COMPLETE",
+      remoteUploadOffset: item.size,
+      encryptedUploadSession: null,
+      uploadSessionNonce: null,
+      uploadSessionTag: null,
+      uploadSessionKeyVersion: null,
+      lastErrorCode: null,
+      lastErrorMessage: null,
+    },
+  );
+  if (!updated) {
+    throw new ScheduledUploadWorkerError(
+      "RELEASE_LEASE_LOST",
+      "The scheduled upload release lease expired.",
+      true,
+    );
+  }
+  await recordFirstWriteResponse(claim, dependencies);
+  return { operation: "item" as const, chunks: 0 };
+}
+
+async function handleExpiredStatus(
+  claim: ScheduledUploadReleaseClaim,
+  item: ScheduledUploadReleaseItem,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  const cleared = await dependencies.store.updateItem(
+    claim.schedule.id,
+    item.id,
+    claim.leaseToken,
+    {
+      status: "PENDING",
+      encryptedUploadSession: null,
+      uploadSessionNonce: null,
+      uploadSessionTag: null,
+      uploadSessionKeyVersion: null,
+      remoteUploadOffset: BigInt(0),
+    },
+  );
+  if (!cleared) {
+    throw new ScheduledUploadWorkerError(
+      "RELEASE_LEASE_LOST",
+      "The scheduled upload release lease expired.",
+      true,
+    );
+  }
+  return { operation: "item" as const, chunks: 0 };
+}
+
+async function handleEmptyFileUpload(
+  claim: ScheduledUploadReleaseClaim,
+  item: ScheduledUploadReleaseItem,
+  sessionUri: string,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
+  if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
+    return { operation: "none" as const, chunks: 0 };
+  }
+  await markFirstWriteAttempt(claim, dependencies);
+  const result = await dependencies.drive.uploadChunk({
+    sessionUri,
+    start: 0,
+    totalBytes: 0,
+    bytes: new Uint8Array(0),
+  });
+  if (result.kind !== "complete") {
+    throw new ScheduledUploadWorkerError(
+      "EMPTY_FILE_NOT_COMPLETED",
+      "Google Drive did not complete the empty file upload.",
+      true,
+    );
+  }
+  const completed = await dependencies.store.updateItem(
+    claim.schedule.id,
+    item.id,
+    claim.leaseToken,
+    {
+      status: "COMPLETE",
+      remoteUploadOffset: BigInt(0),
+      encryptedUploadSession: null,
+      uploadSessionNonce: null,
+      uploadSessionTag: null,
+      uploadSessionKeyVersion: null,
+    },
+  );
+  if (!completed) {
+    throw new ScheduledUploadWorkerError(
+      "RELEASE_LEASE_LOST",
+      "The scheduled upload release lease expired.",
+      true,
+    );
+  }
+  await recordFirstWriteResponse(claim, dependencies);
+  return { operation: "chunk" as const, chunks: 1 };
+}
+
+async function uploadFileChunk(
+  claim: ScheduledUploadReleaseClaim,
+  item: ScheduledUploadReleaseItem,
+  sessionUri: string,
+  acknowledgedBytes: number,
+  length: number,
+  totalBytes: number,
+  dependencies: ScheduledUploadWorkerDependencies,
+) {
   const bytes = await readChunkFromStorage(
     dependencies.storage,
     claim.schedule.id,
-    item.storageKey,
+    item.storageKey!,
     acknowledgedBytes,
     length,
   );

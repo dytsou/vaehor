@@ -86,6 +86,19 @@ function postToParent(message: ZeeMobileMessage): void {
   window.parent.postMessage(message, parentOrigin());
 }
 
+function getRequestMessage(
+  event: MessageEvent,
+  requestId: string,
+): ZeeMobileMessage | null {
+  if (event.source !== window.parent) return null;
+  const trustedOrigin = parentOrigin();
+  if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return null;
+  const data = event.data as ZeeMobileMessage | undefined;
+  if (data?.type !== ZEE_MOBILE_MESSAGE) return null;
+  if (!("requestId" in data) || data.requestId !== requestId) return null;
+  return data;
+}
+
 /**
  * Handlers must verify event.origin against the shell's origin before
  * trusting received messages. Only the native shell (our direct parent) at
@@ -99,98 +112,122 @@ export function notifyZeeMobileLogout(): void {
   postToParent({ type: ZEE_MOBILE_MESSAGE, action: "logout" });
 }
 
+function createPromiseWithTimeout<T>(
+  timeoutMs: number,
+  timeoutMessage: string,
+  setup: (
+    resolve: (value: T) => void,
+    reject: (error: Error) => void,
+    cleanup: () => void,
+  ) => void,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error(timeoutMessage));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      clearTimeout(timeout);
+    };
+
+    setup(resolve, reject, cleanup);
+  });
+}
+
 export function createZeeMobileBridge(): ZeeMobileBridge {
   return {
     isAvailable: () => isZeeMobileBridgeAvailable(),
     pickAndUpload({ parentId }) {
       const requestId = crypto.randomUUID();
-      return new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          cleanup();
-          reject(new Error("Native upload timed out"));
-        }, 600_000);
+      return createPromiseWithTimeout<void>(
+        600_000,
+        "Native upload timed out",
+        (resolve, reject, cleanup) => {
+          const handler = (event: MessageEvent) => {
+            const data = getRequestMessage(event, requestId);
+            if (!data) return;
 
-        const handler = (event: MessageEvent) => {
-          if (event.source !== window.parent) return;
-          const trustedOrigin = parentOrigin();
-          if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
-          const data = event.data as ZeeMobileMessage | undefined;
-          if (data?.type !== ZEE_MOBILE_MESSAGE) return;
-          if (!("requestId" in data) || data.requestId !== requestId) return;
+            if (data.action === "upload/pick-done") {
+              cleanup();
+              resolve();
+            }
+            if (data.action === "upload/pick-error") {
+              cleanup();
+              reject(new Error(data.error || "Native upload failed"));
+            }
+          };
 
-          if (data.action === "upload/pick-done") {
-            cleanup();
-            resolve();
-          }
-          if (data.action === "upload/pick-error") {
-            cleanup();
-            reject(new Error(data.error || "Native upload failed"));
-          }
-        };
+          const removeListener = () => {
+            window.removeEventListener("message", handler);
+          };
+          const originalCleanup = cleanup;
+          cleanup = () => {
+            originalCleanup();
+            removeListener();
+          };
 
-        const cleanup = () => {
-          clearTimeout(timeout);
-          window.removeEventListener("message", handler);
-        };
-
-        window.addEventListener("message", handler);
-        postToParent({
-          type: ZEE_MOBILE_MESSAGE,
-          action: "upload/pick",
-          requestId,
-          parentId,
-        });
-      });
+          window.addEventListener("message", handler);
+          postToParent({
+            type: ZEE_MOBILE_MESSAGE,
+            action: "upload/pick",
+            requestId,
+            parentId,
+          });
+        },
+      );
     },
     pickAndStageScheduledUpload(options, onProgress) {
       const requestId = crypto.randomUUID();
-      return new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          cleanup();
-          reject(new Error("Native scheduled upload timed out"));
-        }, 21_600_000);
+      return createPromiseWithTimeout<string>(
+        21_600_000,
+        "Native scheduled upload timed out",
+        (resolve, reject, cleanup) => {
+          const handler = (event: MessageEvent) => {
+            const data = getRequestMessage(event, requestId);
+            if (!data) return;
 
-        const handler = (event: MessageEvent) => {
-          if (event.source !== window.parent) return;
-          const trustedOrigin = parentOrigin();
-          if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
-          const data = event.data as ZeeMobileMessage | undefined;
-          if (data?.type !== ZEE_MOBILE_MESSAGE) return;
-          if (!("requestId" in data) || data.requestId !== requestId) return;
+            switch (data.action) {
+              case "scheduled/progress":
+                onProgress?.({
+                  ...(data.scheduleId ? { scheduleId: data.scheduleId } : {}),
+                  phase: data.phase,
+                  ...(data.path ? { path: data.path } : {}),
+                  ...(data.index !== undefined ? { index: data.index } : {}),
+                  ...(data.total !== undefined ? { total: data.total } : {}),
+                });
+                return;
+              case "scheduled/done":
+                cleanup();
+                resolve(data.scheduleId);
+                return;
+              case "scheduled/error":
+                cleanup();
+                reject(
+                  new Error(data.error || "Native scheduled upload failed"),
+                );
+                return;
+            }
+          };
 
-          if (data.action === "scheduled/progress") {
-            onProgress?.({
-              ...(data.scheduleId ? { scheduleId: data.scheduleId } : {}),
-              phase: data.phase,
-              ...(data.path ? { path: data.path } : {}),
-              ...(data.index !== undefined ? { index: data.index } : {}),
-              ...(data.total !== undefined ? { total: data.total } : {}),
-            });
-            return;
-          }
-          if (data.action === "scheduled/done") {
-            cleanup();
-            resolve(data.scheduleId);
-          }
-          if (data.action === "scheduled/error") {
-            cleanup();
-            reject(new Error(data.error || "Native scheduled upload failed"));
-          }
-        };
+          const removeListener = () => {
+            window.removeEventListener("message", handler);
+          };
+          const originalCleanup = cleanup;
+          cleanup = () => {
+            originalCleanup();
+            removeListener();
+          };
 
-        const cleanup = () => {
-          clearTimeout(timeout);
-          window.removeEventListener("message", handler);
-        };
-
-        window.addEventListener("message", handler);
-        postToParent({
-          type: ZEE_MOBILE_MESSAGE,
-          action: "scheduled/pick-folder",
-          requestId,
-          ...options,
-        });
-      });
+          window.addEventListener("message", handler);
+          postToParent({
+            type: ZEE_MOBILE_MESSAGE,
+            action: "scheduled/pick-folder",
+            requestId,
+            ...options,
+          });
+        },
+      );
     },
   };
 }

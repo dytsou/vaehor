@@ -20,6 +20,17 @@ function emailRetryDelayMilliseconds(attempts: number) {
   );
 }
 
+function adminAlertReason(reasonCode: string) {
+  switch (reasonCode) {
+    case "DESTINATION_ACCESS_REVOKED":
+      return "the creator no longer has access to the selected destination folder.";
+    case "CREATOR_ROLE_REVOKED":
+      return "the creator no longer has editor access.";
+    default:
+      return "the scheduled upload needs administrator attention.";
+  }
+}
+
 async function claimNextAdminAlertEmail(): Promise<
   (AlertEmailClaim & { leaseToken: string }) | null
 > {
@@ -121,12 +132,7 @@ export async function deliverNextScheduledUploadAdminAlertEmail() {
 
   let sent = false;
   try {
-    const reason =
-      claim.reasonCode === "DESTINATION_ACCESS_REVOKED"
-        ? "the creator no longer has access to the selected destination folder."
-        : claim.reasonCode === "CREATOR_ROLE_REVOKED"
-          ? "the creator no longer has editor access."
-          : "the scheduled upload needs administrator attention.";
+    const reason = adminAlertReason(claim.reasonCode);
     sent = await sendMail({
       to: recipients,
       subject: "[vaehor Alert] Scheduled upload needs attention",
@@ -159,7 +165,7 @@ export async function deliverNextScheduledUploadAdminAlertEmail() {
 export async function listScheduledUploadAdminAlerts(
   status?: AdminAlertStatus,
 ) {
-  return db.scheduledUploadAdminAlert.findMany({
+  return await db.scheduledUploadAdminAlert.findMany({
     where: status ? { status } : undefined,
     include: {
       schedule: {
