@@ -876,10 +876,7 @@ function resolveParentId(
     (candidate) =>
       candidate.kind === "FOLDER" && candidate.manifestPath === parent,
   );
-  if (
-    !parentFolder?.remoteFileId ||
-    parentFolder.status !== "COMPLETE"
-  ) {
+  if (!parentFolder?.remoteFileId || parentFolder.status !== "COMPLETE") {
     throw new ScheduledUploadWorkerError(
       "MANIFEST_PARENT_FOLDER_MISSING",
       "The staged package is missing a required parent folder.",
@@ -1546,7 +1543,11 @@ async function handleFirstWrite(
     return { completed: false, operation: "item" as const, chunks: 0 };
   }
 
-  const canAccessDestination = await checkDestinationAccess(claim, dependencies, role);
+  const canAccessDestination = await checkDestinationAccess(
+    claim,
+    dependencies,
+    role,
+  );
   if (!canAccessDestination) {
     await pauseForAttention(
       claim,
@@ -1596,12 +1597,7 @@ async function validateDestination(
       if (error.retryable) {
         await pauseForRetry(claim, dependencies, error.code, error.message);
       } else {
-        await pauseForAttention(
-          claim,
-          dependencies,
-          error.code,
-          error.message,
-        );
+        await pauseForAttention(claim, dependencies, error.code, error.message);
       }
       return { completed: false, operation: "none" as const, chunks: 0 };
     }
@@ -1729,7 +1725,10 @@ function createSummary() {
   };
 }
 
-async function runCleanup(dependencies: ScheduledUploadWorkerDependencies, summary: ReturnType<typeof createSummary>) {
+async function runCleanup(
+  dependencies: ScheduledUploadWorkerDependencies,
+  summary: ReturnType<typeof createSummary>,
+) {
   try {
     summary.cleanedSchedules = await dependencies.retryPendingCleanup();
   } catch {

@@ -340,7 +340,17 @@ interface StagingContext {
 async function refreshActiveStagingSession(
   context: StagingContext,
 ): Promise<{ schedule: ScheduledUpload; stagedPaths: Set<string> } | null> {
-  const { api, active, copy, clearSelection, setNewUploadOpen, setScheduleDetails, setDashboard, refresh, setNotice } = context;
+  const {
+    api,
+    active,
+    copy,
+    clearSelection,
+    setNewUploadOpen,
+    setScheduleDetails,
+    setDashboard,
+    refresh,
+    setNotice,
+  } = context;
   const latest = (await api.get(active.schedule.id)).schedule;
   active.schedule = latest;
   for (const item of latest.items) {
@@ -449,7 +459,19 @@ interface CommitContext {
 }
 
 async function commitSchedule(context: CommitContext) {
-  const { api, activeSchedule, copy, clearSelection, setNewUploadOpen, setScheduleDetails, setDashboard, refresh, setNotice, setStagingScheduleId, stagingRef } = context;
+  const {
+    api,
+    activeSchedule,
+    copy,
+    clearSelection,
+    setNewUploadOpen,
+    setScheduleDetails,
+    setDashboard,
+    refresh,
+    setNotice,
+    setStagingScheduleId,
+    stagingRef,
+  } = context;
   const committed = await api.commit(activeSchedule.schedule.id);
   if (committed.schedule.status !== ScheduledUploadStatus.WAITING) {
     activeSchedule.schedule = committed.schedule;
@@ -1034,15 +1056,17 @@ export function ScheduledUploadsScreen({
           {selection ? (
             <View style={styles.selectionList}>
               {selection.entries.map((entry) => {
-                const kindLabel = entry.kind === "folder" ? copy.folderItem : copy.file;
+                const kindLabel =
+                  entry.kind === "folder" ? copy.folderItem : copy.file;
                 return (
                   <View key={entry.path} style={styles.fileRow}>
-                    <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                    <Text
+                      style={[styles.bodyText, { color: colors.foreground }]}
+                    >
                       {entry.path}
                     </Text>
                     <Text style={[styles.muted, { color: colors.muted }]}>
-                      {kindLabel} ·{" "}
-                      {entry.size} {copy.bytes}
+                      {kindLabel} · {entry.size} {copy.bytes}
                     </Text>
                   </View>
                 );
@@ -1257,7 +1281,9 @@ function ScheduleCard({
   else if (detailsExpanded) detailsButtonLabel = copy.hideItems;
 
   const isStaging = schedule.status === ScheduledUploadStatus.STAGING;
-  const transferredBytes = isStaging ? schedule.stagedBytes : schedule.uploadedBytes;
+  const transferredBytes = isStaging
+    ? schedule.stagedBytes
+    : schedule.uploadedBytes;
   const transferredLabel = isStaging ? copy.staged : copy.uploaded;
 
   return (

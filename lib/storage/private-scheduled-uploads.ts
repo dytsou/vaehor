@@ -146,7 +146,10 @@ export function normalizeManifestPath(value: string): string {
 
 function validateEntry(
   entry: ScheduledUploadManifestEntryInput,
-  limits: Pick<ScheduledUploadLimits, "maxFileBytes" | "maxPackageBytes" | "maxItems">,
+  limits: Pick<
+    ScheduledUploadLimits,
+    "maxFileBytes" | "maxPackageBytes" | "maxItems"
+  >,
   totalBytes: { value: number },
   paths: Map<string, ScheduledUploadManifestEntry>,
 ) {
@@ -183,7 +186,10 @@ function validateEntry(
 function validateFileEntry(
   entry: ScheduledUploadManifestEntryInput,
   normalizedPath: string,
-  limits: Pick<ScheduledUploadLimits, "maxFileBytes" | "maxPackageBytes" | "maxItems">,
+  limits: Pick<
+    ScheduledUploadLimits,
+    "maxFileBytes" | "maxPackageBytes" | "maxItems"
+  >,
   totalBytes: { value: number },
   item: ScheduledUploadManifestEntry,
 ) {
@@ -194,8 +200,7 @@ function validateFileEntry(
   }
   if (
     entry.sha256 !== undefined &&
-    (typeof entry.sha256 !== "string" ||
-      !/^[a-f\d]{64}$/i.test(entry.sha256))
+    (typeof entry.sha256 !== "string" || !/^[a-f\d]{64}$/i.test(entry.sha256))
   ) {
     throw new Error(
       `Manifest item ${normalizedPath} must include a SHA-256 hash.`,
@@ -271,7 +276,7 @@ export function validateScheduledUploadManifest(
     throw new Error(`The package exceeds the ${limits.maxItems} item limit.`);
   }
 
-  let totalBytes = { value: 0 };
+  const totalBytes = { value: 0 };
   const paths = new Map<string, ScheduledUploadManifestEntry>();
   const items = input.map((entry) =>
     validateEntry(entry, limits, totalBytes, paths),
@@ -345,13 +350,14 @@ export class PrivateScheduledUploadStorage {
   }
 
   async writeStream(input: WriteScheduledUploadInput) {
-    const { directory, temporaryPath, finalPath, fileHandle } = await prepareWrite(
-      this,
-      input,
-      this.limits.maxFileBytes,
-      (id) => this.ensureScheduleDirectory(id),
-      (bytes) => this.assertPackageCapacity(bytes),
-    );
+    const { directory, temporaryPath, finalPath, fileHandle } =
+      await prepareWrite(
+        this,
+        input,
+        this.limits.maxFileBytes,
+        (id) => this.ensureScheduleDirectory(id),
+        (bytes) => this.assertPackageCapacity(bytes),
+      );
     const reader = input.body!.getReader();
     const hash = createHash("sha256");
 
@@ -605,11 +611,7 @@ async function writeChunks(
       hash.update(chunk);
       let chunkOffset = 0;
       while (chunkOffset < chunk.byteLength) {
-        const bytesWritten = await writeChunk(
-          fileHandle,
-          chunk,
-          chunkOffset,
-        );
+        const bytesWritten = await writeChunk(fileHandle, chunk, chunkOffset);
         if (
           !Number.isSafeInteger(bytesWritten) ||
           bytesWritten <= 0 ||
