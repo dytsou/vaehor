@@ -21,6 +21,7 @@ import {
   updateScheduledUploadTime,
   type ScheduledUpload,
   type ScheduledUploadAdminAlert,
+  type ScheduledUploadItem,
   type ScheduledUploadLimits,
   type ScheduledUploadManifestItem,
   type ScheduledUploadSummary,
@@ -131,6 +132,46 @@ function apiError(data: unknown, fallback: string) {
 
 function errorText(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+async function stagePendingItem({
+  scheduleId,
+  index,
+  item,
+  fileMap,
+  pendingItems,
+  setProgress,
+  t,
+}: Readonly<{
+  scheduleId: string;
+  index: number;
+  item: ScheduledUploadItem;
+  fileMap: Map<string, File>;
+  pendingItems: readonly ScheduledUploadItem[];
+  setProgress: (value: {
+    scheduleId: string;
+    index: number;
+    total: number;
+    path: string;
+  }) => void;
+  t: (key: string) => string;
+}>) {
+  const file = fileMap.get(item.path);
+  if (!file) throw new Error(t("selectMatchingFiles"));
+  setProgress({
+    scheduleId,
+    index: index + 1,
+    total: pendingItems.length,
+    path: item.path,
+  });
+  const response = await stageScheduledUploadItemContent(
+    scheduleId,
+    item.id,
+    file,
+  );
+  if (response.status !== 200) {
+    throw new Error(apiError(response.data, t("stageFailed")));
+  }
 }
 
 function computeProgressPercent(
@@ -492,26 +533,17 @@ export default function ScheduledUploads({
       }
 
       const pendingItems = fileItems.filter((item) => item.status !== "STAGED");
-      for (let index = 0; index < pendingItems.length; index += 1) {
-        const item = pendingItems[index]!;
-        const file = fileMap.get(item.path);
-        if (!file) throw new Error(t("selectMatchingFiles"));
-        setProgress({
-          scheduleId: schedule.id,
-          index: index + 1,
-          total: pendingItems.length,
-          path: item.path,
-        });
+      const stageContext = {
+        scheduleId: schedule.id,
+        fileMap,
+        pendingItems,
+        setProgress,
+        t,
+      };
+      for (const [index, item] of pendingItems.entries()) {
         // Sequential by design: each file is staged individually and the loop
         // reports per-item progress, so uploads must not overlap.
-        const response = await stageScheduledUploadItemContent(
-          schedule.id,
-          item.id,
-          file,
-        ); // NOSONAR
-        if (response.status !== 200) {
-          throw new Error(apiError(response.data, t("stageFailed")));
-        }
+        await stagePendingItem({ ...stageContext, index, item }); // NOSONAR
       }
 
       setProgress({

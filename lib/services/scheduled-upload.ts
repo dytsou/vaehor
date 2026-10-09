@@ -1014,6 +1014,49 @@ export async function stageScheduledUploadItem(input: {
   }
 }
 
+async function verifyStagedItem({
+  item,
+  scheduleId,
+}: {
+  item: {
+    storageKey: string | null;
+    size: bigint | string | number;
+    sha256: string | null;
+    manifestPath: string;
+  };
+  scheduleId: string;
+}) {
+  if (!item.sha256) {
+    await recordStageFailure(
+      scheduleId,
+      "Staged file is missing its SHA-256 hash.",
+    );
+    conflict("Staged file is missing its SHA-256 hash.");
+  }
+  const readable = await privateScheduledUploadStorage.verifyFile({
+    scheduleId,
+    storageKey: item.storageKey!,
+    expectedSize: Number(item.size),
+    expectedSha256: item.sha256,
+  });
+  if (readable) return;
+  const message = `Staged file failed verification: ${item.manifestPath}`;
+  await recordStageFailure(scheduleId, message);
+  conflict(`${message}.`);
+}
+
+// Sequential by design: this records the failure state before the caller's
+// conflict() aborts the commit, so the ordering must not change.
+async function recordStageFailure(scheduleId: string, message: string) {
+  await db.scheduledUpload.updateMany({
+    where: { id: scheduleId, status: "STAGING" },
+    data: {
+      lastErrorCode: "STAGE_VERIFICATION_FAILED",
+      lastErrorMessage: message,
+    },
+  });
+}
+
 export async function commitScheduledUpload(
   scheduleId: string,
   actor: ScheduledUploadActor,
@@ -1039,38 +1082,9 @@ export async function commitScheduledUpload(
 
   for (const item of schedule.items) {
     if (item.kind === "FOLDER") continue;
-    if (!item.sha256) {
-      // Sequential by design: records the failure state before conflict()
-      // aborts the commit, so the order must not change.
-      await db.scheduledUpload.updateMany({
-        where: { id: scheduleId, status: "STAGING" },
-        data: {
-          lastErrorCode: "STAGE_VERIFICATION_FAILED",
-          lastErrorMessage: "Staged file is missing its SHA-256 hash.",
-        },
-      }); // NOSONAR
-      conflict("Staged file is missing its SHA-256 hash.");
-    }
     // Sequential by design: verification short-circuits on the first invalid
     // item, so files are checked in order and stop at that failure.
-    const readable = await privateScheduledUploadStorage.verifyFile({
-      scheduleId,
-      storageKey: item.storageKey!,
-      expectedSize: Number(item.size),
-      expectedSha256: item.sha256 ?? "",
-    }); // NOSONAR
-    if (!readable) {
-      // Sequential by design: records the failure state before conflict()
-      // aborts the commit, so the order must not change.
-      await db.scheduledUpload.updateMany({
-        where: { id: scheduleId, status: "STAGING" },
-        data: {
-          lastErrorCode: "STAGE_VERIFICATION_FAILED",
-          lastErrorMessage: `Staged file failed verification: ${item.manifestPath}`,
-        },
-      }); // NOSONAR
-      conflict(`Staged file failed verification: ${item.manifestPath}.`);
-    }
+    await verifyStagedItem({ item, scheduleId }); // NOSONAR
   }
 
   const updated = await db.scheduledUpload.updateMany({
