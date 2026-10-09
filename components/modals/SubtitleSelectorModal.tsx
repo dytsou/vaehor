@@ -49,7 +49,7 @@ export default function SubtitleSelectorModal({
       }
     };
 
-    fetchFiles();
+    void fetchFiles();
   }, [folderId]);
 
   const handleSelect = (file: DriveFile) => {

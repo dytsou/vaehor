@@ -76,7 +76,9 @@ export function DetailRow({
 
   const handleCopy = () => {
     if (!copyable) return;
-    navigator.clipboard.writeText(value);
+    void navigator.clipboard.writeText(value).catch((error: unknown) => {
+      console.error("Failed to copy value", error);
+    });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

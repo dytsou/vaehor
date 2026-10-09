@@ -34,11 +34,16 @@ export function Providers({ children }: Readonly<Props>) {
       typeof window !== "undefined" &&
       "serviceWorker" in navigator
     ) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          registration.unregister();
-        }
-      });
+      void navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) =>
+          Promise.all(
+            registrations.map((registration) => registration.unregister()),
+          ),
+        )
+        .catch((error: unknown) => {
+          console.error("Failed to unregister service workers", error);
+        });
     }
   }, []);
 

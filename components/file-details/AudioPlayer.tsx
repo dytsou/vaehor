@@ -98,7 +98,9 @@ export default function AudioPlayer({
 
     const handlePlay = () => {
       if (!audioCtx) setupVisualizer();
-      if (audioCtx?.state === "suspended") audioCtx.resume();
+      if (audioCtx?.state === "suspended") {
+        void audioCtx.resume().catch(() => undefined);
+      }
     };
 
     const mediaElement = playerRef.current?.el?.querySelector("audio");
@@ -108,7 +110,7 @@ export default function AudioPlayer({
       mediaElement?.removeEventListener("play", handlePlay);
       cancelAnimationFrame(animationId);
       if (audioCtx) {
-        audioCtx.close();
+        void audioCtx.close().catch(() => undefined);
       }
     };
   }, []);

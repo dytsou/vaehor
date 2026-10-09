@@ -31,17 +31,21 @@ export async function readResponseWithinByteLimit(
 
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > remainingBytes) {
-        await reader.cancel().catch(() => undefined);
-        throw new BulkDownloadLimitError();
-      }
-      chunks.push(value);
+  const readNextChunk = async (): Promise<void> => {
+    const { done, value } = await reader.read();
+    if (done) return;
+
+    totalBytes += value.byteLength;
+    if (totalBytes > remainingBytes) {
+      await reader.cancel().catch(() => undefined);
+      throw new BulkDownloadLimitError();
     }
+    chunks.push(value);
+    return readNextChunk();
+  };
+
+  try {
+    await readNextChunk();
   } finally {
     reader.releaseLock();
   }

@@ -121,7 +121,9 @@ export function AdminDashboard(props: Readonly<AdminDashboardProps>) {
   }, [shareLinks]);
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text).catch((error: unknown) => {
+      console.error("Failed to copy link", error);
+    });
     addToast({ message: t("linkCopied"), type: "success" });
   };
 

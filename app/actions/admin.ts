@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdminSession } from "@/lib/admin-auth";
+import { mapAsyncInBatches } from "@/lib/async-sequence";
 import { getAdminStats } from "@/lib/admin-stats";
 import {
   appConfigUpdateSchema,
@@ -322,16 +323,12 @@ export async function getUserAccessPermissionsAction() {
   await requireAdminSession();
 
   const folderIds: string[] = await kv.smembers(FOLDERS_WITH_ACCESS_KEY);
-  const permissions: Record<string, string[]> = {};
-
-  for (const folderId of folderIds) {
+  const entries = await mapAsyncInBatches(folderIds, 20, async (folderId) => {
     const emails: string[] = await kv.smembers(getFolderAccessKey(folderId));
-    if (emails.length > 0) {
-      permissions[folderId] = emails;
-    }
-  }
+    return emails.length > 0 ? ([folderId, emails] as const) : null;
+  });
 
-  return permissions;
+  return Object.fromEntries(entries.filter((entry) => entry !== null));
 }
 
 export async function addUserAccessPermissionAction(input: {

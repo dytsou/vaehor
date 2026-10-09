@@ -68,7 +68,7 @@ export default function FolderReadme({ fileId }: Readonly<FolderReadmeProps>) {
     };
 
     if (fileId) {
-      fetchReadme();
+      void fetchReadme();
     }
   }, [fileId, shareToken, addToast]);
 

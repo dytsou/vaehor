@@ -92,7 +92,6 @@ export default function LocalStorageAuthForm({
                 placeholder={t("enterPasswordPlaceholder")}
                 className="w-full pl-12 pr-5 py-4 rounded-2xl border bg-background/50 focus:bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground/30 shadow-sm text-lg"
                 required
-                autoFocus
               />
             </div>
             {error && (

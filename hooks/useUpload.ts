@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { useAppStore } from "@/lib/store";
 import { parseDroppedItems, FileEntry } from "@/lib/fileParser";
 import { useTranslations } from "next-intl";
+import { forEachSequentially } from "@/lib/async-sequence";
 import { runChunkedFileUpload } from "@/hooks/chunked-file-upload";
 import { useNativeUpload } from "@/hooks/use-native-upload";
 
@@ -77,12 +78,12 @@ export function useUpload({
       let currentParentId = rootId;
       let currentPath = "";
 
-      for (const folderName of parts) {
+      await forEachSequentially(parts, async (folderName) => {
         currentPath += (currentPath ? "/" : "") + folderName;
 
         if (folderIdCache.current[currentPath]) {
           currentParentId = folderIdCache.current[currentPath];
-          continue;
+          return;
         }
 
         try {
@@ -104,7 +105,7 @@ export function useUpload({
           console.error(`Gagal membuat folder ${folderName}:`, error);
           throw error;
         }
-      }
+      });
 
       return currentParentId;
     },
@@ -143,7 +144,7 @@ export function useUpload({
   );
 
   const processUploadQueue = useCallback(
-    async (items: FileList | FileEntry[]) => {
+    (items: FileList | FileEntry[]) => {
       if (!currentFolderId) {
         addToast({
           message: t("destNotFound"),

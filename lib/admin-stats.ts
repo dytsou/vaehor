@@ -44,6 +44,6 @@ const getAdminStatsCached = unstable_cache(
   { revalidate: 300, tags: ["admin-stats"] },
 );
 
-export async function getAdminStats(): Promise<AdminStats> {
+export function getAdminStats(): Promise<AdminStats> {
   return getAdminStatsCached();
 }

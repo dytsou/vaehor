@@ -92,7 +92,7 @@ function SharedCollectionPage() {
       }
     };
 
-    fetchCollectionItems();
+    void fetchCollectionItems();
   }, [shareId, shareToken, addToast, router, t]);
 
   if (isLoading) {

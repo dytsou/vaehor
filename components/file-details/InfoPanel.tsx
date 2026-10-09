@@ -144,7 +144,7 @@ export default function InfoPanel({
       }
     };
 
-    fetchPath();
+    void fetchPath();
   }, [file.id, file.parents, t]);
 
   return (

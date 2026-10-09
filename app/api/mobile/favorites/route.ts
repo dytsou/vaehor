@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mapAsyncInBatches } from "@/lib/async-sequence";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
 import { createUserRoute } from "@/lib/api-middleware";
@@ -37,26 +38,14 @@ export const GET = createUserRoute(
       : 0;
     const start = firstIdAfterCursor < 0 ? ids.length : firstIdAfterCursor;
     const pageIds = ids.slice(start, start + FAVORITES_PAGE_SIZE);
-    const entries: {
-      id: string;
-      file: Awaited<ReturnType<typeof getFileDetailsFromDrive>>;
-    }[] = [];
-
-    for (
-      let index = 0;
-      index < pageIds.length;
-      index += DRIVE_LOOKUP_BATCH_SIZE
-    ) {
-      const batch = pageIds.slice(index, index + DRIVE_LOOKUP_BATCH_SIZE);
-      entries.push(
-        ...(await Promise.all(
-          batch.map(async (id) => ({
-            id,
-            file: await getFileDetailsFromDrive(id),
-          })),
-        )),
-      );
-    }
+    const entries = await mapAsyncInBatches(
+      pageIds,
+      DRIVE_LOOKUP_BATCH_SIZE,
+      async (id) => ({
+        id,
+        file: await getFileDetailsFromDrive(id),
+      }),
+    );
 
     const protectedFolders = await db.protectedFolder.findMany({
       select: { folderId: true },

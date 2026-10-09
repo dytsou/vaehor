@@ -4,7 +4,7 @@ import { revalidateTag } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
-export const GET = createAdminRoute(async ({ request }) => {
+export const GET = createAdminRoute(({ request }) => {
   const { searchParams } = new URL(request.url);
   const target = searchParams.get("target");
   if (target === "files") {

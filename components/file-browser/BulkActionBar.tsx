@@ -10,6 +10,7 @@ import MoveModal from "@/components/modals/MoveModal";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { getErrorMessage } from "@/lib/errors";
+import { forEachSequentially } from "@/lib/async-sequence";
 
 export function BulkActionBar() {
   const {
@@ -105,13 +106,13 @@ export function BulkActionBar() {
     setIsProcessing(true);
 
     try {
-      for (const file of selectedFiles) {
+      await forEachSequentially(selectedFiles, async (file) => {
         await fetch("/api/files/delete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileId: file.id }),
         });
-      }
+      });
       clearSelection();
       triggerRefresh();
       addToast({ message: t("itemsDeleted"), type: "success" });
@@ -128,14 +129,14 @@ export function BulkActionBar() {
     let successCount = 0;
 
     try {
-      for (const file of selectedFiles) {
+      await forEachSequentially(selectedFiles, async (file) => {
         const response = await fetch("/api/files/copy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileId: file.id }),
         });
         if (response.ok) successCount++;
-      }
+      });
       triggerRefresh();
       addToast({
         message: t("copiedSuccess", { count: successCount }),

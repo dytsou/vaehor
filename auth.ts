@@ -49,7 +49,7 @@ const authConfig: NextAuthConfig = {
   },
   callbacks: {
     jwt: handleJwtCallback,
-    async session({ session, token }) {
+    session({ session, token }) {
       if (session.user) {
         const role = (token.role as any) || "USER";
         session.user.role = role;

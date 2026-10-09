@@ -139,7 +139,10 @@ async function retryFetch(
   signal?: AbortSignal,
   classifyAuthentication = true,
 ): Promise<Response> {
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
+  const attemptRequest = async (attempt: number): Promise<Response> => {
+    if (attempt > MAX_RETRIES) {
+      throw new Error("Upload retry limit reached");
+    }
     if (signal?.aborted) throw new Error("Upload cancelled");
     const response = await tryUploadRequest(
       fetchImpl,
@@ -152,9 +155,10 @@ async function retryFetch(
     if (response) return response;
 
     await waitBeforeRetry(signal);
-  }
+    return attemptRequest(attempt + 1);
+  };
 
-  throw new Error("Upload retry limit reached");
+  return attemptRequest(0);
 }
 
 function buildChunkUploadPath(uploadUrl: string, parentId: string): string {

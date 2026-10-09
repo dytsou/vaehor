@@ -92,7 +92,7 @@ export const createUISlice: StateCreator<AppState, [], [], UISlice> = (
   hideAuthor: null,
   localStorageAuthEnabled: null,
   localStoragePassword: null,
-  fetchConfig: async () => {
+  fetchConfig: () => {
     return get().fetchPublicConfig();
   },
   fetchAdminConfig: async () => {

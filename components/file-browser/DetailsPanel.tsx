@@ -147,16 +147,20 @@ export default function DetailsPanel({
         setPathLoading(false);
       }
     };
-    fetchPath();
+    void fetchPath();
   }, [file.id, file.parents, t, locale]);
 
   const handleCopyLink = () => {
     const url = `/api/download?fileId=${file.id}`;
-    navigator.clipboard.writeText(`${window.location.origin}${url}`);
+    void navigator.clipboard
+      .writeText(`${window.location.origin}${url}`)
+      .catch((error: unknown) => {
+        console.error("Failed to copy download link", error);
+      });
     addToast({ message: t("linkDownloadCopied"), type: "success" });
   };
 
-  const onDragEnd = async (
+  const onDragEnd = (
     event: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo,
   ) => {

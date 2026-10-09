@@ -31,7 +31,8 @@ export function openDocumentPickerUploadFile(
       if (signal?.aborted) throw new Error("Upload cancelled");
       if (closed) throw new Error("The selected file is no longer available.");
       handle.offset = start;
-      return handle.readBytes(end - start);
+      const bytes = await handle.readBytes(end - start);
+      return bytes;
     },
     close: () => {
       if (closed) return;

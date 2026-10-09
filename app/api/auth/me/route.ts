@@ -4,7 +4,7 @@ import { createPublicRoute } from "@/lib/api-middleware";
 export const dynamic = "force-dynamic";
 
 export const GET = createPublicRoute(
-  async ({ session }) => {
+  ({ session }) => {
     if (!session?.user) {
       return NextResponse.json({ user: null });
     }

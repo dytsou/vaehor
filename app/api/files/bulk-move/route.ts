@@ -40,9 +40,9 @@ export const POST = createEditorRoute(
       if (failedMoves.length < fileIds.length) {
         await invalidateFolderCache(currentParentId);
         await invalidateFolderCache(newParentId);
-        for (const fileId of fileIds) {
-          await invalidateFolderCache(fileId);
-        }
+        await Promise.all(
+          fileIds.map((fileId) => invalidateFolderCache(fileId)),
+        );
       }
 
       await logActivity("MOVE", {

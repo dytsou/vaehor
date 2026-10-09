@@ -1,3 +1,5 @@
+import { mapAsyncInBatches } from "@/lib/async-sequence";
+
 export interface FileEntry {
   file: File;
   path: string;
@@ -46,12 +48,14 @@ async function readAllDirectoryEntries(
   dirReader: FileSystemDirectoryReaderLike,
 ): Promise<FileSystemEntryLike[]> {
   const allEntries: FileSystemEntryLike[] = [];
-  let batch = await readDirectoryBatch(dirReader);
-
-  while (batch.length > 0) {
+  const readNextBatch = async (): Promise<void> => {
+    const batch = await readDirectoryBatch(dirReader);
+    if (batch.length === 0) return;
     allEntries.push(...batch);
-    batch = await readDirectoryBatch(dirReader);
-  }
+    return readNextBatch();
+  };
+
+  await readNextBatch();
 
   return allEntries;
 }
@@ -88,16 +92,14 @@ async function traverseFileTree(
 export async function parseDroppedItems(
   dataTransfer: DataTransfer,
 ): Promise<FileEntry[]> {
-  const items = dataTransfer.items;
-  const files: FileEntry[] = [];
-
-  for (const dataTransferItem of Array.from(items)) {
-    const item =
-      dataTransferItem.webkitGetAsEntry() as FileSystemEntryLike | null;
-    if (item) {
-      const result = await traverseFileTree(item);
-      files.push(...result);
-    }
-  }
-  return files;
+  const trees = await mapAsyncInBatches(
+    Array.from(dataTransfer.items),
+    8,
+    async (dataTransferItem) => {
+      const item =
+        dataTransferItem.webkitGetAsEntry() as FileSystemEntryLike | null;
+      return item ? traverseFileTree(item) : [];
+    },
+  );
+  return trees.flat();
 }

@@ -178,22 +178,28 @@ async function fetchWithRetry(
   retries = 3,
   delay = 1000,
 ): Promise<Response> {
-  for (let i = 0; i < retries; i++) {
+  const attempt = async (index: number): Promise<Response> => {
+    if (index >= retries) {
+      throw new Error("Fetch failed after retries");
+    }
+
     try {
       const response = await fetch(url, options);
       if (response.ok) return response;
       if (response.status === 404 || response.status === 401) return response;
       if (response.status >= 500) {
-        await new Promise((resolve) => setTimeout(resolve, delay * 2 ** i));
-        continue;
+        await new Promise((resolve) => setTimeout(resolve, delay * 2 ** index));
+        return attempt(index + 1);
       }
       return response;
     } catch (error) {
-      if (i === retries - 1) throw error;
-      await new Promise((resolve) => setTimeout(resolve, delay * 2 ** i));
+      if (index === retries - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delay * 2 ** index));
+      return attempt(index + 1);
     }
-  }
-  throw new Error("Fetch failed after retries");
+  };
+
+  return attempt(0);
 }
 
 async function buildShortcutMap(locale: string): Promise<Map<string, string>> {
@@ -254,12 +260,11 @@ async function buildDriveAncestorPath(
   driveFallback: string,
 ): Promise<DrivePathNode[]> {
   const path: DrivePathNode[] = [];
-  let currentId: string | undefined = folderId;
-  let iterations = 0;
-
-  while (currentId && iterations < 20) {
-    iterations++;
-
+  const addAncestor = async (
+    currentId: string | undefined,
+    remaining: number,
+  ): Promise<void> => {
+    if (!currentId || remaining <= 0) return;
     if (shortcutMap.has(currentId)) {
       path.unshift(
         await fetchShortcutNode(
@@ -269,7 +274,7 @@ async function buildDriveAncestorPath(
           driveFallback,
         ),
       );
-      break;
+      return;
     }
 
     const driveUrl = `https://www.googleapis.com/drive/v3/files/${currentId}?fields=id,name,parents&supportsAllDrives=true`;
@@ -278,12 +283,14 @@ async function buildDriveAncestorPath(
       cache: "no-store",
     });
 
-    if (!response.ok) break;
+    if (!response.ok) return;
 
     const data = (await response.json()) as DrivePathResponse;
     path.unshift({ id: data.id, name: data.name });
-    currentId = data.parents?.[0];
-  }
+    return addAncestor(data.parents?.[0], remaining - 1);
+  };
+
+  await addAncestor(folderId, 20);
 
   return path;
 }

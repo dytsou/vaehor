@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mapAsyncInBatches } from "@/lib/async-sequence";
 import { createAdminRoute } from "@/lib/api-middleware";
 import { kv } from "@/lib/kv";
 import { z } from "zod";
@@ -16,14 +17,13 @@ export const dynamic = "force-dynamic";
 export const GET = createAdminRoute(async () => {
   try {
     const folderIds: string[] = await kv.smembers(FOLDERS_WITH_ACCESS_KEY);
-    const permissions: Record<string, string[]> = {};
-
-    for (const folderId of folderIds) {
+    const entries = await mapAsyncInBatches(folderIds, 20, async (folderId) => {
       const emails: string[] = await kv.smembers(getFolderAccessKey(folderId));
-      if (emails.length > 0) {
-        permissions[folderId] = emails;
-      }
-    }
+      return emails.length > 0 ? ([folderId, emails] as const) : null;
+    });
+    const permissions = Object.fromEntries(
+      entries.filter((entry) => entry !== null),
+    );
 
     return NextResponse.json(permissions);
   } catch {

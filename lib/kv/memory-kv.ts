@@ -3,20 +3,13 @@ import type { KVClient, KVPipeline } from "./types";
 
 export class InMemoryKV implements KVClient {
   pipeline(): KVPipeline {
-    const results: unknown[] = [];
-    const commands: Array<() => Promise<void>> = [];
+    const commands: Array<() => Promise<unknown>> = [];
     const pipeline: KVPipeline = {
       sismember: (key: string, member: unknown) => {
-        commands.push(async () => {
-          const res = await this.sismember(key, member);
-          results.push(res);
-        });
+        commands.push(() => this.sismember(key, member));
         return pipeline;
       },
-      exec: async () => {
-        for (const cmd of commands) await cmd();
-        return results;
-      },
+      exec: () => Promise.all(commands.map((cmd) => cmd())),
     };
     return pipeline;
   }
@@ -29,22 +22,18 @@ export class InMemoryKV implements KVClient {
   private readonly setStore = new Map<string, Set<unknown>>();
   private readonly sortedSets = new Map<string, Map<string, number>>();
 
-  async get<T>(key: string): Promise<T | null> {
+  get<T>(key: string): Promise<T | null> {
     const cached = memoryCache.get<T>(`kv:${key}`);
-    if (cached !== null) return cached;
+    if (cached !== null) return Promise.resolve(cached);
 
     const value = (this.store.get(key) as T) ?? null;
     if (value !== null) {
       memoryCache.set(`kv:${key}`, value, CACHE_TTL.FOLDER_CONTENT);
     }
-    return value;
+    return Promise.resolve(value);
   }
 
-  async set(
-    key: string,
-    value: unknown,
-    options?: { ex?: number },
-  ): Promise<string> {
+  set(key: string, value: unknown, options?: { ex?: number }): Promise<string> {
     this.store.set(key, value);
     memoryCache.set(`kv:${key}`, value, (options?.ex ?? 3600) * 1000);
 
@@ -61,10 +50,10 @@ export class InMemoryKV implements KVClient {
       if (typeof timer === "object" && timer.unref) timer.unref();
       this.expirations.set(key, timer);
     }
-    return "OK";
+    return Promise.resolve("OK");
   }
 
-  async del(...keys: string[]): Promise<number> {
+  del(...keys: string[]): Promise<number> {
     let deleted = 0;
     for (const key of keys) {
       if (this.store.delete(key)) deleted++;
@@ -80,63 +69,73 @@ export class InMemoryKV implements KVClient {
         this.expirations.delete(key);
       }
     }
-    return deleted;
+    return Promise.resolve(deleted);
   }
 
-  async exists(...keys: string[]): Promise<number> {
-    return keys.filter(
-      (key) =>
-        this.store.has(key) ||
-        this.hashStore.has(key) ||
-        this.setStore.has(key) ||
-        this.sortedSets.has(key),
-    ).length;
-  }
-
-  async keys(pattern: string): Promise<string[]> {
-    const regex = new RegExp(
-      "^" + pattern.replaceAll("*", ".*").replaceAll("?", ".") + "$",
+  exists(...keys: string[]): Promise<number> {
+    return Promise.resolve(
+      keys.filter(
+        (key) =>
+          this.store.has(key) ||
+          this.hashStore.has(key) ||
+          this.setStore.has(key) ||
+          this.sortedSets.has(key),
+      ).length,
     );
-    const allKeys = new Set([
-      ...this.store.keys(),
-      ...this.hashStore.keys(),
-      ...this.setStore.keys(),
-      ...this.sortedSets.keys(),
-    ]);
-    return Array.from(allKeys).filter((key) => regex.test(key));
+  }
+
+  keys(pattern: string): Promise<string[]> {
+    try {
+      const regex = new RegExp(
+        "^" + pattern.replaceAll("*", ".*").replaceAll("?", ".") + "$",
+      );
+      const allKeys = new Set([
+        ...this.store.keys(),
+        ...this.hashStore.keys(),
+        ...this.setStore.keys(),
+        ...this.sortedSets.keys(),
+      ]);
+      return Promise.resolve(
+        Array.from(allKeys).filter((key) => regex.test(key)),
+      );
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   async scanKeys(pattern: string): Promise<string[]> {
     return await this.keys(pattern);
   }
 
-  async mget<T>(...keys: string[]): Promise<(T | null)[]> {
-    return keys.map((key) => (this.store.get(key) as T) ?? null);
+  mget<T>(...keys: string[]): Promise<(T | null)[]> {
+    return Promise.resolve(
+      keys.map((key) => (this.store.get(key) as T) ?? null),
+    );
   }
 
-  async mset(keyValues: Record<string, unknown>): Promise<string> {
+  mset(keyValues: Record<string, unknown>): Promise<string> {
     for (const [key, value] of Object.entries(keyValues)) {
       this.store.set(key, value);
       memoryCache.set(`kv:${key}`, value, CACHE_TTL.FOLDER_CONTENT);
     }
-    return "OK";
+    return Promise.resolve("OK");
   }
 
-  async incr(key: string): Promise<number> {
+  incr(key: string): Promise<number> {
     const val = Number(this.store.get(key) || 0);
     const newVal = val + 1;
     this.store.set(key, newVal);
-    return newVal;
+    return Promise.resolve(newVal);
   }
 
-  async expire(key: string, seconds: number): Promise<number> {
+  expire(key: string, seconds: number): Promise<number> {
     if (
       !this.store.has(key) &&
       !this.hashStore.has(key) &&
       !this.setStore.has(key) &&
       !this.sortedSets.has(key)
     ) {
-      return 0;
+      return Promise.resolve(0);
     }
 
     const existingTimer = this.expirations.get(key);
@@ -154,22 +153,22 @@ export class InMemoryKV implements KVClient {
     }, timeoutMs);
     if (typeof timer === "object" && timer.unref) timer.unref();
     this.expirations.set(key, timer);
-    return 1;
+    return Promise.resolve(1);
   }
 
-  async hgetall<T>(key: string): Promise<T | null> {
+  hgetall<T>(key: string): Promise<T | null> {
     const cached = memoryCache.get<T>(`kv:hash:${key}`);
-    if (cached !== null) return cached;
+    if (cached !== null) return Promise.resolve(cached);
 
     const hash = this.hashStore.get(key);
-    if (!hash) return null;
+    if (!hash) return Promise.resolve(null);
 
     const result = Object.fromEntries(hash) as T;
     memoryCache.set(`kv:hash:${key}`, result, CACHE_TTL.PROTECTED_FOLDERS);
-    return result;
+    return Promise.resolve(result);
   }
 
-  async hset(key: string, obj: Record<string, unknown>): Promise<number> {
+  hset(key: string, obj: Record<string, unknown>): Promise<number> {
     let hash = this.hashStore.get(key);
     if (!hash) {
       hash = new Map();
@@ -181,17 +180,17 @@ export class InMemoryKV implements KVClient {
     }
 
     memoryCache.delete(`kv:hash:${key}`);
-    return Object.keys(obj).length;
+    return Promise.resolve(Object.keys(obj).length);
   }
 
-  async hget<T>(key: string, field: string): Promise<T | null> {
+  hget<T>(key: string, field: string): Promise<T | null> {
     const hash = this.hashStore.get(key);
-    return (hash?.get(field) as T) ?? null;
+    return Promise.resolve((hash?.get(field) as T) ?? null);
   }
 
-  async hdel(key: string, ...fields: string[]): Promise<number> {
+  hdel(key: string, ...fields: string[]): Promise<number> {
     const hash = this.hashStore.get(key);
-    if (!hash) return 0;
+    if (!hash) return Promise.resolve(0);
 
     let deleted = 0;
     for (const field of fields) {
@@ -199,10 +198,10 @@ export class InMemoryKV implements KVClient {
     }
 
     memoryCache.delete(`kv:hash:${key}`);
-    return deleted;
+    return Promise.resolve(deleted);
   }
 
-  async sadd(key: string, ...members: unknown[]): Promise<number> {
+  sadd(key: string, ...members: unknown[]): Promise<number> {
     let set = this.setStore.get(key);
     if (!set) {
       set = new Set();
@@ -216,42 +215,42 @@ export class InMemoryKV implements KVClient {
         added++;
       }
     }
-    return added;
+    return Promise.resolve(added);
   }
 
-  async srem(key: string, ...members: unknown[]): Promise<number> {
+  srem(key: string, ...members: unknown[]): Promise<number> {
     const set = this.setStore.get(key);
-    if (!set) return 0;
+    if (!set) return Promise.resolve(0);
 
     let removed = 0;
     for (const member of members) {
       if (set.delete(member)) removed++;
     }
-    return removed;
+    return Promise.resolve(removed);
   }
 
-  async sismember(key: string, member: unknown): Promise<number> {
+  sismember(key: string, member: unknown): Promise<number> {
     const cacheKey = `kv:sismember:${key}:${String(member)}`;
     const cached = memoryCache.get<number>(cacheKey);
-    if (cached !== null) return cached;
+    if (cached !== null) return Promise.resolve(cached);
 
     const set = this.setStore.get(key);
     const result = set?.has(member) ? 1 : 0;
     memoryCache.set(cacheKey, result, CACHE_TTL.USER_ACCESS);
-    return result;
+    return Promise.resolve(result);
   }
 
-  async smembers(key: string): Promise<string[]> {
+  smembers(key: string): Promise<string[]> {
     const set = this.setStore.get(key);
-    return set ? (Array.from(set) as string[]) : [];
+    return Promise.resolve(set ? (Array.from(set) as string[]) : []);
   }
 
-  async scard(key: string): Promise<number> {
+  scard(key: string): Promise<number> {
     const set = this.setStore.get(key);
-    return set?.size ?? 0;
+    return Promise.resolve(set?.size ?? 0);
   }
 
-  async zadd(
+  zadd(
     key: string,
     options: { score: number; member: string },
   ): Promise<number> {
@@ -263,17 +262,17 @@ export class InMemoryKV implements KVClient {
 
     const isNew = !zset.has(options.member);
     zset.set(options.member, options.score);
-    return isNew ? 1 : 0;
+    return Promise.resolve(isNew ? 1 : 0);
   }
 
-  async zrange<T>(
+  zrange<T>(
     key: string,
     start: number,
     stop: number,
     options?: { rev?: boolean; byScore?: boolean },
   ): Promise<T[]> {
     const zset = this.sortedSets.get(key);
-    if (!zset) return [];
+    if (!zset) return Promise.resolve([]);
 
     let entries = Array.from(zset.entries()).sort((a, b) => a[1] - b[1]);
 
@@ -292,22 +291,20 @@ export class InMemoryKV implements KVClient {
       entries = entries.slice(startIdx, endIdx);
     }
 
-    return entries.map(([member]) => {
-      try {
-        return JSON.parse(member) as T;
-      } catch {
-        return member as unknown as T;
-      }
-    });
+    return Promise.resolve(
+      entries.map(([member]) => {
+        try {
+          return JSON.parse(member) as T;
+        } catch {
+          return member as unknown as T;
+        }
+      }),
+    );
   }
 
-  async zremrangebyscore(
-    key: string,
-    min: number,
-    max: number,
-  ): Promise<number> {
+  zremrangebyscore(key: string, min: number, max: number): Promise<number> {
     const zset = this.sortedSets.get(key);
-    if (!zset) return 0;
+    if (!zset) return Promise.resolve(0);
 
     let removed = 0;
     for (const [member, score] of zset.entries()) {
@@ -316,74 +313,74 @@ export class InMemoryKV implements KVClient {
         removed++;
       }
     }
-    return removed;
+    return Promise.resolve(removed);
   }
 
-  async zcard(key: string): Promise<number> {
+  zcard(key: string): Promise<number> {
     const zset = this.sortedSets.get(key);
-    return zset?.size ?? 0;
+    return Promise.resolve(zset?.size ?? 0);
   }
 
-  async zrem(key: string, ...members: string[]): Promise<number> {
+  zrem(key: string, ...members: string[]): Promise<number> {
     const zset = this.sortedSets.get(key);
-    if (!zset) return 0;
+    if (!zset) return Promise.resolve(0);
 
     let removed = 0;
     for (const member of members) {
       if (zset.delete(member)) removed++;
     }
-    return removed;
+    return Promise.resolve(removed);
   }
 
-  async zscore(key: string, member: string): Promise<number | null> {
+  zscore(key: string, member: string): Promise<number | null> {
     const zset = this.sortedSets.get(key);
-    return zset?.get(member) ?? null;
+    return Promise.resolve(zset?.get(member) ?? null);
   }
 
-  async lpush(key: string, ...values: unknown[]): Promise<number> {
+  lpush(key: string, ...values: unknown[]): Promise<number> {
     let list = this.store.get(key) as unknown[] | undefined;
     if (!Array.isArray(list)) {
       list = [];
       this.store.set(key, list);
     }
     list.unshift(...values);
-    return list.length;
+    return Promise.resolve(list.length);
   }
 
-  async rpush(key: string, ...values: unknown[]): Promise<number> {
+  rpush(key: string, ...values: unknown[]): Promise<number> {
     let list = this.store.get(key) as unknown[] | undefined;
     if (!Array.isArray(list)) {
       list = [];
       this.store.set(key, list);
     }
     list.push(...values);
-    return list.length;
+    return Promise.resolve(list.length);
   }
 
-  async lrange<T>(key: string, start: number, stop: number): Promise<T[]> {
+  lrange<T>(key: string, start: number, stop: number): Promise<T[]> {
     const list = this.store.get(key) as unknown[] | undefined;
-    if (!Array.isArray(list)) return [];
+    if (!Array.isArray(list)) return Promise.resolve([]);
 
     const end = stop < 0 ? list.length + stop + 1 : stop + 1;
-    return list.slice(start, end) as T[];
+    return Promise.resolve(list.slice(start, end) as T[]);
   }
 
-  async llen(key: string): Promise<number> {
+  llen(key: string): Promise<number> {
     const list = this.store.get(key) as unknown[] | undefined;
-    return Array.isArray(list) ? list.length : 0;
+    return Promise.resolve(Array.isArray(list) ? list.length : 0);
   }
 
-  async ltrim(key: string, start: number, stop: number): Promise<string> {
+  ltrim(key: string, start: number, stop: number): Promise<string> {
     const list = this.store.get(key) as unknown[] | undefined;
     if (Array.isArray(list)) {
       const actualStop = stop < 0 ? list.length + stop : stop;
       const newList = list.slice(start, actualStop + 1);
       this.store.set(key, newList);
     }
-    return "OK";
+    return Promise.resolve("OK");
   }
 
-  async flushall(): Promise<string> {
+  flushall(): Promise<string> {
     this.store.clear();
     this.hashStore.clear();
     this.setStore.clear();
@@ -392,7 +389,7 @@ export class InMemoryKV implements KVClient {
       clearTimeout(timer);
     }
     this.expirations.clear();
-    return "OK";
+    return Promise.resolve("OK");
   }
 
   getStats() {

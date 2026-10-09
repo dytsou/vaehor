@@ -47,7 +47,7 @@ export default function FileRevisionsModal({
         setIsLoading(false);
       }
     };
-    fetchRevisions();
+    void fetchRevisions();
   }, [fileId, addToast, t]);
 
   const handleDownload = (revId: string) => {
