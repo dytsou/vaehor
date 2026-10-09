@@ -366,7 +366,6 @@ async function createNewSchedule(
   setStagingScheduleId: (id: string) => void,
 ): Promise<{ schedule: ScheduledUpload; stagedPaths: Set<string> }> {
   const manifest: CreateScheduledUploadRequest = {
-    destinationId: scheduleTime.destinationId,
     ...scheduleTime,
     items: [...selection.entries]
       .sort((left, right) => left.path.localeCompare(right.path))
@@ -737,7 +736,7 @@ export function ScheduledUploadsScreen({
       if (!active) {
         active = await createNewSchedule(
           api,
-          { destinationId, ...scheduleTime },
+          { destinationId, ...scheduleTime, items: [] },
           selection,
           copy,
           setStagingScheduleId,
@@ -792,43 +791,6 @@ export function ScheduledUploadsScreen({
     selection,
     setStagingScheduleId,
     stagingRef,
-    time,
-    timeZone,
-  ]);
-      setDashboard((current) =>
-        current
-          ? {
-              ...current,
-              schedules: [
-                summarizeSchedule(committed.schedule),
-                ...current.schedules.filter(
-                  (item) => item.id !== committed.schedule.id,
-                ),
-              ],
-            }
-          : current,
-      );
-      refresh();
-      setNotice(copy.waiting);
-    } catch (cause) {
-      setActionError(errorMessage(cause));
-    } finally {
-      setWorking(false);
-      setStagingPath(null);
-    }
-  }, [
-    api,
-    clearSelection,
-    copy.noDestination,
-    copy.noSelection,
-    copy.stageProgress,
-    copy.waiting,
-    copy.waitingForServer,
-    date,
-    destinationId,
-    loadFileBlob,
-    refresh,
-    selection,
     time,
     timeZone,
   ]);
@@ -1286,6 +1248,10 @@ function ScheduleCard({
   if (detailsLoading) detailsButtonLabel = copy.loadingItems;
   else if (detailsExpanded) detailsButtonLabel = copy.hideItems;
 
+  const isStaging = schedule.status === ScheduledUploadStatus.STAGING;
+  const transferredBytes = isStaging ? schedule.stagedBytes : schedule.uploadedBytes;
+  const transferredLabel = isStaging ? copy.staged : copy.uploaded;
+
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
       <View style={styles.statusRow}>
@@ -1301,10 +1267,6 @@ function ScheduleCard({
           {copy.owner}: {schedule.creatorEmail}
         </Text>
       ) : null}
-      const isStaging = schedule.status === ScheduledUploadStatus.STAGING; const
-      transferredBytes = isStaging ? schedule.stagedBytes :
-      schedule.uploadedBytes; const transferredLabel = isStaging ? copy.staged :
-      copy.uploaded;
       <Text style={[styles.muted, { color: colors.muted }]}>
         {parseByteCount(transferredBytes)} /{" "}
         {parseByteCount(schedule.totalBytes)} {copy.bytes} {transferredLabel}
