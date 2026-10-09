@@ -3,12 +3,14 @@ import { NextResponse } from "next/server";
 import { createAdminRoute } from "@/lib/api-middleware";
 import { REDIS_KEYS } from "@/lib/constants";
 import { z } from "zod";
+import { revokeEditorAccess } from "@/lib/services/auth-jwt";
 
 const emailSchema = z.object({
   email: z
     .string()
+    .trim()
     .email("Invalid email format")
-    .transform((v) => v.trim()),
+    .transform((v) => v.toLowerCase()),
 });
 
 export const dynamic = "force-dynamic";
@@ -47,8 +49,11 @@ export const DELETE = createAdminRoute(
   async ({ body }) => {
     try {
       const { email } = body;
-      await kv.srem(REDIS_KEYS.ADMIN_EDITORS, email);
-      return NextResponse.json({ message: "Editor removed", email });
+      const normalizedEmail = await revokeEditorAccess(email);
+      return NextResponse.json({
+        message: "Editor removed",
+        email: normalizedEmail,
+      });
     } catch (error) {
       console.error("Editor remove error:", error);
       return NextResponse.json(

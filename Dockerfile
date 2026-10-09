@@ -55,6 +55,7 @@ COPY app ./app
 COPY components ./components
 COPY hooks ./hooks
 COPY lib ./lib
+COPY packages/sdk/src ./packages/sdk/src
 COPY types ./types
 COPY messages ./messages
 COPY public ./public
@@ -99,7 +100,10 @@ RUN addgroup --system --gid 1001 nodejs && \
   npm install -g prisma@7.7.0 --ignore-scripts && \
   mkdir -p /app/hash-tool && cd /app/hash-tool && \
   npm install bcryptjs@3.0.2 --omit=dev --no-package-lock --ignore-scripts && \
-  chmod -R a-w /app/hash-tool
+  chmod -R a-w /app/hash-tool && \
+  mkdir -p /app/.private-data/scheduled-uploads && \
+  chown nextjs:nodejs /app/.private-data/scheduled-uploads && \
+  chmod 700 /app/.private-data/scheduled-uploads
 
 # Copy necessary files from builder (root-owned, no write bit — S6504)
 COPY --from=builder --chown=root:root --chmod=555 /app/public ./public

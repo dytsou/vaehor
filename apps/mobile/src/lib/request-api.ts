@@ -32,7 +32,9 @@ async function requestJson<T>(
 ): Promise<T> {
   const response = await fetchImpl(path, init);
   const payload = (await response.json().catch(() => null)) as
-    { error?: unknown } | T | null;
+    | { error?: unknown }
+    | T
+    | null;
   if (!response.ok) {
     const message =
       payload &&

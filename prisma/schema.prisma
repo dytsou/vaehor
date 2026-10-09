@@ -7,6 +7,50 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ScheduledUploadStatus {
+  STAGING
+  WAITING
+  RELEASING
+  PARTIAL
+  NEEDS_ATTENTION
+  COMPLETED
+  CANCELED
+  ABANDONED
+}
+
+enum ScheduledUploadItemKind {
+  FILE
+  FOLDER
+}
+
+enum ScheduledUploadItemStatus {
+  PENDING
+  STAGING
+  STAGED
+  UPLOADING
+  COMPLETE
+  FAILED
+}
+
+enum ScheduledUploadCleanupStatus {
+  NONE
+  PENDING
+  COMPLETE
+}
+
+enum ScheduledUploadAdminAlertStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum ScheduledUploadAdminEmailStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -38,14 +82,139 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          String    @default("USER")
-  accounts      Account[]
-  sessions      Session[]
+  id               String            @id @default(cuid())
+  name             String?
+  email            String?           @unique
+  emailVerified    DateTime?
+  image            String?
+  role             String            @default("USER")
+  accounts         Account[]
+  sessions         Session[]
+  scheduledUploads ScheduledUpload[]
+}
+
+model ScheduledUpload {
+  id                  String                       @id @default(cuid())
+  creatorId           String
+  creatorEmail        String
+  creatorAccessEmail  String?
+  destinationId       String
+  scheduledAt         DateTime                     @db.Timestamptz(3)
+  scheduledTimeZone   String
+  scheduledLocalTime  String
+  scheduledUtcOffset  String
+  status              ScheduledUploadStatus        @default(STAGING)
+  itemCount           Int
+  totalBytes          BigInt                       @default(0)
+  stagedBytes         BigInt                       @default(0)
+  stageCompleteAt     DateTime?                    @db.Timestamptz(3)
+  releaseLeaseToken   String?                      @unique
+  releaseLeaseUntil   DateTime?                    @db.Timestamptz(3)
+  claimedAt           DateTime?                    @db.Timestamptz(3)
+  firstWriteAt        DateTime?                    @db.Timestamptz(3)
+  firstWriteAttemptAt DateTime?                    @db.Timestamptz(3)
+  completedAt         DateTime?                    @db.Timestamptz(3)
+  pollerLagMs         BigInt?
+  leaseRecoveryCount  Int                          @default(0)
+  leaseRecoveredAt    DateTime?                    @db.Timestamptz(3)
+  workerRetryCount    Int                          @default(0)
+  roleRevocationCount Int                          @default(0)
+  retryAfter          DateTime?                    @db.Timestamptz(3)
+  lastErrorCode       String?
+  lastErrorMessage    String?
+  adminAlertStatus    String?
+  adminAlertedAt      DateTime?                    @db.Timestamptz(3)
+  adminAlertLastError String?
+  cleanupStatus       ScheduledUploadCleanupStatus @default(NONE)
+  createdAt           DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                     @updatedAt @db.Timestamptz(3)
+  creator             User                         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  items               ScheduledUploadItem[]
+  attempts            ScheduledUploadAttempt[]
+  adminAlerts         ScheduledUploadAdminAlert[]
+
+  @@index([creatorId, status, scheduledAt])
+  @@index([status, scheduledAt])
+  @@index([status, scheduledAt, retryAfter, releaseLeaseUntil])
+  @@index([cleanupStatus, updatedAt])
+}
+
+model ScheduledUploadItem {
+  id                      String                    @id @default(cuid())
+  scheduleId              String
+  manifestPath            String
+  kind                    ScheduledUploadItemKind
+  status                  ScheduledUploadItemStatus @default(PENDING)
+  size                    BigInt                    @default(0)
+  sha256                  String?
+  contentType             String?
+  storageKey              String?
+  uploadedBytes           BigInt                    @default(0)
+  uploadToken             String?
+  uploadLeaseUntil        DateTime?                 @db.Timestamptz(3)
+  stagedAt                DateTime?                 @db.Timestamptz(3)
+  remoteFileId            String?
+  encryptedUploadSession  String?
+  uploadSessionNonce      String?
+  uploadSessionTag        String?
+  uploadSessionKeyVersion String?
+  remoteUploadOffset      BigInt                    @default(0)
+  releaseVerifiedAt       DateTime?                 @db.Timestamptz(3)
+  attemptCount            Int                       @default(0)
+  retryAfter              DateTime?                 @db.Timestamptz(3)
+  lastErrorCode           String?
+  lastErrorMessage        String?
+  createdAt               DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime                  @updatedAt @db.Timestamptz(3)
+  schedule                ScheduledUpload           @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  attempts                ScheduledUploadAttempt[]
+
+  @@unique([scheduleId, manifestPath])
+  @@index([scheduleId, status])
+  @@index([status, retryAfter])
+}
+
+model ScheduledUploadAttempt {
+  id           String               @id @default(cuid())
+  scheduleId   String
+  itemId       String?
+  kind         String
+  status       String
+  startedAt    DateTime             @default(now()) @db.Timestamptz(3)
+  finishedAt   DateTime?            @db.Timestamptz(3)
+  retryAfter   DateTime?            @db.Timestamptz(3)
+  errorCode    String?
+  errorMessage String?
+  schedule     ScheduledUpload      @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  item         ScheduledUploadItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
+
+  @@index([scheduleId, startedAt])
+  @@index([itemId, startedAt])
+}
+
+model ScheduledUploadAdminAlert {
+  id                  String                          @id @default(cuid())
+  scheduleId          String
+  occurrence          Int
+  reasonCode          String
+  status              ScheduledUploadAdminAlertStatus @default(OPEN)
+  emailStatus         ScheduledUploadAdminEmailStatus @default(PENDING)
+  emailAttempts       Int                             @default(0)
+  emailRetryAfter     DateTime?                       @db.Timestamptz(3)
+  emailLeaseToken     String?                         @unique
+  emailLeaseUntil     DateTime?                       @db.Timestamptz(3)
+  emailLastError      String?
+  acknowledgedAt      DateTime?                       @db.Timestamptz(3)
+  acknowledgedByEmail String?
+  resolvedAt          DateTime?                       @db.Timestamptz(3)
+  resolvedByEmail     String?
+  createdAt           DateTime                        @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime                        @updatedAt @db.Timestamptz(3)
+  schedule            ScheduledUpload                 @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, reasonCode, occurrence])
+  @@index([status, createdAt])
+  @@index([emailStatus, emailRetryAfter, emailLeaseUntil])
 }
 
 model VerificationToken {
@@ -57,30 +226,30 @@ model VerificationToken {
 }
 
 model ActivityLog {
-  id            String   @id @default(cuid())
-  type          String
-  timestamp     Float
-  severity      String
-  
-  itemName      String?
-  itemId        String?
-  itemSize      String?
-  itemType      String?
-  userEmail     String?
-  userId        String?
-  userRole      String?
-  targetUser    String?
+  id        String @id @default(cuid())
+  type      String
+  timestamp Float
+  severity  String
+
+  itemName          String?
+  itemId            String?
+  itemSize          String?
+  itemType          String?
+  userEmail         String?
+  userId            String?
+  userRole          String?
+  targetUser        String?
   destinationFolder String?
-  sourcePath    String?
-  targetPath    String?
-  status        String?
-  error         String?
-  errorCode     String?
-  ipAddress     String?
-  userAgent     String?
-  country       String?
-  city          String?
-  metadata      String?
+  sourcePath        String?
+  targetPath        String?
+  status            String?
+  error             String?
+  errorCode         String?
+  ipAddress         String?
+  userAgent         String?
+  country           String?
+  city              String?
+  metadata          String?
 
   @@index([type])
   @@index([timestamp])
@@ -101,8 +270,8 @@ model ShareLink {
   createdAt     DateTime @default(now())
 
   maxUses         Int?
-  preventDownload Boolean  @default(false)
-  hasWatermark    Boolean  @default(false)
+  preventDownload Boolean @default(false)
+  hasWatermark    Boolean @default(false)
   watermarkText   String?
 
   @@index([expiresAt])

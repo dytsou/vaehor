@@ -7,6 +7,7 @@ import {
   CheckSquare,
   LayoutTemplate,
   UploadCloud,
+  Clock,
   Home,
   AlignJustify,
   StretchHorizontal,
@@ -28,6 +29,7 @@ interface FileBrowserHeaderProps {
   history: { id: string; name: string }[];
   shareToken: string | null;
   isAdmin: boolean;
+  canScheduleUploads: boolean;
   isBulkMode: boolean;
   view: "list" | "grid" | "gallery";
   dragOverBreadcrumb: string | null;
@@ -36,6 +38,7 @@ interface FileBrowserHeaderProps {
   onBreadcrumbDragLeave: (e: React.DragEvent) => void;
   onBreadcrumbDrop: (e: React.DragEvent, folder: { id: string }) => void;
   onUploadClick: () => void;
+  onScheduleUploadsClick: () => void;
   onShareFolderClick: () => void;
   onToggleBulkMode: () => void;
   onSetView: (view: "list" | "grid" | "gallery") => void;
@@ -49,6 +52,7 @@ export default function FileBrowserHeader({
   history,
   shareToken,
   isAdmin,
+  canScheduleUploads,
   isBulkMode,
   view,
   dragOverBreadcrumb,
@@ -57,6 +61,7 @@ export default function FileBrowserHeader({
   onBreadcrumbDragLeave,
   onBreadcrumbDrop,
   onUploadClick,
+  onScheduleUploadsClick,
   onShareFolderClick,
   onToggleBulkMode,
   onSetView,
@@ -70,6 +75,7 @@ export default function FileBrowserHeader({
   const t = useTranslations("FileBrowser");
 
   const showAdminActions = !shareToken && isAdmin;
+  const showScheduleAction = !shareToken && canScheduleUploads;
   const sortLabels = {
     name: t("sortName"),
     modifiedTime: t("sortDate"),
@@ -221,6 +227,17 @@ export default function FileBrowserHeader({
         )}
 
         <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {showScheduleAction && (
+            <button
+              type="button"
+              onClick={onScheduleUploadsClick}
+              className="p-2 rounded-lg bg-card border hover:bg-accent hover:text-primary transition-colors shadow-sm flex items-center justify-center shrink-0"
+              title={t("scheduleUpload")}
+              aria-label={t("scheduleUpload")}
+            >
+              <Clock size={18} />
+            </button>
+          )}
           {view === "list" && (
             <button
               type="button"

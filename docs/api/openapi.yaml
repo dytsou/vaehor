@@ -6,6 +6,7 @@ tags:
   - name: Health
   - name: Admin
   - name: Files
+  - name: Scheduled Uploads
   - name: Auth
   - name: Mobile
   - name: Share
@@ -534,6 +535,108 @@ paths:
         content:
           application/json:
             schema: {}
+      security:
+        - ApiKeyAuth: []
+  /api/admin/scheduled-uploads/alerts:
+    get:
+      operationId: listScheduledUploadAdminAlerts
+      description: List durable administrator alerts for private scheduled uploads.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ScheduledUploadAdminAlertStatus'
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadAdminAlertsResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Admin
+      security:
+        - ApiKeyAuth: []
+  /api/admin/scheduled-uploads/alerts/update:
+    post:
+      operationId: updateScheduledUploadAdminAlert
+      description: Acknowledge or resolve one scheduled-upload administrator alert.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateScheduledUploadAdminAlertResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduledUploadAdminAlertRequest'
+      security:
+        - ApiKeyAuth: []
+  /api/admin/scheduled-uploads/cancel:
+    post:
+      operationId: cancelScheduledUploadAsAdmin
+      description: Cancel a paused private package before its first Drive write.
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelScheduledUploadAsAdminRequest'
       security:
         - ApiKeyAuth: []
   /api/admin/stats:
@@ -1151,8 +1254,10 @@ paths:
         '200':
           description: The request has succeeded.
           content:
-            application/json:
-              schema: {}
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
         '302':
           description: Redirection
         '401':
@@ -2345,6 +2450,420 @@ paths:
               $ref: '#/components/schemas/AccessRequestCreateRequest'
       security:
         - ApiKeyAuth: []
+  /api/scheduled-uploads:
+    get:
+      operationId: listScheduledUploads
+      description: List scheduled uploads visible to the authenticated owner or administrator.
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadListResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+    post:
+      operationId: createScheduledUpload
+      description: Create a private staging package and schedule a future Drive write.
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadCreateResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '507':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduledUploadRequest'
+      security:
+        - ApiKeyAuth: []
+  /api/scheduled-uploads/{scheduleId}:
+    get:
+      operationId: getScheduledUpload
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+    patch:
+      operationId: updateScheduledUploadTime
+      description: Change a waiting upload's future local time, time zone, and offset.
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduledUploadTimeRequest'
+      security:
+        - ApiKeyAuth: []
+    delete:
+      operationId: cancelScheduledUpload
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+  /api/scheduled-uploads/{scheduleId}/abandon:
+    post:
+      operationId: abandonScheduledUpload
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+  /api/scheduled-uploads/{scheduleId}/commit:
+    post:
+      operationId: commitScheduledUpload
+      description: Verify every staged byte and move a complete package into waiting state.
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+  /api/scheduled-uploads/{scheduleId}/items/{itemId}/content:
+    get:
+      operationId: readScheduledUploadItemContent
+      description: Read private staged content as an owner or administrator stream.
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
+    put:
+      operationId: stageScheduledUploadItemContent
+      description: Stream one file into private staging without buffering multipart form data.
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadItemStageResponse'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: Client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '507':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      security:
+        - ApiKeyAuth: []
+  /api/scheduled-uploads/{scheduleId}/retry:
+    post:
+      operationId: retryScheduledUpload
+      parameters:
+        - name: scheduleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledUploadResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      tags:
+        - Scheduled Uploads
+      security:
+        - ApiKeyAuth: []
   /api/search:
     get:
       operationId: searchFiles
@@ -2831,6 +3350,34 @@ components:
           type: string
         backend:
           $ref: '#/components/schemas/CacheBackend'
+    CancelScheduledUploadAsAdminRequest:
+      type: object
+      required:
+        - scheduleId
+      properties:
+        scheduleId:
+          type: string
+    CreateScheduledUploadRequest:
+      type: object
+      required:
+        - destinationId
+        - scheduledLocalTime
+        - timeZone
+        - utcOffset
+        - items
+      properties:
+        destinationId:
+          type: string
+        scheduledLocalTime:
+          type: string
+        timeZone:
+          type: string
+        utcOffset:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledUploadManifestItem'
     CreateShareLinkRequest:
       type: object
       required:
@@ -3350,6 +3897,408 @@ components:
         size:
           type: number
           format: double
+    ScheduledUpload:
+      type: object
+      required:
+        - id
+        - creatorEmail
+        - destinationId
+        - scheduledAt
+        - scheduledLocalTime
+        - timeZone
+        - utcOffset
+        - status
+        - itemCount
+        - totalBytes
+        - stagedBytes
+        - cleanupStatus
+        - createdAt
+        - updatedAt
+        - items
+      properties:
+        id:
+          type: string
+        creatorEmail:
+          type: string
+        destinationId:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        scheduledLocalTime:
+          type: string
+        timeZone:
+          type: string
+        utcOffset:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduledUploadStatus'
+        itemCount:
+          type: integer
+          format: int32
+        totalBytes:
+          type: string
+        stagedBytes:
+          type: string
+        stageCompleteAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstWriteAt:
+          type: string
+          format: date-time
+          nullable: true
+        retryAfter:
+          type: string
+          format: date-time
+          nullable: true
+        lastErrorCode:
+          type: string
+          nullable: true
+        lastErrorMessage:
+          type: string
+          nullable: true
+        cleanupStatus:
+          type: string
+          enum:
+            - NONE
+            - PENDING
+            - COMPLETE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledUploadItem'
+    ScheduledUploadAdminAlert:
+      type: object
+      required:
+        - id
+        - scheduleId
+        - occurrence
+        - reasonCode
+        - status
+        - emailStatus
+        - emailAttempts
+        - createdAt
+        - updatedAt
+        - schedule
+      properties:
+        id:
+          type: string
+        scheduleId:
+          type: string
+        occurrence:
+          type: integer
+          format: int32
+        reasonCode:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduledUploadAdminAlertStatus'
+        emailStatus:
+          $ref: '#/components/schemas/ScheduledUploadAdminEmailStatus'
+        emailAttempts:
+          type: integer
+          format: int32
+        emailRetryAfter:
+          type: string
+          format: date-time
+          nullable: true
+        emailLastError:
+          type: string
+          nullable: true
+        acknowledgedAt:
+          type: string
+          format: date-time
+          nullable: true
+        acknowledgedByEmail:
+          type: string
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedByEmail:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        schedule:
+          $ref: '#/components/schemas/ScheduledUploadAdminAlertSchedule'
+    ScheduledUploadAdminAlertSchedule:
+      type: object
+      required:
+        - id
+        - creatorEmail
+        - scheduledAt
+        - status
+      properties:
+        id:
+          type: string
+        creatorEmail:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/ScheduledUploadStatus'
+    ScheduledUploadAdminAlertStatus:
+      type: string
+      enum:
+        - OPEN
+        - ACKNOWLEDGED
+        - RESOLVED
+    ScheduledUploadAdminAlertsResponse:
+      type: object
+      required:
+        - alerts
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledUploadAdminAlert'
+    ScheduledUploadAdminEmailStatus:
+      type: string
+      enum:
+        - PENDING
+        - SENDING
+        - SENT
+        - FAILED
+    ScheduledUploadCreateResponse:
+      type: object
+      required:
+        - schedule
+        - limits
+      properties:
+        schedule:
+          $ref: '#/components/schemas/ScheduledUpload'
+        limits:
+          $ref: '#/components/schemas/ScheduledUploadLimits'
+    ScheduledUploadItem:
+      type: object
+      required:
+        - id
+        - path
+        - kind
+        - size
+        - uploadedBytes
+        - status
+      properties:
+        id:
+          type: string
+        path:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ScheduledUploadItemKind'
+        size:
+          type: string
+        uploadedBytes:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduledUploadItemStatus'
+        contentType:
+          type: string
+          nullable: true
+        stagedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ScheduledUploadItemKind:
+      type: string
+      enum:
+        - FILE
+        - FOLDER
+    ScheduledUploadItemStageResponse:
+      type: object
+      required:
+        - item
+      properties:
+        item:
+          type: object
+          properties:
+            itemId:
+              type: string
+            path:
+              type: string
+            status:
+              $ref: '#/components/schemas/ScheduledUploadItemStatus'
+            uploadedBytes:
+              type: string
+            size:
+              type: string
+            sha256:
+              type: string
+          required:
+            - itemId
+            - path
+            - status
+            - uploadedBytes
+            - size
+            - sha256
+    ScheduledUploadItemStatus:
+      type: string
+      enum:
+        - PENDING
+        - STAGING
+        - STAGED
+        - UPLOADING
+        - COMPLETE
+        - FAILED
+    ScheduledUploadLimits:
+      type: object
+      required:
+        - maxFileBytes
+        - maxPackageBytes
+        - maxItems
+        - reserveFreeBytes
+      properties:
+        maxFileBytes:
+          type: string
+        maxPackageBytes:
+          type: string
+        maxItems:
+          type: integer
+          format: int32
+        reserveFreeBytes:
+          type: string
+    ScheduledUploadListResponse:
+      type: object
+      required:
+        - items
+        - nextCursor
+        - limits
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledUploadSummary'
+        nextCursor:
+          type: string
+          nullable: true
+        limits:
+          $ref: '#/components/schemas/ScheduledUploadLimits'
+    ScheduledUploadManifestItem:
+      type: object
+      required:
+        - path
+        - kind
+        - size
+      properties:
+        path:
+          type: string
+        kind:
+          type: string
+          enum:
+            - file
+            - folder
+        size:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+        contentType:
+          type: string
+    ScheduledUploadResponse:
+      type: object
+      required:
+        - schedule
+      properties:
+        schedule:
+          $ref: '#/components/schemas/ScheduledUpload'
+    ScheduledUploadStatus:
+      type: string
+      enum:
+        - STAGING
+        - WAITING
+        - RELEASING
+        - PARTIAL
+        - NEEDS_ATTENTION
+        - COMPLETED
+        - CANCELED
+        - ABANDONED
+    ScheduledUploadSummary:
+      type: object
+      required:
+        - id
+        - creatorEmail
+        - destinationId
+        - scheduledAt
+        - scheduledLocalTime
+        - timeZone
+        - utcOffset
+        - status
+        - itemCount
+        - totalBytes
+        - stagedBytes
+        - uploadedBytes
+        - cleanupStatus
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        creatorEmail:
+          type: string
+        destinationId:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        scheduledLocalTime:
+          type: string
+        timeZone:
+          type: string
+        utcOffset:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduledUploadStatus'
+        itemCount:
+          type: integer
+          format: int32
+        totalBytes:
+          type: string
+        stagedBytes:
+          type: string
+        uploadedBytes:
+          type: string
+        stageCompleteAt:
+          type: string
+          format: date-time
+          nullable: true
+        firstWriteAt:
+          type: string
+          format: date-time
+          nullable: true
+        retryAfter:
+          type: string
+          format: date-time
+          nullable: true
+        lastErrorCode:
+          type: string
+          nullable: true
+        lastErrorMessage:
+          type: string
+          nullable: true
+        cleanupStatus:
+          type: string
+          enum:
+            - NONE
+            - PENDING
+            - COMPLETE
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     SearchType:
       type: string
       enum:
@@ -3460,6 +4409,39 @@ components:
           type: string
     UnauthorizedResponse:
       type: object
+    UpdateScheduledUploadAdminAlertRequest:
+      type: object
+      required:
+        - alertId
+        - status
+      properties:
+        alertId:
+          type: string
+        status:
+          type: string
+          enum:
+            - ACKNOWLEDGED
+            - RESOLVED
+    UpdateScheduledUploadAdminAlertResponse:
+      type: object
+      required:
+        - alert
+      properties:
+        alert:
+          $ref: '#/components/schemas/ScheduledUploadAdminAlert'
+    UpdateScheduledUploadTimeRequest:
+      type: object
+      required:
+        - scheduledLocalTime
+        - timeZone
+        - utcOffset
+      properties:
+        scheduledLocalTime:
+          type: string
+        timeZone:
+          type: string
+        utcOffset:
+          type: string
     UploadMode:
       type: string
       enum:

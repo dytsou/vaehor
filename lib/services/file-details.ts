@@ -15,7 +15,8 @@ export type FileDetailsAuthResult = {
 };
 
 export type FileIdParseResult =
-  { ok: true; fileId: string } | { ok: false; error: NextResponse };
+  | { ok: true; fileId: string }
+  | { ok: false; error: NextResponse };
 
 export async function resolveFileDetailsAuth(
   request: NextRequest,

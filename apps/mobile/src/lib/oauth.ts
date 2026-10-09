@@ -8,7 +8,8 @@ const PENDING_OAUTH_ORIGIN_KEY = "vaehor.oauth.pending-origin.v1";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export type OAuthBrowserResult =
-  { type: "success"; url: string } | { type: "cancel" | "dismiss" };
+  | { type: "success"; url: string }
+  | { type: "cancel" | "dismiss" };
 
 export type OAuthPendingStore = {
   get(): Promise<string | null>;

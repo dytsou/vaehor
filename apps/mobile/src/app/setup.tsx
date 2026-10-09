@@ -367,8 +367,8 @@ function ServiceAccountSetupForm({
 }>) {
   const canSubmit = Boolean(
     serviceAccountEmail.trim() &&
-    serviceAccountKey.trim() &&
-    rootFolderId.trim(),
+      serviceAccountKey.trim() &&
+      rootFolderId.trim(),
   );
   return (
     <>
