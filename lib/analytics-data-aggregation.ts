@@ -276,7 +276,7 @@ async function buildBandwidthSummary(now: number) {
   const totalThisWeek = dailyTrend
     .slice(-7)
     .reduce((total, day) => total + day.bytes, 0);
-  const totalToday = dailyTrend[dailyTrend.length - 1]?.bytes ?? 0;
+  const totalToday = dailyTrend.at(-1)?.bytes ?? 0;
 
   return {
     totalToday,
