@@ -114,7 +114,7 @@
     "recharts": "^3.10.1",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.1",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "tailwind-merge": "^3.7.0",
     "tailwindcss-animate": "^1.0.7",
     "yet-another-react-lightbox": "^3.32.2",
