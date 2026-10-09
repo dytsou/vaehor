@@ -1105,13 +1105,6 @@ async function initializeUploadSession(
   parentId: string,
   dependencies: ScheduledUploadWorkerDependencies,
 ): Promise<string> {
-  if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
-    throw new ScheduledUploadWorkerError(
-      "AUTHORIZATION_FAILED",
-      "First write authorization failed.",
-      false,
-    );
-  }
   await markFirstWriteAttempt(claim, dependencies);
   const sessionUri = await dependencies.drive.startResumableUpload({
     id: remoteFileId,
