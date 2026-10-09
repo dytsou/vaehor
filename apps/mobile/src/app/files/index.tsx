@@ -2870,7 +2870,7 @@ export default function FilesRoute() {
             <Text style={[styles.empty, { color: colors.muted }]}>
               {activeQuery ? "No matching files." : "This folder is empty."}
             </Text>
-          ) : null
+          ) : undefined
         }
         ListHeaderComponent={renderListHeader()}
         ListFooterComponent={renderListFooter()}
