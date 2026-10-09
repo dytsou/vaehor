@@ -1,4 +1,5 @@
 import { requireAdminSession } from "@/lib/admin-auth";
+import { mapAsyncInBatches } from "@/lib/async-sequence";
 import { AdminDashboard } from "./AdminDashboard.client";
 import { getAdminStats } from "@/lib/admin-stats";
 import { getAppConfig } from "@/lib/app-config";
@@ -45,14 +46,15 @@ export default async function AdminPage() {
       return result;
     }),
     kv.smembers(foldersWithAccessKey).then(async (folderIds) => {
-      const result: Record<string, string[]> = {};
-      for (const folderId of folderIds || []) {
-        const emails = await kv.smembers(getFolderAccessKey(folderId));
-        if (emails.length > 0) {
-          result[folderId] = emails;
-        }
-      }
-      return result;
+      const entries = await mapAsyncInBatches(
+        folderIds || [],
+        20,
+        async (folderId): Promise<[string, string[]] | null> => {
+          const emails = await kv.smembers(getFolderAccessKey(folderId));
+          return emails.length > 0 ? [folderId, emails] : null;
+        },
+      );
+      return Object.fromEntries(entries.filter((entry) => entry !== null));
     }),
     kv.smembers(REDIS_KEYS.ACCESS_REQUESTS).then((rows) => {
       const parsed = (rows || [])

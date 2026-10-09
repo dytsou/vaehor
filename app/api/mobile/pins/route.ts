@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mapAsyncInBatches } from "@/lib/async-sequence";
 import { z } from "zod";
 import { revalidateTag } from "next/cache";
 import { createAdminRoute, createUserRoute } from "@/lib/api-middleware";
@@ -14,35 +15,23 @@ export const dynamic = "force-dynamic";
 export const GET = createUserRoute(async () => {
   try {
     const ids = [...new Set((await kv.smembers(PINNED_KEY)).filter(Boolean))];
-    const entries: Array<{
-      id?: string;
-      name?: string;
-      mimeType?: string;
-      parents?: string[];
-    } | null> = [];
-
-    for (
-      let offset = 0;
-      offset < ids.length;
-      offset += PIN_LOOKUP_CONCURRENCY
-    ) {
-      const batch = await Promise.all(
-        ids.slice(offset, offset + PIN_LOOKUP_CONCURRENCY).map(async (id) => {
-          const file = await getFileDetailsFromDrive(id);
-          if (!file || file.trashed || !file.isFolder) {
-            await kv.srem(PINNED_KEY, id);
-            return null;
-          }
-          return {
-            id: file.id,
-            name: file.name,
-            mimeType: file.mimeType,
-            parents: file.parents,
-          };
-        }),
-      );
-      entries.push(...batch);
-    }
+    const entries = await mapAsyncInBatches(
+      ids,
+      PIN_LOOKUP_CONCURRENCY,
+      async (id) => {
+        const file = await getFileDetailsFromDrive(id);
+        if (!file || file.trashed || !file.isFolder) {
+          await kv.srem(PINNED_KEY, id);
+          return null;
+        }
+        return {
+          id: file.id,
+          name: file.name,
+          mimeType: file.mimeType,
+          parents: file.parents,
+        };
+      },
+    );
 
     return NextResponse.json({
       folders: entries.filter((entry) => entry !== null),

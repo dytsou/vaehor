@@ -4,7 +4,7 @@ import { getKvCacheStats } from "@/lib/kv";
 
 export const dynamic = "force-dynamic";
 
-export const GET = createAdminRoute(async () => {
+export const GET = createAdminRoute(() => {
   const stats = getKvCacheStats();
 
   return NextResponse.json({

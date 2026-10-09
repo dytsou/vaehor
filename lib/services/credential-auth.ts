@@ -174,7 +174,7 @@ async function resolveCredentialAdminStatus(
   return isAdminDb || isRedisAdmin === 1 || isAdminEnv;
 }
 
-async function verifyAdminPassword(
+function verifyAdminPassword(
   password: string,
   normalizedInputEmail: string,
 ): Promise<boolean | null> {
@@ -189,7 +189,7 @@ async function verifyAdminPassword(
       { email: normalizedInputEmail },
       "[Auth] ADMIN_PASSWORD_HASH is required in production for credential login",
     );
-    return null;
+    return Promise.resolve(null);
   }
 
   if (envPassHash) {
@@ -197,10 +197,10 @@ async function verifyAdminPassword(
   }
 
   if (!isProduction && envPass) {
-    return constantTimeEqual(password, envPass);
+    return Promise.resolve(constantTimeEqual(password, envPass));
   }
 
-  return false;
+  return Promise.resolve(false);
 }
 
 function logCredentialLoginAttempt(

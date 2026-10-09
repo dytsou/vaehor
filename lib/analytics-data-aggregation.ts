@@ -60,18 +60,19 @@ async function fetchDayViewTotals(now: number, dayOffset: number) {
 }
 
 async function fetchOverviewMetrics(now: number) {
-  const [today, yesterday] = await Promise.all([
-    fetchDayViewTotals(now, 0),
-    fetchDayViewTotals(now, 1),
-  ]);
+  const dailyTotals = await Promise.all(
+    Array.from({ length: 30 }, (_, dayOffset) =>
+      fetchDayViewTotals(now, dayOffset),
+    ),
+  );
+  const [today, yesterday] = dailyTotals;
 
   let viewsThisWeek = 0;
   let viewsThisMonth = 0;
   let visitorsThisWeek = 0;
   let visitorsThisMonth = 0;
 
-  for (let dayOffset = 0; dayOffset < 30; dayOffset += 1) {
-    const totals = await fetchDayViewTotals(now, dayOffset);
+  dailyTotals.forEach((totals, dayOffset) => {
     viewsThisMonth += totals.views;
     visitorsThisMonth += totals.visitors;
 
@@ -79,7 +80,7 @@ async function fetchOverviewMetrics(now: number) {
       viewsThisWeek += totals.views;
       visitorsThisWeek += totals.visitors;
     }
-  }
+  });
 
   const fiveMinAgo = now - 5 * 60 * 1000;
   const activeMembers = await kv.zrange(
@@ -163,18 +164,17 @@ async function buildHourlyViews(now: number) {
 }
 
 async function buildDailyTrend(now: number) {
-  const dailyTrend: AnalyticsData["dailyTrend"] = [];
+  const dailyTotals = await Promise.all(
+    Array.from({ length: 30 }, (_, index) =>
+      fetchDayViewTotals(now, 29 - index),
+    ),
+  );
 
-  for (let dayOffset = 29; dayOffset >= 0; dayOffset -= 1) {
-    const totals = await fetchDayViewTotals(now, dayOffset);
-    dailyTrend.push({
-      date: formatTrendDate(now - dayOffset * MS_PER_DAY),
-      views: totals.views,
-      visitors: totals.visitors,
-    });
-  }
-
-  return dailyTrend;
+  return dailyTotals.map((totals, index) => ({
+    date: formatTrendDate(now - (29 - index) * MS_PER_DAY),
+    views: totals.views,
+    visitors: totals.visitors,
+  }));
 }
 
 async function buildPopularPages(fromTimestamp: number, toTimestamp: number) {
@@ -256,29 +256,27 @@ async function buildTopReferrers(fromTimestamp: number, toTimestamp: number) {
 }
 
 async function buildBandwidthSummary(now: number) {
-  let totalToday = 0;
-  let totalThisWeek = 0;
-  let totalThisMonth = 0;
-  const dailyTrend: AnalyticsData["bandwidth"]["dailyTrend"] = [];
-
-  for (let dayOffset = 29; dayOffset >= 0; dayOffset -= 1) {
-    const dayKey = getAnalyticsDayKey(now - dayOffset * MS_PER_DAY);
-    const bytes =
-      (await kv.get<number>(`${ANALYTICS_KEYS.bandwidth}:${dayKey}`)) || 0;
-
-    dailyTrend.push({
-      date: formatTrendDate(now - dayOffset * MS_PER_DAY),
-      bytes,
-    });
-
-    totalThisMonth += bytes;
-    if (dayOffset < 7) {
-      totalThisWeek += bytes;
-    }
-    if (dayOffset === 0) {
-      totalToday = bytes;
-    }
-  }
+  const dailyBytes = await Promise.all(
+    Array.from({ length: 30 }, (_, index) => {
+      const dayOffset = 29 - index;
+      const dayKey = getAnalyticsDayKey(now - dayOffset * MS_PER_DAY);
+      return kv.get<number>(`${ANALYTICS_KEYS.bandwidth}:${dayKey}`);
+    }),
+  );
+  const dailyTrend: AnalyticsData["bandwidth"]["dailyTrend"] = dailyBytes.map(
+    (value, index) => ({
+      date: formatTrendDate(now - (29 - index) * MS_PER_DAY),
+      bytes: value || 0,
+    }),
+  );
+  const totalThisMonth = dailyTrend.reduce(
+    (total, day) => total + day.bytes,
+    0,
+  );
+  const totalThisWeek = dailyTrend
+    .slice(-7)
+    .reduce((total, day) => total + day.bytes, 0);
+  const totalToday = dailyTrend[dailyTrend.length - 1]?.bytes ?? 0;
 
   return {
     totalToday,

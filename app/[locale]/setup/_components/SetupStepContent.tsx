@@ -66,7 +66,11 @@ export function SetupStepContent(state: Readonly<SetupPageState>) {
           writeSuccess={state.writeSuccess}
           onGoHome={() => state.router.push("/")}
           onCopy={(value) => {
-            navigator.clipboard.writeText(value);
+            void navigator.clipboard
+              .writeText(value)
+              .catch((error: unknown) => {
+                console.error("Failed to copy setup value", error);
+              });
             state
               .alert(state.t("copied"), { title: state.t("success") })
               .catch(() => {});

@@ -48,7 +48,7 @@ export default function AuditDashboardClient(
   // biome-ignore lint/correctness/useExhaustiveDependencies: Only fetch on the initial empty state.
   useEffect(() => {
     if (props.initialLogs.length === 0) {
-      fetchLogs();
+      void fetchLogs();
     }
   }, []);
 

@@ -159,10 +159,9 @@ export class RedisKV implements KVClient {
 
   async scanKeys(pattern: string, count: number = 200): Promise<string[]> {
     const maxCount = Math.max(1, Math.min(count, 5000));
-    let cursor = "0";
     const keys: string[] = [];
 
-    do {
+    const scanPage = async (cursor: string): Promise<void> => {
       const [nextCursor, foundKeys] = await this.client.scan(
         cursor,
         "MATCH",
@@ -170,11 +169,13 @@ export class RedisKV implements KVClient {
         "COUNT",
         maxCount,
       );
-      cursor = nextCursor;
       if (foundKeys.length > 0) {
         keys.push(...foundKeys);
       }
-    } while (cursor !== "0");
+      if (nextCursor !== "0") return scanPage(nextCursor);
+    };
+
+    await scanPage("0");
 
     return keys;
   }

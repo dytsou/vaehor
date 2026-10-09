@@ -88,17 +88,18 @@ export default async function FolderPage(
       cleanFolderId.startsWith("local-storage:")
         ? false
         : isProtected(cleanFolderId),
-      import("@/lib/db").then((m) =>
-        m.db.protectedFolder
-          .findMany({ select: { folderId: true } })
-          .then((res: { folderId: string }[]) => {
-            const map: ProtectedFolderMap = {};
-            res.forEach((entry) => {
-              map[entry.folderId] = true;
-            });
-            return map;
-          }),
-      ),
+      import("@/lib/db").then(async (m) => {
+        const res: { folderId: string }[] = await m.db.protectedFolder.findMany(
+          {
+            select: { folderId: true },
+          },
+        );
+        const map: ProtectedFolderMap = {};
+        res.forEach((entry) => {
+          map[entry.folderId] = true;
+        });
+        return map;
+      }),
       import("@/lib/auth").then((m) => m.isPrivateFolder),
     ]);
 

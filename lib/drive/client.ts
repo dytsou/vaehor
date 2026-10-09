@@ -8,36 +8,41 @@ export async function fetchWithRetry(
 ): Promise<Response> {
   const originalHeaders = new Headers(options.headers);
 
-  for (let i = 0; i < retries; i++) {
+  const attempt = async (index: number): Promise<Response> => {
+    if (index >= retries) {
+      throw new Error("Gagal melakukan fetch setelah beberapa kali percobaan.");
+    }
+
+    let response: Response;
     try {
-      const response = await fetch(url, options);
-
-      if (response.ok) {
-        return response;
-      }
-
-      if (response.status === 404) {
-        return response;
-      }
-
+      response = await fetch(url, options);
       if (response.status === 401) {
         await invalidateAccessToken();
         const newToken = await getAccessToken();
         originalHeaders.set("Authorization", `Bearer ${newToken}`);
         options.headers = originalHeaders;
-        continue;
+        if (index === retries - 1) {
+          throw new Error(
+            "Gagal melakukan fetch setelah beberapa kali percobaan.",
+          );
+        }
+        return attempt(index + 1);
       }
-
-      if (response.status === 429 || response.status >= 500) {
-        await new Promise((res) => setTimeout(res, delay * Math.pow(2, i)));
-        continue;
-      }
-
-      return response;
     } catch (error: unknown) {
-      if (i === retries - 1) throw error;
-      await new Promise((res) => setTimeout(res, delay * Math.pow(2, i)));
+      if (index === retries - 1) throw error;
+      await new Promise((res) => setTimeout(res, delay * Math.pow(2, index)));
+      return attempt(index + 1);
     }
-  }
-  throw new Error("Gagal melakukan fetch setelah beberapa kali percobaan.");
+
+    if (response.ok || response.status === 404) return response;
+
+    if (response.status === 429 || response.status >= 500) {
+      await new Promise((res) => setTimeout(res, delay * Math.pow(2, index)));
+      return attempt(index + 1);
+    }
+
+    return response;
+  };
+
+  return attempt(0);
 }

@@ -149,7 +149,9 @@ export default function VideoPlayer({
       if (active) setProcessedTracks(tracks);
     };
 
-    processTracks();
+    void processTracks().catch((error: unknown) => {
+      console.error("Failed to process subtitle tracks", error);
+    });
 
     return () => {
       active = false;
@@ -371,7 +373,11 @@ export default function VideoPlayer({
             preventDownload={sharePolicy?.preventDownload}
             getAbsoluteSrc={getAbsoluteSrc}
             onCopyUrl={() => {
-              navigator.clipboard.writeText(getAbsoluteSrc());
+              void navigator.clipboard
+                .writeText(getAbsoluteSrc())
+                .catch((error: unknown) => {
+                  console.error("Failed to copy stream URL", error);
+                });
               addToast({ message: "URL Stream disalin!", type: "success" });
             }}
             onToggleTheater={toggleTheaterMode}

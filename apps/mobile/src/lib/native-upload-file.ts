@@ -27,7 +27,7 @@ export function openDocumentPickerUploadFile(
     name: fileName,
     mimeType: asset.mimeType ?? "application/octet-stream",
     size,
-    readChunk: async (start, end, signal) => {
+    readChunk: (start, end, signal) => {
       if (signal?.aborted) throw new Error("Upload cancelled");
       if (closed) throw new Error("The selected file is no longer available.");
       handle.offset = start;

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import { forEachSequentially } from "@/lib/async-sequence";
 import { createPublicRoute } from "@/lib/api-middleware";
 import { getAccessToken } from "@/lib/drive";
 import JSZip from "jszip";
@@ -67,7 +68,7 @@ export const POST = createPublicRoute(
       let addedCount = 0;
       let totalBytes = 0;
 
-      for (const fileId of fileIds) {
+      await forEachSequentially(fileIds, async (fileId) => {
         const addedBytes = await addFileToArchive(
           zip,
           fileId,
@@ -76,10 +77,10 @@ export const POST = createPublicRoute(
           session.user.role,
           session.user.email ?? undefined,
         );
-        if (addedBytes === null) continue;
+        if (addedBytes === null) return;
         totalBytes += addedBytes;
         addedCount += 1;
-      }
+      });
 
       if (addedCount === 0) {
         return NextResponse.json(

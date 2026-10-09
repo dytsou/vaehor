@@ -92,11 +92,15 @@ export default function AuthForm({
       countdown -= 1;
       if (countdown <= 0) {
         countdown = 5;
-        pollFolderAccess(folderId).then((granted) => {
-          if (!granted) return;
-          addToast({ message: t("accessGranted"), type: "success" });
-          window.location.reload();
-        });
+        void pollFolderAccess(folderId)
+          .then((granted) => {
+            if (!granted) return;
+            addToast({ message: t("accessGranted"), type: "success" });
+            window.location.reload();
+          })
+          .catch((error: unknown) => {
+            console.error("Failed to check folder access", error);
+          });
       }
       setRefreshCountdown(countdown);
     }, 1000);
@@ -214,7 +218,6 @@ export default function AuthForm({
               placeholder={t("enterPasswordPlaceholder")}
               className="w-full px-5 py-4 rounded-2xl border bg-background/50 focus:bg-background focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground/30 shadow-sm text-lg"
               required
-              autoFocus
               autoComplete="current-password"
             />
           </div>

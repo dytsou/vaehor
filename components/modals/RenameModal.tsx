@@ -54,7 +54,6 @@ export default function RenameModal({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="w-full px-3 py-2 rounded-md border bg-background focus:ring-2 focus:ring-ring focus:outline-none"
-            autoFocus
             onFocus={(e) => e.target.select()}
           />
           <div className="flex justify-end gap-2 mt-4">

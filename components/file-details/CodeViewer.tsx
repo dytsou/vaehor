@@ -26,7 +26,9 @@ export function CodeViewer({
   const displayLanguage = language === "clike" ? "cpp" : language;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(content);
+    void navigator.clipboard.writeText(content).catch((error: unknown) => {
+      console.error("Failed to copy code", error);
+    });
     setCopied(true);
     addToast({ message: "Code copied to clipboard", type: "success" });
     setTimeout(() => setCopied(false), 2000);

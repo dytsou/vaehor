@@ -77,7 +77,7 @@ export default function MoveModal({
       setIsInitializing(false);
     };
 
-    initPath();
+    void initPath();
   }, [initialFolderId, rootId, rootName]);
 
   const fetchFolders = useCallback(

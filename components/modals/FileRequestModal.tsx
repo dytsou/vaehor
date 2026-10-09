@@ -55,7 +55,9 @@ export default function FileRequestModal({
 
   const handleCopy = () => {
     if (resultUrl) {
-      navigator.clipboard.writeText(resultUrl);
+      void navigator.clipboard.writeText(resultUrl).catch((error: unknown) => {
+        console.error("Failed to copy file request link", error);
+      });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       addToast({ message: t("linkCopied"), type: "success" });

@@ -170,7 +170,7 @@ export function useSidebarController() {
     };
 
     if (mounted) {
-      fetchAuthAndDrives();
+      void fetchAuthAndDrives();
     }
   }, [mounted, t, setAuthHealth]);
 
@@ -443,7 +443,7 @@ export function useSidebarController() {
         return;
       }
 
-      handleDropMove(data.files, targetFolderId);
+      void handleDropMove(data.files, targetFolderId);
     },
     [],
   );

@@ -41,7 +41,7 @@ export default function RichMediaMetadata({
       }
     };
 
-    fetchMetadata();
+    void fetchMetadata();
   }, [filename, onMetadataLoaded]);
 
   if (loading) {

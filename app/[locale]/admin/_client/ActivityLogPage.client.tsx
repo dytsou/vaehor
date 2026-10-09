@@ -38,7 +38,9 @@ export default function ActivityLogPageClient(
   useEffect(() => {
     // If server gave no logs (first load), try fetching once.
     if (props.initialLogs.length === 0) {
-      refresh();
+      void refresh().catch((error: unknown) => {
+        console.error("Failed to refresh activity log", error);
+      });
     }
   }, []);
 

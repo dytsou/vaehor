@@ -11,14 +11,12 @@ export const GET = createUserRoute(async ({ session }) => {
     const isAdmin = session.user?.role === "ADMIN";
 
     if (!isAdmin) {
-      const allowedFiles = [];
-      for (const file of details.largestFiles) {
-        const restricted = await isAccessRestricted(file.id);
-        if (!restricted) {
-          allowedFiles.push(file);
-        }
-      }
-      details.largestFiles = allowedFiles;
+      const restrictions = await Promise.all(
+        details.largestFiles.map((file) => isAccessRestricted(file.id)),
+      );
+      details.largestFiles = details.largestFiles.filter(
+        (_, index) => !restrictions[index],
+      );
     }
 
     return NextResponse.json(details);

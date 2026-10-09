@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { forEachSequentially } from "@/lib/async-sequence";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -55,7 +56,7 @@ export default function PublicUploadPage() {
         setIsLoading(false);
       }
     };
-    fetchInfo();
+    void fetchInfo();
   }, [token, t]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,11 +83,11 @@ export default function PublicUploadPage() {
       const { uploadUrl } = await initRes.json();
 
       const CHUNK_SIZE = 2 * 1024 * 1024;
-      let start = 0;
 
-      while (start < file.size) {
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        const chunk = file.slice(start, end);
+      const uploadNextChunk = async (chunkStart: number): Promise<void> => {
+        if (chunkStart >= file.size) return;
+        const end = Math.min(chunkStart + CHUNK_SIZE, file.size);
+        const chunk = file.slice(chunkStart, end);
 
         const chunkRes = await fetch(
           `/api/file-request/upload?type=chunk&token=${token}&uploadUrl=${encodeURIComponent(
@@ -95,7 +96,7 @@ export default function PublicUploadPage() {
           {
             method: "POST",
             headers: {
-              "Content-Range": `bytes ${start}-${end - 1}/${file.size}`,
+              "Content-Range": `bytes ${chunkStart}-${end - 1}/${file.size}`,
               "Content-Type": "application/octet-stream",
             },
             body: chunk,
@@ -108,8 +109,10 @@ export default function PublicUploadPage() {
 
         const percent = Math.round((end / file.size) * 100);
         setUploadProgress((prev) => ({ ...prev, [file.name]: percent }));
-        start = end;
-      }
+        return uploadNextChunk(end);
+      };
+
+      await uploadNextChunk(0);
 
       setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }));
     } catch (err) {
@@ -123,9 +126,7 @@ export default function PublicUploadPage() {
     setUploadStatus("uploading");
 
     try {
-      for (const file of files) {
-        await uploadFile(file);
-      }
+      await forEachSequentially(files, uploadFile);
       setUploadStatus("completed");
       setFiles([]);
     } catch (err) {

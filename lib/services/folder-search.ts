@@ -25,7 +25,8 @@ export type FolderSearchParams = {
 };
 
 export type FolderSearchParamsResult =
-  { ok: true; params: FolderSearchParams } | { ok: false; error: NextResponse };
+  | { ok: true; params: FolderSearchParams }
+  | { ok: false; error: NextResponse };
 
 const sanitizeString = stripHtmlTags;
 
@@ -278,22 +279,24 @@ type ProcessedSearchFile = DriveFile & {
   isProtected: boolean;
 };
 
-async function processSearchFiles(
+function processSearchFiles(
   files: DriveFile[],
   protectedFolderMap: Record<string, boolean>,
   isPrivateFolder: (folderId: string) => boolean,
 ): Promise<ProcessedSearchFile[]> {
-  return files.map((file) => {
-    const isFolder = file.mimeType === "application/vnd.google-apps.folder";
-    const isProt = !!protectedFolderMap[file.id];
-    const isPriv = isPrivateFolder(file.id);
+  return Promise.resolve(
+    files.map((file) => {
+      const isFolder = file.mimeType === "application/vnd.google-apps.folder";
+      const isProt = !!protectedFolderMap[file.id];
+      const isPriv = isPrivateFolder(file.id);
 
-    return {
-      ...file,
-      isFolder,
-      isProtected: isProt || isPriv,
-    };
-  });
+      return {
+        ...file,
+        isFolder,
+        isProtected: isProt || isPriv,
+      };
+    }),
+  );
 }
 
 async function filterFilesByAccess(

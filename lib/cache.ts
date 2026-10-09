@@ -9,12 +9,14 @@ export async function invalidateFolderCache(folderId: string) {
       `vaehor:folder-tree*`,
     ];
 
-    for (const pattern of patterns) {
-      const keys = await kv.scanKeys(pattern);
-      if (keys.length > 0) {
-        await kv.del(...keys);
-      }
-    }
+    await Promise.all(
+      patterns.map(async (pattern) => {
+        const keys = await kv.scanKeys(pattern);
+        if (keys.length > 0) {
+          await kv.del(...keys);
+        }
+      }),
+    );
 
     const memoryPrefixes = [
       `drive:folder:${folderId}:`,

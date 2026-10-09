@@ -16,7 +16,7 @@ const exchangeBodySchema = z.object({
   token: z.string().min(1),
 });
 
-export async function OPTIONS(request: Request) {
+export function OPTIONS(request: Request) {
   const cors = mobileApiCorsHeaders(request.headers.get("Origin"));
   if (!cors) {
     return new Response(null, { status: 403 });

@@ -177,7 +177,7 @@ function readZip64EntrySize(
   let size = declaredSize;
   let zip64SizeFound = false;
 
-  for (let offset = extraOffset; offset < extraEnd;) {
+  for (let offset = extraOffset; offset < extraEnd; ) {
     assertRange(offset, 4, extraEnd);
     const identifier = readUint16(bytes, offset);
     const fieldLength = readUint16(bytes, offset + 2);
@@ -818,6 +818,19 @@ async function readWordPreview(
   return requireOfficePreviewText(cleanOfficeParagraphs(xml));
 }
 
+async function forEachInSequence<T>(
+  items: readonly T[],
+  visit: (item: T) => Promise<void>,
+): Promise<void> {
+  const visitAt = async (index: number): Promise<void> => {
+    if (index >= items.length) return;
+    await visit(items[index]!);
+    return visitAt(index + 1);
+  };
+
+  await visitAt(0);
+}
+
 async function readPresentationPreview(
   zip: JSZip,
   sourceBytes: { value: number },
@@ -835,10 +848,10 @@ async function readPresentationPreview(
   }
 
   const slides: string[] = [];
-  for (const path of slidePaths) {
+  await forEachInSequence(slidePaths, async (path) => {
     const xml = await readZipText(zip, path, sourceBytes);
     slides.push(parsePresentationText(xml));
-  }
+  });
   const text = cleanText(
     slides
       .map((slide, index) => "Slide " + (index + 1) + "\n" + slide)
@@ -869,10 +882,10 @@ async function readSpreadsheetPreview(
   if (!sheetPaths.length) throw new DocumentPreviewError("no_preview_content");
 
   const sheets: string[] = [];
-  for (const path of sheetPaths.slice(0, 20)) {
+  await forEachInSequence(sheetPaths.slice(0, 20), async (path) => {
     const xml = await readZipText(zip, path, sourceBytes);
     sheets.push(parseSpreadsheetText(xml, sharedStrings));
-  }
+  });
   return requireOfficePreviewText(
     cleanText(sheets.filter(Boolean).join("\n\n")),
   );
@@ -1119,13 +1132,13 @@ async function readEpubPreview(zip: JSZip): Promise<{
   }
 
   const chapters: EpubPreviewChapter[] = [];
-  for (const [index, id] of spineIds.entries()) {
+  await forEachInSequence([...spineIds.entries()], async ([index, id]) => {
     const chapterPath = manifest.get(id);
-    if (!chapterPath) continue;
+    if (!chapterPath) return;
     const markup = await readZipText(zip, chapterPath, sourceBytes);
     const text = stripMarkupToText(markup);
     if (text) chapters.push({ id, label: "Chapter " + (index + 1), text });
-  }
+  });
   if (!chapters.length) throw new DocumentPreviewError("no_preview_content");
   return { title, chapters };
 }

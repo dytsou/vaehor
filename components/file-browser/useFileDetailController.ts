@@ -233,6 +233,9 @@ export function useFileDetailController({
           setTextContent(text);
         }
       })
+      .catch((error: unknown) => {
+        console.error("Failed to fetch file content", error);
+      })
       .finally(() => setIsFetchingEditableContent(false));
   }, [
     isEditing,
@@ -269,7 +272,11 @@ export function useFileDetailController({
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(`${window.location.origin}${directLink}`);
+    void navigator.clipboard
+      .writeText(`${window.location.origin}${directLink}`)
+      .catch((error: unknown) => {
+        console.error("Failed to copy file link", error);
+      });
     addToast({ message: t("linkCopied"), type: "success" });
   };
 

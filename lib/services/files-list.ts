@@ -302,14 +302,18 @@ export function logShareLinkAccessIfNeeded(
     return;
   }
 
-  import("@/lib/activityLogger").then((module) => {
-    module.logActivity("SHARE_LINK_ACCESSED", {
-      itemName: "Folder View",
-      itemId: folderId,
-      userEmail: userEmail || "Guest",
-      status: "success",
+  void import("@/lib/activityLogger")
+    .then((module) =>
+      module.logActivity("SHARE_LINK_ACCESSED", {
+        itemName: "Folder View",
+        itemId: folderId,
+        userEmail: userEmail || "Guest",
+        status: "success",
+      }),
+    )
+    .catch((error: unknown) => {
+      console.error("Failed to log share-link access", error);
     });
-  });
 }
 
 export function filesListErrorResponse(error: unknown) {

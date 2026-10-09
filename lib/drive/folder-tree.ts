@@ -130,15 +130,19 @@ async function collectDescendantFolderIds(
   const allFolderIds = new Set<string>([rootFolderId]);
   const queue: [string, number][] = [[rootFolderId, 0]];
 
-  while (queue.length > 0) {
+  const visitNextFolder = async (): Promise<void> => {
+    if (queue.length === 0) return;
     const [folderId, depth] = queue.shift()!;
     if (depth >= MAX_FOLDER_TREE_DEPTH) {
-      continue;
+      return Promise.resolve().then(visitNextFolder);
     }
 
     const childFolders = await listChildFolders(accessToken, folderId);
     enqueueDiscoveredFolders(childFolders, allFolderIds, queue, depth);
-  }
+    return visitNextFolder();
+  };
+
+  await visitNextFolder();
 
   return Array.from(allFolderIds);
 }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { kv } from "@/lib/kv";
+import { forEachSequentially } from "@/lib/async-sequence";
 import { logger } from "@/lib/logger";
 import { sendMail } from "@/lib/mailer";
 import { REDIS_KEYS } from "@/lib/constants";
@@ -525,7 +526,7 @@ export async function evaluateIncidentRules(): Promise<EvaluateIncidentResult> {
   let updatedIncidents = 0;
   let skippedCooldown = 0;
 
-  for (const candidate of candidates) {
+  await forEachSequentially(candidates, async (candidate) => {
     try {
       const result = await createOrUpdateIncident(candidate, now);
       if (result === "created") createdIncidents += 1;
@@ -537,7 +538,7 @@ export async function evaluateIncidentRules(): Promise<EvaluateIncidentResult> {
         "[IncidentMonitor] Failed to process incident candidate",
       );
     }
-  }
+  });
 
   await kv.set(INCIDENT_KEYS.cursor, now);
 
@@ -565,15 +566,12 @@ export async function listIncidents(
     { rev: true },
   );
 
-  const incidents: IncidentRecord[] = [];
-  for (const id of ids) {
-    const incident = await readIncidentById(id);
-    if (!incident) continue;
-    if (statusFilter !== "all" && incident.status !== statusFilter) {
-      continue;
-    }
-    incidents.push(incident);
-  }
+  const storedIncidents = await Promise.all(ids.map(readIncidentById));
+  const incidents = storedIncidents.filter(
+    (incident): incident is IncidentRecord =>
+      incident !== null &&
+      (statusFilter === "all" || incident.status === statusFilter),
+  );
 
   const [total, openCount] = await Promise.all([
     kv.zcard(INCIDENT_KEYS.timeline),

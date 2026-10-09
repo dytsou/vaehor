@@ -4,7 +4,7 @@ import { eventBus, AppEvent } from "@/lib/events/eventBus";
 export const dynamic = "force-dynamic";
 
 export const GET = createUserRoute(
-  async ({ request, session }) => {
+  ({ request, session }) => {
     const userId = session.user.email || "guest";
     const userRole = (session.user.role as string) || "USER";
 

@@ -38,7 +38,7 @@ async function markJtiConsumed(
   return true;
 }
 
-export async function createMobileOAuthState(): Promise<string> {
+export function createMobileOAuthState(): Promise<string> {
   const jti = crypto.randomUUID();
   return new SignJWT({ purpose: PURPOSE_STATE })
     .setProtectedHeader({ alg: "HS256" })
@@ -60,9 +60,7 @@ export async function consumeMobileOAuthState(state: string): Promise<boolean> {
   }
 }
 
-export async function mintMobileExchangeToken(
-  sessionToken: string,
-): Promise<string> {
+export function mintMobileExchangeToken(sessionToken: string): Promise<string> {
   const jti = crypto.randomUUID();
   return new SignJWT({ purpose: PURPOSE_EXCHANGE, sessionToken })
     .setProtectedHeader({ alg: "HS256" })
@@ -94,7 +92,7 @@ export async function redeemMobileExchangeToken(
   }
 }
 
-export async function mintSessionBootstrapToken(
+export function mintSessionBootstrapToken(
   sessionToken: string,
 ): Promise<string> {
   const jti = crypto.randomUUID();

@@ -32,7 +32,7 @@ function normalizeServiceAccountKey(raw: string): string {
   return raw.replaceAll(String.raw`\n`, "\n").trim();
 }
 
-export async function getAppCredentials(): Promise<AppDriveCredentials | null> {
+export function getAppCredentials(): Promise<AppDriveCredentials | null> {
   const rootFolderId = resolveRootFolderIdFromEnv();
 
   const saEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
@@ -40,26 +40,26 @@ export async function getAppCredentials(): Promise<AppDriveCredentials | null> {
   if (saEmail && saKeyRaw !== undefined && saKeyRaw !== "") {
     const privateKey = normalizeServiceAccountKey(saKeyRaw);
     if (privateKey.length > 0) {
-      return {
+      return Promise.resolve({
         mode: "service_account",
         serviceAccountEmail: saEmail,
         privateKey,
         rootFolderId,
-      };
+      });
     }
   }
 
   if (process.env.GOOGLE_REFRESH_TOKEN) {
-    return {
+    return Promise.resolve({
       mode: "oauth_refresh",
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       refreshToken: process.env.GOOGLE_REFRESH_TOKEN!,
       rootFolderId,
-    };
+    });
   }
 
-  return null;
+  return Promise.resolve(null);
 }
 
 export async function isAppConfigured(): Promise<boolean> {
