@@ -879,7 +879,7 @@ function resolveParentId(
   if (
     !parentFolder ||
     parentFolder.status !== "COMPLETE" ||
-    !parentFolder.remoteFileId
+    !parentFolder?.remoteFileId
   ) {
     throw new ScheduledUploadWorkerError(
       "MANIFEST_PARENT_FOLDER_MISSING",
@@ -1180,12 +1180,12 @@ async function processFile(
     return { operation: "item" as const, chunks: 0 };
   }
 
-  let sessionUri = sessionUris.get(item.id) ?? null;
+  const sessionUri = sessionUris.get(item.id) ?? null;
   if (!sessionUri) {
     if (!(await ensureFirstWriteAuthorization(claim, dependencies))) {
       return { operation: "none" as const, chunks: 0 };
     }
-    sessionUri = await initializeUploadSession(
+    await initializeUploadSession(
       claim,
       item,
       remoteFileId,

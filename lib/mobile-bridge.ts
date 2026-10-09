@@ -86,19 +86,6 @@ function postToParent(message: ZeeMobileMessage): void {
   window.parent.postMessage(message, parentOrigin());
 }
 
-function getRequestMessage(
-  event: MessageEvent,
-  requestId: string,
-): ZeeMobileMessage | null {
-  if (event.source !== window.parent) return null;
-  const trustedOrigin = parentOrigin();
-  if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return null;
-  const data = event.data as ZeeMobileMessage | undefined;
-  if (data?.type !== ZEE_MOBILE_MESSAGE) return null;
-  if (!("requestId" in data) || data.requestId !== requestId) return null;
-  return data;
-}
-
 /**
  * Handlers must verify event.origin against the shell's origin before
  * trusting received messages. Only the native shell (our direct parent) at
@@ -144,9 +131,13 @@ export function createZeeMobileBridge(): ZeeMobileBridge {
         600_000,
         "Native upload timed out",
         (resolve, reject, cleanup) => {
+          const trustedOrigin = parentOrigin();
           const handler = (event: MessageEvent) => {
-            const data = getRequestMessage(event, requestId);
-            if (!data) return;
+            if (event.source !== window.parent) return;
+            if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
+            const data = event.data as ZeeMobileMessage | undefined;
+            if (data?.type !== ZEE_MOBILE_MESSAGE) return;
+            if (!("requestId" in data) || data.requestId !== requestId) return;
 
             if (data.action === "upload/pick-done") {
               cleanup();
@@ -183,9 +174,13 @@ export function createZeeMobileBridge(): ZeeMobileBridge {
         21_600_000,
         "Native scheduled upload timed out",
         (resolve, reject, cleanup) => {
+          const trustedOrigin = parentOrigin();
           const handler = (event: MessageEvent) => {
-            const data = getRequestMessage(event, requestId);
-            if (!data) return;
+            if (event.source !== window.parent) return;
+            if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
+            const data = event.data as ZeeMobileMessage | undefined;
+            if (data?.type !== ZEE_MOBILE_MESSAGE) return;
+            if (!("requestId" in data) || data.requestId !== requestId) return;
 
             switch (data.action) {
               case "scheduled/progress":
@@ -252,9 +247,9 @@ export function subscribeZeeMobileUploadComplete(
 ): () => void {
   if (typeof window === "undefined") return () => {};
 
+  const trustedOrigin = parentOrigin();
   const handler = (event: MessageEvent) => {
     if (event.source !== window.parent) return;
-    const trustedOrigin = parentOrigin();
     if (trustedOrigin !== "*" && event.origin !== trustedOrigin) return;
     const data = event.data as ZeeMobileMessage | undefined;
     if (data?.type !== ZEE_MOBILE_MESSAGE) return;

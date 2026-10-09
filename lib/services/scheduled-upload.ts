@@ -887,7 +887,7 @@ export async function stageScheduledUploadItem(input: {
   if (schedule.status !== "STAGING")
     conflict("Files can only be staged before package commit.");
   const item = schedule.items.find((entry) => entry.id === input.itemId);
-  if (!item || item.kind !== "FILE" || !item.storageKey) notFound();
+  if (!item || item.kind !== "FILE" || !item?.storageKey) notFound();
   if (item.status === "STAGED") conflict("This file has already been staged.");
   const expectedSize = Number(item.size);
   if (input.contentLength !== undefined && input.contentLength !== null) {
@@ -1095,7 +1095,7 @@ export async function readScheduledUploadItemContent(
     !item ||
     item.kind !== "FILE" ||
     item.status !== "STAGED" ||
-    !item.storageKey
+    !item?.storageKey
   )
     notFound();
   return {

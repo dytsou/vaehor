@@ -309,6 +309,161 @@ function button(
   );
 }
 
+function updateDashboardWithSchedule(
+  current: Dashboard | null,
+  schedule: ScheduledUpload,
+): Dashboard | null {
+  if (!current) return current;
+  return {
+    ...current,
+    schedules: [
+      summarizeSchedule(schedule),
+      ...current.schedules.filter((item) => item.id !== schedule.id),
+    ],
+  };
+}
+
+async function refreshActiveStagingSession(
+  api: ScheduledUploadApi,
+  active: { schedule: ScheduledUpload; stagedPaths: Set<string> },
+  copy: Record<string, string>,
+  clearSelection: () => void,
+  setNewUploadOpen: (open: boolean) => void,
+  setScheduleDetails: React.Dispatch<
+    React.SetStateAction<Record<string, ScheduledUpload>>
+  >,
+  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>,
+  refresh: () => void,
+  setNotice: (notice: string | null) => void,
+): Promise<{ schedule: ScheduledUpload; stagedPaths: Set<string> } | null> {
+  const latest = (await api.get(active.schedule.id)).schedule;
+  active.schedule = latest;
+  for (const item of latest.items) {
+    if (item.kind === "FILE" && item.status === "STAGED") {
+      active.stagedPaths.add(item.path);
+    }
+  }
+  if (latest.status === ScheduledUploadStatus.WAITING) {
+    clearSelection();
+    setNewUploadOpen(false);
+    setScheduleDetails((current) => ({
+      ...current,
+      [latest.id]: latest,
+    }));
+    setDashboard((current) => updateDashboardWithSchedule(current, latest));
+    refresh();
+    setNotice(copy.waiting);
+    return null;
+  }
+  return active;
+}
+
+async function createNewSchedule(
+  api: ScheduledUploadApi,
+  scheduleTime: CreateScheduledUploadRequest,
+  selection: NativeScheduledUploadSelection,
+  copy: Record<string, string>,
+  setStagingScheduleId: (id: string) => void,
+): Promise<{ schedule: ScheduledUpload; stagedPaths: Set<string> }> {
+  const manifest: CreateScheduledUploadRequest = {
+    destinationId: scheduleTime.destinationId,
+    ...scheduleTime,
+    items: [...selection.entries]
+      .sort((left, right) => left.path.localeCompare(right.path))
+      .map(({ path, kind, size, contentType }) => ({
+        path,
+        kind,
+        size,
+        ...(contentType ? { contentType } : {}),
+      })),
+  };
+  const created = await api.create(manifest);
+  return {
+    schedule: created.schedule,
+    stagedPaths: new Set(),
+  };
+}
+
+async function stageFiles(
+  api: ScheduledUploadApi,
+  activeSchedule: { schedule: ScheduledUpload; stagedPaths: Set<string> },
+  files: NativeScheduledUploadEntry[],
+  loadFileBlob: (entry: NativeScheduledUploadEntry) => Promise<Blob>,
+  copy: Record<string, string>,
+  setStagingPath: (path: string | null) => void,
+  setNotice: (notice: string | null) => void,
+) {
+  const itemsByPath = new Map<
+    string,
+    (typeof activeSchedule.schedule.items)[number]
+  >();
+  for (const item of activeSchedule.schedule.items) {
+    if (!itemsByPath.has(item.path)) itemsByPath.set(item.path, item);
+  }
+  let staging = Promise.resolve();
+  for (const [index, entry] of files.entries()) {
+    if (activeSchedule.stagedPaths.has(entry.path)) continue;
+    staging = staging.then(async () => {
+      setStagingPath(entry.path);
+      const item = itemsByPath.get(entry.path);
+      if (!item) {
+        throw new Error(
+          `The server did not accept ${entry.path} into this schedule.`,
+        );
+      }
+      await api.stage(
+        activeSchedule.schedule.id,
+        item.id,
+        await loadFileBlob(entry),
+      );
+      activeSchedule.stagedPaths.add(entry.path);
+      setNotice(
+        `${copy.stageProgress}: ${Math.min(index + 1, files.length)} / ${files.length}`,
+      );
+    });
+  }
+  await staging;
+}
+
+async function commitSchedule(
+  api: ScheduledUploadApi,
+  activeSchedule: { schedule: ScheduledUpload; stagedPaths: Set<string> },
+  copy: Record<string, string>,
+  clearSelection: () => void,
+  setNewUploadOpen: (open: boolean) => void,
+  setScheduleDetails: React.Dispatch<
+    React.SetStateAction<Record<string, ScheduledUpload>>
+  >,
+  setDashboard: React.Dispatch<React.SetStateAction<Dashboard | null>>,
+  refresh: () => void,
+  setNotice: (notice: string | null) => void,
+  setStagingScheduleId: (id: string | null) => void,
+  stagingRef: React.MutableRefObject<{
+    schedule: ScheduledUpload;
+    stagedPaths: Set<string>;
+  } | null>,
+) {
+  const committed = await api.commit(activeSchedule.schedule.id);
+  if (committed.schedule.status !== ScheduledUploadStatus.WAITING) {
+    activeSchedule.schedule = committed.schedule;
+    stagingRef.current = { ...activeSchedule };
+    setStagingScheduleId(activeSchedule.schedule.id);
+    throw new Error(copy.waitingForServer);
+  }
+
+  clearSelection();
+  setNewUploadOpen(false);
+  setScheduleDetails((current) => ({
+    ...current,
+    [committed.schedule.id]: committed.schedule,
+  }));
+  setDashboard((current) =>
+    updateDashboardWithSchedule(current, committed.schedule),
+  );
+  refresh();
+  setNotice(copy.waiting);
+}
+
 export function ScheduledUploadsScreen({
   api,
   role,
@@ -562,106 +717,84 @@ export function ScheduledUploadsScreen({
     try {
       const scheduleTime = resolveScheduledUploadTime(date, time, timeZone);
       let active = stagingRef.current;
+
       if (active) {
-        const latest = (await api.get(active.schedule.id)).schedule;
-        active.schedule = latest;
-        for (const item of latest.items) {
-          if (item.kind === "FILE" && item.status === "STAGED") {
-            active.stagedPaths.add(item.path);
-          }
-        }
-        if (latest.status === ScheduledUploadStatus.WAITING) {
-          clearSelection();
-          setNewUploadOpen(false);
-          setScheduleDetails((current) => ({
-            ...current,
-            [latest.id]: latest,
-          }));
-          setDashboard((current) =>
-            current
-              ? {
-                  ...current,
-                  schedules: [
-                    summarizeSchedule(latest),
-                    ...current.schedules.filter(
-                      (item) => item.id !== latest.id,
-                    ),
-                  ],
-                }
-              : current,
-          );
-          refresh();
-          setNotice(copy.waiting);
-          return;
-        }
+        const refreshed = await refreshActiveStagingSession(
+          api,
+          active,
+          copy,
+          clearSelection,
+          setNewUploadOpen,
+          setScheduleDetails,
+          setDashboard,
+          refresh,
+          setNotice,
+        );
+        if (!refreshed) return;
+        active = refreshed;
       }
+
       if (!active) {
-        const manifest: CreateScheduledUploadRequest = {
-          destinationId,
-          ...scheduleTime,
-          items: [...selection.entries]
-            .sort((left, right) => left.path.localeCompare(right.path))
-            .map(({ path, kind, size, contentType }) => ({
-              path,
-              kind,
-              size,
-              ...(contentType ? { contentType } : {}),
-            })),
-        };
-        const created = await api.create(manifest);
-        active = { schedule: created.schedule, stagedPaths: new Set() };
+        active = await createNewSchedule(
+          api,
+          { destinationId, ...scheduleTime },
+          selection,
+          copy,
+          setStagingScheduleId,
+        );
         stagingRef.current = active;
-        setStagingScheduleId(created.schedule.id);
       }
 
       const files = fileEntries(selection.entries);
-      const activeSchedule = active;
-      if (!activeSchedule) throw new Error(copy.waitingForServer);
-      const itemsByPath = new Map<
-        string,
-        (typeof activeSchedule.schedule.items)[number]
-      >();
-      for (const item of activeSchedule.schedule.items) {
-        if (!itemsByPath.has(item.path)) itemsByPath.set(item.path, item);
-      }
-      let staging = Promise.resolve();
-      for (const [index, entry] of files.entries()) {
-        if (activeSchedule.stagedPaths.has(entry.path)) continue;
-        staging = staging.then(async () => {
-          setStagingPath(entry.path);
-          const item = itemsByPath.get(entry.path);
-          if (!item) {
-            throw new Error(
-              `The server did not accept ${entry.path} into this schedule.`,
-            );
-          }
-          await api.stage(
-            activeSchedule.schedule.id,
-            item.id,
-            await loadFileBlob(entry),
-          );
-          activeSchedule.stagedPaths.add(entry.path);
-          setNotice(
-            `${copy.stageProgress}: ${Math.min(index + 1, files.length)} / ${files.length}`,
-          );
-        });
-      }
-      await staging;
+      if (!active) throw new Error(copy.waitingForServer);
 
-      const committed = await api.commit(activeSchedule.schedule.id);
-      if (committed.schedule.status !== ScheduledUploadStatus.WAITING) {
-        activeSchedule.schedule = committed.schedule;
-        stagingRef.current = { ...activeSchedule };
-        setStagingScheduleId(activeSchedule.schedule.id);
-        throw new Error(copy.waitingForServer);
-      }
+      await stageFiles(
+        api,
+        active,
+        files,
+        loadFileBlob,
+        copy,
+        setStagingPath,
+        setNotice,
+      );
 
-      clearSelection();
-      setNewUploadOpen(false);
-      setScheduleDetails((current) => ({
-        ...current,
-        [committed.schedule.id]: committed.schedule,
-      }));
+      await commitSchedule(
+        api,
+        active,
+        copy,
+        clearSelection,
+        setNewUploadOpen,
+        setScheduleDetails,
+        setDashboard,
+        refresh,
+        setNotice,
+        setStagingScheduleId,
+        stagingRef,
+      );
+    } catch (cause) {
+      setActionError(errorMessage(cause));
+    } finally {
+      setWorking(false);
+      setStagingPath(null);
+    }
+  }, [
+    api,
+    clearSelection,
+    copy.noDestination,
+    copy.noSelection,
+    copy.stageProgress,
+    copy.waiting,
+    copy.waitingForServer,
+    date,
+    destinationId,
+    loadFileBlob,
+    refresh,
+    selection,
+    setStagingScheduleId,
+    stagingRef,
+    time,
+    timeZone,
+  ]);
       setDashboard((current) =>
         current
           ? {
@@ -818,6 +951,7 @@ export function ScheduledUploadsScreen({
 
   const schedules = dashboard?.schedules ?? [];
   const adminAlerts = dashboard?.adminAlerts ?? [];
+  const stageButtonLabel = stagingScheduleId ? copy.resume : copy.stage;
 
   return body(
     <>
@@ -929,17 +1063,20 @@ export function ScheduledUploadsScreen({
           </View>
           {selection ? (
             <View style={styles.selectionList}>
-              {selection.entries.map((entry) => (
-                <View key={entry.path} style={styles.fileRow}>
-                  <Text style={[styles.bodyText, { color: colors.foreground }]}>
-                    {entry.path}
-                  </Text>
-                  <Text style={[styles.muted, { color: colors.muted }]}>
-                    {entry.kind === "folder" ? copy.folderItem : copy.file} ·{" "}
-                    {entry.size} {copy.bytes}
-                  </Text>
-                </View>
-              ))}
+              {selection.entries.map((entry) => {
+                const kindLabel = entry.kind === "folder" ? copy.folderItem : copy.file;
+                return (
+                  <View key={entry.path} style={styles.fileRow}>
+                    <Text style={[styles.bodyText, { color: colors.foreground }]}>
+                      {entry.path}
+                    </Text>
+                    <Text style={[styles.muted, { color: colors.muted }]}>
+                      {kindLabel} ·{" "}
+                      {entry.size} {copy.bytes}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           ) : null}
           <Text style={[styles.muted, { color: colors.muted }]}>
@@ -951,7 +1088,7 @@ export function ScheduledUploadsScreen({
             </Text>
           ) : null}
           {button(
-            stagingScheduleId ? copy.resume : copy.stage,
+            stageButtonLabel,
             () => void stageAndSchedule(),
             colors,
             working || !selection || !destinationId,

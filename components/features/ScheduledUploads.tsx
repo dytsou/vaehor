@@ -719,6 +719,9 @@ export default function ScheduledUploads({
     nativeProgressText = t("nativeCommitting");
   }
 
+  const showLoading = loading;
+  const showEmpty = !loading && schedules.length === 0;
+
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 pb-12">
       <header className="space-y-3">
@@ -1049,17 +1052,17 @@ export default function ScheduledUploads({
             {t("refresh")}
           </button>
         </div>
-        const showLoading = loading; const showEmpty = !loading &&
-        schedules.length === 0;
-        {showLoading ? (
+        {showLoading && (
           <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
             {t("loading")}
           </div>
-        ) : showEmpty ? (
+        )}
+        {showEmpty && !showLoading && (
           <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
             {t("noSchedules")}
           </div>
-        ) : (
+        )}
+        {!showLoading && !showEmpty && (
           <div className="space-y-4">
             {schedules.map((schedule) => {
               const transferredBytes =
@@ -1070,15 +1073,14 @@ export default function ScheduledUploads({
               const details = scheduleDetails[schedule.id];
               const detailsExpanded = expandedScheduleId === schedule.id;
               const isStaging = schedule.status === "STAGING";
+              const emptyProgressPercent = isStaging ? 0 : 100;
               const progressPercent =
                 totalBytes > 0
                   ? Math.min(
                       100,
                       Math.round((transferredBytes / totalBytes) * 100),
                     )
-                  : isStaging
-                    ? 0
-                    : 100;
+                  : emptyProgressPercent;
               const ownsSchedule = schedule.creatorEmail === user?.email;
               const canReschedule =
                 ownsSchedule &&
@@ -1155,11 +1157,15 @@ export default function ScheduledUploads({
                         disabled={detailsLoadingId !== null}
                         className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
                       >
-                        {detailsLoadingId === schedule.id
-                          ? t("loadingItems")
-                          : detailsExpanded
-                            ? t("hideItems")
-                            : t("showItems")}
+                        {(() => {
+                          if (detailsLoadingId === schedule.id) {
+                            return t("loadingItems");
+                          }
+                          if (detailsExpanded) {
+                            return t("hideItems");
+                          }
+                          return t("showItems");
+                        })()}
                       </button>
                       {detailsExpanded && details && (
                         <ul className="max-h-40 divide-y overflow-auto rounded-lg border">
