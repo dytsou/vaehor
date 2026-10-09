@@ -56,6 +56,39 @@ export type ScheduledUploadPicker = Readonly<{
   pickDirectory: () => Promise<NativeScheduledUploadSelection | null>;
 }>;
 
+type ScreenColors = Readonly<{
+  accent: string;
+  border: string;
+  card: string;
+  foreground: string;
+  muted: string;
+  danger: string;
+}>;
+
+const THEME_COLORS: Record<
+  "light" | "dark",
+  ScreenColors & { background: string }
+> = {
+  dark: {
+    background: "#111820",
+    card: "#1C2732",
+    foreground: "#F4F7F8",
+    muted: "#AAB8C4",
+    border: "#3C4A56",
+    accent: "#74D2CB",
+    danger: "#FF8B8B",
+  },
+  light: {
+    background: "#F4F7F8",
+    card: "#FFFFFF",
+    foreground: "#17252D",
+    muted: "#52636D",
+    border: "#D5E0E4",
+    accent: "#1F6F78",
+    danger: "#A52B2B",
+  },
+};
+
 type Locale = "en" | "zh";
 
 type ScheduledUploadsScreenProps = Readonly<{
@@ -493,6 +526,115 @@ async function commitSchedule(context: CommitContext) {
   setNotice(copy.waiting);
 }
 
+function StatusBanners({
+  actionError,
+  pickerError,
+  notice,
+  colors,
+}: Readonly<{
+  actionError: string | null;
+  pickerError: string | null;
+  notice: string | null;
+  colors: ScreenColors;
+}>) {
+  const error = actionError ?? pickerError;
+  return (
+    <>
+      {error ? (
+        <Text
+          accessibilityRole="alert"
+          style={[styles.error, { color: colors.danger }]}
+        >
+          {error}
+        </Text>
+      ) : null}
+      {notice ? (
+        <Text style={[styles.notice, { color: colors.accent }]}>{notice}</Text>
+      ) : null}
+    </>
+  );
+}
+
+function EmptyScheduleState({
+  show,
+  isAdmin,
+  copy,
+  colors,
+}: Readonly<{
+  show: boolean;
+  isAdmin: boolean;
+  copy: Record<string, string>;
+  colors: ScreenColors;
+}>) {
+  if (!show) return null;
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <Text style={[styles.bodyText, { color: colors.foreground }]}>
+        {isAdmin ? copy.adminEmpty : copy.noSchedules}
+      </Text>
+    </View>
+  );
+}
+
+function renderBlockingState({
+  bootstrapLoading,
+  bootstrapError,
+  canManage,
+  hasDashboard,
+  listLoading,
+  listError,
+  copy,
+  colors,
+  onRetrySession,
+  onRetryList,
+}: Readonly<{
+  bootstrapLoading: boolean;
+  bootstrapError: string | null;
+  canManage: boolean;
+  hasDashboard: boolean;
+  listLoading: boolean;
+  listError: string | null;
+  copy: Record<string, string>;
+  colors: ScreenColors;
+  onRetrySession?: () => void;
+  onRetryList: () => void;
+}>) {
+  const loadingCard = (
+    <View style={styles.centerState}>
+      <ActivityIndicator color={colors.accent} />
+      <Text style={[styles.muted, { color: colors.muted }]}>
+        {copy.loading}
+      </Text>
+    </View>
+  );
+  if (bootstrapLoading) return loadingCard;
+  if (listLoading && !hasDashboard) return loadingCard;
+  if (!canManage) {
+    return (
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.bodyText, { color: colors.foreground }]}>
+          {copy.access}
+        </Text>
+      </View>
+    );
+  }
+  const error = bootstrapError ?? listError;
+  if (!error) return null;
+  return (
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
+      <Text
+        accessibilityRole="alert"
+        style={[styles.error, { color: colors.danger }]}
+      >
+        {error}
+      </Text>
+      {bootstrapError && onRetrySession
+        ? button(copy.retry, onRetrySession, colors)
+        : button(copy.retry, onRetryList, colors, listLoading)}
+    </View>
+  );
+}
+
 export function ScheduledUploadsScreen({
   api,
   role,
@@ -508,26 +650,7 @@ export function ScheduledUploadsScreen({
   const copy = COPY[locale];
   const isAdmin = role.toUpperCase() === "ADMIN";
   const canManage = canManageScheduledUploads(role);
-  const colors =
-    theme === "dark"
-      ? {
-          background: "#111820",
-          card: "#1C2732",
-          foreground: "#F4F7F8",
-          muted: "#AAB8C4",
-          border: "#3C4A56",
-          accent: "#74D2CB",
-          danger: "#FF8B8B",
-        }
-      : {
-          background: "#F4F7F8",
-          card: "#FFFFFF",
-          foreground: "#17252D",
-          muted: "#52636D",
-          border: "#D5E0E4",
-          accent: "#1F6F78",
-          danger: "#A52B2B",
-        };
+  const colors = THEME_COLORS[theme];
   const defaultTime = useMemo(() => {
     const [date = "", time = ""] = getDefaultScheduledLocalTime().split("T");
     return { date, time };
@@ -881,65 +1004,19 @@ export function ScheduledUploadsScreen({
     </SafeAreaView>
   );
 
-  if (bootstrapLoading) {
-    return body(
-      <View style={styles.centerState}>
-        <ActivityIndicator color={colors.accent} />
-        <Text style={[styles.muted, { color: colors.muted }]}>
-          {copy.loading}
-        </Text>
-      </View>,
-    );
-  }
-
-  if (bootstrapError) {
-    return body(
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text
-          accessibilityRole="alert"
-          style={[styles.error, { color: colors.danger }]}
-        >
-          {bootstrapError}
-        </Text>
-        {onRetrySession ? button(copy.retry, onRetrySession, colors) : null}
-      </View>,
-    );
-  }
-
-  if (!canManage) {
-    return body(
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={[styles.bodyText, { color: colors.foreground }]}>
-          {copy.access}
-        </Text>
-      </View>,
-    );
-  }
-
-  if (listLoading && dashboard === null) {
-    return body(
-      <View style={styles.centerState}>
-        <ActivityIndicator color={colors.accent} />
-        <Text style={[styles.muted, { color: colors.muted }]}>
-          {copy.loading}
-        </Text>
-      </View>,
-    );
-  }
-
-  if (listError) {
-    return body(
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text
-          accessibilityRole="alert"
-          style={[styles.error, { color: colors.danger }]}
-        >
-          {listError}
-        </Text>
-        {button(copy.retry, refresh, colors, listLoading)}
-      </View>,
-    );
-  }
+  const blockingState = renderBlockingState({
+    bootstrapLoading,
+    bootstrapError,
+    canManage,
+    hasDashboard: dashboard !== null,
+    listLoading,
+    listError,
+    copy,
+    colors,
+    onRetrySession,
+    onRetryList: refresh,
+  });
+  if (blockingState) return body(blockingState);
 
   const schedules = dashboard?.schedules ?? [];
   const adminAlerts = dashboard?.adminAlerts ?? [];
@@ -954,25 +1031,12 @@ export function ScheduledUploadsScreen({
 
   return body(
     <>
-      {actionError ? (
-        <Text
-          accessibilityRole="alert"
-          style={[styles.error, { color: colors.danger }]}
-        >
-          {actionError}
-        </Text>
-      ) : null}
-      {pickerError ? (
-        <Text
-          accessibilityRole="alert"
-          style={[styles.error, { color: colors.danger }]}
-        >
-          {pickerError}
-        </Text>
-      ) : null}
-      {notice ? (
-        <Text style={[styles.notice, { color: colors.accent }]}>{notice}</Text>
-      ) : null}
+      <StatusBanners
+        actionError={actionError}
+        pickerError={pickerError}
+        notice={notice}
+        colors={colors}
+      />
 
       {!newUploadOpen
         ? button(copy.create, () => setNewUploadOpen(true), colors)
@@ -1020,13 +1084,12 @@ export function ScheduledUploadsScreen({
         }
       />
 
-      {schedules.length === 0 && adminAlerts.length === 0 ? (
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={[styles.bodyText, { color: colors.foreground }]}>
-            {isAdmin ? copy.adminEmpty : copy.noSchedules}
-          </Text>
-        </View>
-      ) : null}
+      <EmptyScheduleState
+        show={schedules.length === 0 && adminAlerts.length === 0}
+        isAdmin={isAdmin}
+        copy={copy}
+        colors={colors}
+      />
 
       <ScheduleList
         schedules={schedules}
@@ -1074,14 +1137,7 @@ function AdminAlertList({
 }: Readonly<{
   alerts: ScheduledUploadAdminAlert[];
   visible: boolean;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   copy: Record<string, string>;
   disabled: boolean;
   onAcknowledge: (alertId: string) => void;
@@ -1135,14 +1191,7 @@ function ScheduleList({
   detailsLoadingId: string | null;
   onToggleDetails: (scheduleId: string) => void;
   role: string;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   copy: Record<string, string>;
   date: string;
   time: string;
@@ -1213,14 +1262,7 @@ function NewUploadForm({
   onStage,
 }: Readonly<{
   copy: Record<string, string>;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   drives: ScheduledUploadDrive[];
   destinationId: string | null;
   onDestinationChange: (id: string) => void;
@@ -1355,14 +1397,7 @@ function AdminAlertCard({
   onResolve,
 }: Readonly<{
   alert: ScheduledUploadAdminAlert;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   copy: Record<string, string>;
   disabled: boolean;
   onAcknowledge: () => void;
@@ -1398,14 +1433,7 @@ function ScheduleActions({
   onAdminCancel,
 }: Readonly<{
   copy: Record<string, string>;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   working: boolean;
   rescheduling: boolean;
   canUpdateBeforeRelease: boolean;
@@ -1464,14 +1492,7 @@ function ScheduleCard({
   detailsLoading: boolean;
   onToggleDetails: () => void;
   role: string;
-  colors: {
-    accent: string;
-    border: string;
-    card: string;
-    foreground: string;
-    muted: string;
-    danger: string;
-  };
+  colors: ScreenColors;
   copy: Record<string, string>;
   date: string;
   time: string;

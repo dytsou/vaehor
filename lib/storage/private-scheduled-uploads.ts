@@ -453,9 +453,9 @@ export class PrivateScheduledUploadStorage {
     let size = 0;
     try {
       while (true) {
-        // NOSONAR: sequential by design - a stream read must settle before the
-        // next read, so these iterations cannot be started concurrently.
-        const { done, value } = await reader.read();
+        // Sequential by design: a stream read must settle before the next
+        // read, so these iterations cannot be started concurrently.
+        const { done, value } = await reader.read(); // NOSONAR
         if (done) break;
         for (
           let offset = 0;
@@ -598,9 +598,9 @@ async function writeChunks(
 ) {
   let receivedBytes = 0;
   while (true) {
-    // NOSONAR: sequential by design - each stream chunk must be received and
-    // hashed in order before the next read is issued.
-    const { done, value } = await reader.read();
+    // Sequential by design: each stream chunk must be received and hashed in
+    // order before the next read is issued.
+    const { done, value } = await reader.read(); // NOSONAR
     if (done) break;
     for (
       let offset = 0;
@@ -615,9 +615,9 @@ async function writeChunks(
       hash.update(chunk);
       let chunkOffset = 0;
       while (chunkOffset < chunk.byteLength) {
-        // NOSONAR: sequential by design - a partial write must report how many
-        // bytes it consumed so the next write can continue at that offset.
-        const bytesWritten = await writeChunk(fileHandle, chunk, chunkOffset);
+        // Sequential by design: a partial write must report how many bytes it
+        // consumed so the next write can continue at that offset.
+        const bytesWritten = await writeChunk(fileHandle, chunk, chunkOffset); // NOSONAR
         if (
           !Number.isSafeInteger(bytesWritten) ||
           bytesWritten <= 0 ||
@@ -628,9 +628,9 @@ async function writeChunks(
         chunkOffset += bytesWritten;
       }
     }
-    // NOSONAR: sequential by design - progress must be reported per chunk in
-    // order, and the callback may await caller-side work between iterations.
-    await onProgress?.(receivedBytes);
+    // Sequential by design: progress must be reported per chunk in order, and
+    // the callback may await caller-side work between iterations.
+    await onProgress?.(receivedBytes); // NOSONAR
   }
   return receivedBytes;
 }

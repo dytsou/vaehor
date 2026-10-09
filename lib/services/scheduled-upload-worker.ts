@@ -849,10 +849,9 @@ async function validateDestinationChain(
         "The selected Drive destination has an unsupported parent chain.",
       );
     }
-    // NOSONAR: sequential by design - each ancestor folder must be resolved
-    // before its own parents are known, so the chain is walked one level at a
-    // time rather than concurrently.
-    const parent = await drive.getFileMetadata(parentId);
+    // Sequential by design: each ancestor folder must be resolved before its
+    // own parents are known, so the chain is walked one level at a time.
+    const parent = await drive.getFileMetadata(parentId); // NOSONAR
     if (!parent || parent.trashed || parent.mimeType !== FOLDER_MIME_TYPE) {
       throw new ScheduledUploadWorkerError(
         "DESTINATION_PARENT_CHAIN_INVALID",
@@ -879,14 +878,13 @@ function resolveParentId(
     (candidate) =>
       candidate.kind === "FOLDER" && candidate.manifestPath === parent,
   );
-  const remoteFileId = parentFolder?.remoteFileId;
-  if (!parentFolder || parentFolder.status !== "COMPLETE" || !remoteFileId) {
+  if (parentFolder?.status !== "COMPLETE" || !parentFolder.remoteFileId) {
     throw new ScheduledUploadWorkerError(
       "MANIFEST_PARENT_FOLDER_MISSING",
       "The staged package is missing a required parent folder.",
     );
   }
-  return remoteFileId;
+  return parentFolder.remoteFileId;
 }
 
 function chooseNextItem(claim: ScheduledUploadReleaseClaim) {
@@ -1708,9 +1706,9 @@ async function runWorkerTick(dependencies: ScheduledUploadWorkerDependencies) {
     const claim = await claimNextSchedule(dependencies, summary);
     if (!claim) break;
 
-    // NOSONAR: sequential by design - the worker claims and processes one
-    // package at a time; concurrent claims would race for the same schedule.
-    await processClaimWithSummary(claim, dependencies, summary);
+    // Sequential by design: the worker claims and processes one package at a
+    // time; concurrent claims would race for the same schedule.
+    await processClaimWithSummary(claim, dependencies, summary); // NOSONAR
   }
 
   summary.elapsedMs = Math.max(0, dependencies.now().getTime() - startedAt);

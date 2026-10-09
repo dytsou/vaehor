@@ -887,8 +887,7 @@ export async function stageScheduledUploadItem(input: {
   if (schedule.status !== "STAGING")
     conflict("Files can only be staged before package commit.");
   const item = schedule.items.find((entry) => entry.id === input.itemId);
-  const itemStorageKey = item?.storageKey;
-  if (!item || item.kind !== "FILE" || !itemStorageKey) notFound();
+  if (item?.kind !== "FILE" || !item.storageKey) notFound();
   if (item.status === "STAGED") conflict("This file has already been staged.");
   const expectedSize = Number(item.size);
   if (input.contentLength !== undefined && input.contentLength !== null) {
@@ -1041,35 +1040,35 @@ export async function commitScheduledUpload(
   for (const item of schedule.items) {
     if (item.kind === "FOLDER") continue;
     if (!item.sha256) {
-      // NOSONAR: sequential by design - records the failure state before
-      // conflict() aborts the commit, so the order must not change.
+      // Sequential by design: records the failure state before conflict()
+      // aborts the commit, so the order must not change.
       await db.scheduledUpload.updateMany({
         where: { id: scheduleId, status: "STAGING" },
         data: {
           lastErrorCode: "STAGE_VERIFICATION_FAILED",
           lastErrorMessage: "Staged file is missing its SHA-256 hash.",
         },
-      });
+      }); // NOSONAR
       conflict("Staged file is missing its SHA-256 hash.");
     }
-    // NOSONAR: sequential by design - verification short-circuits on the first
-    // invalid item, so files must be checked in order and stop at that failure.
+    // Sequential by design: verification short-circuits on the first invalid
+    // item, so files are checked in order and stop at that failure.
     const readable = await privateScheduledUploadStorage.verifyFile({
       scheduleId,
       storageKey: item.storageKey!,
       expectedSize: Number(item.size),
       expectedSha256: item.sha256 ?? "",
-    });
+    }); // NOSONAR
     if (!readable) {
-      // NOSONAR: sequential by design - records the failure state before
-      // conflict() aborts the commit, so the order must not change.
+      // Sequential by design: records the failure state before conflict()
+      // aborts the commit, so the order must not change.
       await db.scheduledUpload.updateMany({
         where: { id: scheduleId, status: "STAGING" },
         data: {
           lastErrorCode: "STAGE_VERIFICATION_FAILED",
           lastErrorMessage: `Staged file failed verification: ${item.manifestPath}`,
         },
-      });
+      }); // NOSONAR
       conflict(`Staged file failed verification: ${item.manifestPath}.`);
     }
   }
@@ -1098,12 +1097,7 @@ export async function readScheduledUploadItemContent(
   const schedule = await getVisibleSchedule(scheduleId, email);
   if (TERMINAL_STATUSES.has(schedule.status)) notFound();
   const item = schedule.items.find((entry) => entry.id === itemId);
-  if (
-    !item ||
-    item.kind !== "FILE" ||
-    item.status !== "STAGED" ||
-    !item.storageKey
-  )
+  if (item?.kind !== "FILE" || item.status !== "STAGED" || !item.storageKey)
     notFound();
   return {
     stream: await privateScheduledUploadStorage.readStream(

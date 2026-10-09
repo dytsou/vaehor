@@ -502,13 +502,13 @@ export default function ScheduledUploads({
           total: pendingItems.length,
           path: item.path,
         });
-        // NOSONAR: sequential by design - each file is staged individually and
-        // the loop reports per-item progress, so uploads must not overlap.
+        // Sequential by design: each file is staged individually and the loop
+        // reports per-item progress, so uploads must not overlap.
         const response = await stageScheduledUploadItemContent(
           schedule.id,
           item.id,
           file,
-        );
+        ); // NOSONAR
         if (response.status !== 200) {
           throw new Error(apiError(response.data, t("stageFailed")));
         }
