@@ -226,6 +226,9 @@ function createSelection(): NativeScheduledUploadSelection {
 
 describe("mobile scheduled upload flow", () => {
   it("stages selected content to Waiting and later renders refreshed server progress", async () => {
+    // This drives the full stage -> commit -> refresh flow through jsdom. It
+    // takes 2.5-5s on its own, so the 5s default leaves no headroom and fails
+    // intermittently when the suite runs in parallel.
     const schedule = baseSchedule("WAITING", "STAGED");
     const api = createApi({
       list: vi
@@ -306,7 +309,7 @@ describe("mobile scheduled upload flow", () => {
           element.textContent.includes("uploaded"),
       ),
     ).toBeTruthy();
-  });
+  }, 30_000);
 
   it("does not request schedules for a normal user", async () => {
     const api = createApi();
