@@ -1,27 +1,41 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
+import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
 
-/** vinext owns next/* at runtime; vitest does not load the vinext plugin. */
-const nextShimAliases = Object.fromEntries(
-  (
-    [
-      ["next/server", "vinext/shims/server"],
-      ["next/headers", "vinext/shims/headers"],
-      ["next/navigation", "vinext/shims/navigation"],
-      ["next/cache", "vinext/shims/cache"],
-      ["next/og", "vinext/shims/og"],
-      ["next/image", "vinext/shims/image"],
-      ["next/link", "vinext/shims/link"],
-      ["next/dynamic", "vinext/shims/dynamic"],
-      ["next/font/google", "vinext/shims/font-google"],
-    ] as const
-  ).map(([id, shim]) => [id, fileURLToPath(import.meta.resolve(shim))]),
-);
+type PublicShimMap = Record<string, { shim: string }>;
+
+/**
+ * Vitest does not load `vinext()` (too heavy for unit tests). Mirror its
+ * next/* → vinext/shims/* resolution from vinext's own public-shim-map.
+ */
+async function vinextNextShimsPlugin(): Promise<Plugin> {
+  const serverShimUrl = import.meta.resolve("vinext/shims/server");
+  const mapUrl = new URL("./public-shim-map.json.js", serverShimUrl);
+  const { default: shimMap } = (await import(mapUrl.href)) as {
+    default: PublicShimMap;
+  };
+
+  const resolved = new Map<string, string>();
+  for (const [id, { shim }] of Object.entries(shimMap)) {
+    resolved.set(
+      id,
+      fileURLToPath(import.meta.resolve(`vinext/shims/${shim}`)),
+    );
+  }
+
+  return {
+    name: "vinext-next-shims-for-vitest",
+    enforce: "pre",
+    resolveId(id) {
+      return resolved.get(id) ?? null;
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), await vinextNextShimsPlugin()],
   test: {
     environment: "jsdom",
     globals: true,
@@ -36,7 +50,6 @@ export default defineConfig({
         import.meta.dirname,
         "./lib/mobile-bridge-protocol.ts",
       ),
-      ...nextShimAliases,
     },
     exclude: [
       "node_modules",
