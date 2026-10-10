@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { getAnyFileDetails } from "@/lib/storage";
 import { isAccessRestricted } from "@/lib/securityUtils";
 import { hasFolderAccessTokenAccess } from "@/lib/services/folder-access-token";
@@ -21,7 +21,7 @@ export type FileIdParseResult =
 export async function resolveFileDetailsAuth(
   request: NextRequest,
   hasShareToken: boolean,
-  session: Session | null,
+  session: AppSession | null,
 ): Promise<FileDetailsAuthResult> {
   if (hasShareToken) {
     const shareRes = await authenticateShareRequest(request);
@@ -93,7 +93,7 @@ export async function ensureShareFileAccess(
 export async function ensureFileDetailsAccess(
   request: NextRequest,
   fileId: string,
-  session: Session | null,
+  session: AppSession | null,
   shareAuthOk: ShareAuthOk | undefined,
 ): Promise<NextResponse | null> {
   const isAdmin = session?.user?.role === "ADMIN";

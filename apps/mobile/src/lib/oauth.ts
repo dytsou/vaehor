@@ -136,8 +136,8 @@ export function buildGoogleSignInUrl(origin: string, state: string): string {
   if (!state.trim()) throw new Error("oauth_state_invalid");
   const callback = new URL("/api/mobile/oauth-complete", serverOrigin);
   callback.searchParams.set("state", state);
-  const signIn = new URL("/api/auth/signin/google", serverOrigin);
-  signIn.searchParams.set("callbackUrl", callback.toString());
+  const signIn = new URL("/api/mobile/oauth-google", serverOrigin);
+  signIn.searchParams.set("callbackURL", callback.toString());
   return signIn.toString();
 }
 

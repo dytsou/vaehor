@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { getAccessToken, type DriveFile } from "@/lib/drive";
 import {
   authenticateShareRequest,
@@ -161,7 +161,7 @@ export function parseFolderSearchParams(
 
 function buildSearchCacheKey(
   params: FolderSearchParams,
-  session: Session | null,
+  session: AppSession | null,
 ) {
   return `search:${JSON.stringify({
     q: params.searchTerm,
@@ -175,14 +175,14 @@ function buildSearchCacheKey(
 }
 
 function shouldUseSearchCache(
-  session: Session | null,
+  session: AppSession | null,
   hasShareToken: boolean,
 ): boolean {
   return session?.user?.role === "ADMIN" && !hasShareToken;
 }
 
 export async function getCachedSearchResult(
-  session: Session | null,
+  session: AppSession | null,
   hasShareToken: boolean,
   params: FolderSearchParams,
 ) {
@@ -301,7 +301,7 @@ function processSearchFiles(
 
 async function filterFilesByAccess(
   files: ProcessedSearchFile[],
-  session: Session | null,
+  session: AppSession | null,
   allowedTokens: string[],
 ) {
   const isAdmin = session?.user?.role === "ADMIN";
@@ -335,7 +335,7 @@ function applyShareFileFilter(
 }
 
 async function cacheSearchResult(
-  session: Session | null,
+  session: AppSession | null,
   hasShareToken: boolean,
   params: FolderSearchParams,
   result: unknown,
@@ -355,7 +355,7 @@ async function cacheSearchResult(
 
 export async function executeFolderSearch(
   request: NextRequest,
-  session: Session | null,
+  session: AppSession | null,
   shareCtx: ShareAuthOk | null,
   params: FolderSearchParams,
   hasShareToken: boolean,

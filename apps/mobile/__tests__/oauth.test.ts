@@ -48,8 +48,8 @@ describe("native oauth", () => {
       buildGoogleSignInUrl("https://files.example.com", "state"),
     );
     expect(url.origin).toBe("https://files.example.com");
-    expect(url.pathname).toBe("/api/auth/signin/google");
-    const callback = new URL(url.searchParams.get("callbackUrl") ?? "");
+    expect(url.pathname).toBe("/api/mobile/oauth-google");
+    const callback = new URL(url.searchParams.get("callbackURL") ?? "");
     expect(callback.origin).toBe("https://files.example.com");
     expect(callback.searchParams.get("state")).toBe("state");
   });
@@ -75,7 +75,7 @@ describe("native oauth", () => {
         };
       });
     const redeemExchange = vi.fn().mockResolvedValue({
-      cookieName: "authjs.session-token",
+      cookieName: "better-auth.session_token",
       bootstrapToken: "bootstrap-a",
     });
     const redeemBootstrap = vi
@@ -96,7 +96,7 @@ describe("native oauth", () => {
       startGoogleOAuth("https://files.example.com/path", deps),
     ).resolves.toEqual({
       origin: "https://files.example.com",
-      cookieName: "authjs.session-token",
+      cookieName: "better-auth.session_token",
     });
     expect(fetchState).toHaveBeenCalledWith("https://files.example.com");
     expect(redeemExchange).toHaveBeenCalledWith(

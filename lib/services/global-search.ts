@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { jwtVerify } from "jose";
 import {
   getAccessToken,
@@ -65,7 +65,7 @@ function getDateQuery(modifiedTime?: string | null) {
 
 export function validateGlobalSearchAccess(
   request: NextRequest,
-  session: Session | null,
+  session: AppSession | null,
 ): NextResponse | null {
   const { searchParams } = new URL(request.url);
 
@@ -203,7 +203,7 @@ async function processSearchFiles(
 
 async function filterFilesByAccess(
   files: ProcessedSearchFile[],
-  session: Session,
+  session: AppSession,
   allowedTokens: string[],
 ) {
   const isAdmin = session.user?.role === "ADMIN";
@@ -221,7 +221,7 @@ async function filterFilesByAccess(
 
 export async function executeGlobalSearch(
   request: NextRequest,
-  session: Session,
+  session: AppSession,
   params: GlobalSearchParams,
 ) {
   const accessToken = await getAccessToken();

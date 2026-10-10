@@ -1,5 +1,5 @@
 {
-  "missingSession": "Login required: set VAEHOR_SESSION_COOKIE (full cookie string, e.g. authjs.session-token=…) or VAEHOR_SESSION_TOKEN (session value only). After signing in to vaehor in your browser, copy the cookie from developer tools.",
+  "missingSession": "Login required: set VAEHOR_SESSION_COOKIE (full cookie string, e.g. better-auth.session_token=…) or VAEHOR_SESSION_TOKEN (session value only). After signing in to vaehor in your browser, copy the cookie from developer tools.",
   "searchNeedOneCriterion": "At least one of q, mimeType, modifiedTime, or minSize is required.",
   "tools": {
     "zee_health": {

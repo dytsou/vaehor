@@ -44,7 +44,7 @@ describe("biometrics", () => {
 describe("oauth helpers", () => {
   it("builds Google sign-in URL with oauth-complete callback", () => {
     const url = buildGoogleSignInUrl("https://files.example.com", "state-123");
-    expect(url).toContain("/api/auth/signin/google");
+    expect(url).toContain("/api/mobile/oauth-google");
     expect(url).toContain(
       encodeURIComponent(
         "https://files.example.com/api/mobile/oauth-complete?state=state-123",

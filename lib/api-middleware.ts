@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import type { z } from "zod";
 import { ERROR_MESSAGES } from "@/lib/constants";
 import type { RateLimitType } from "@/lib/ratelimit";
@@ -18,7 +18,7 @@ export interface RouteHandlerContext<
   TBody = undefined,
   TQuery = undefined,
   TParams = Record<string, string>,
-  TSession extends Session | null = Session | null,
+  TSession extends AppSession | null = AppSession | null,
 > {
   request: NextRequest;
   session: TSession;
@@ -62,8 +62,8 @@ interface CreateRouteOptions<
 }
 
 type SessionForRole<TRole extends ApiRole> = TRole extends "public"
-  ? Session | null
-  : Session;
+  ? AppSession | null
+  : AppSession;
 
 async function loadAuth() {
   const authModule = await import("@/auth");
@@ -72,7 +72,7 @@ async function loadAuth() {
 
 async function loadRequestSession(
   request: NextRequest,
-): Promise<Session | null> {
+): Promise<AppSession | null> {
   if (request.headers.has("authorization")) {
     const { readMobileBearerSession } = await import("@/lib/mobile-auth");
     return readMobileBearerSession(request);
@@ -123,7 +123,7 @@ async function resolveParams<TParams>(params: unknown): Promise<TParams> {
   return (params ?? {}) as TParams;
 }
 
-function isAuthorized(role: ApiRole, session: Session | null): boolean {
+function isAuthorized(role: ApiRole, session: AppSession | null): boolean {
   if (role === "public") return true;
   if (!session?.user) return false;
 
@@ -491,7 +491,7 @@ export function createCronRoute<
 type LegacyAdminHandler = (
   req: NextRequest,
   context: { params?: unknown },
-  session: Session,
+  session: AppSession,
 ) => Promise<Response>;
 
 export function withAdminSession(handler: LegacyAdminHandler) {

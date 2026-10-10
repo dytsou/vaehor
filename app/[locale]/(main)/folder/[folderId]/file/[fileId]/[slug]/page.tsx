@@ -10,7 +10,7 @@ import {
 } from "@/lib/auth";
 import type { SubtitleTrack } from "@/lib/subtitles";
 import type { ZeeFile } from "@/types/storage";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 
 const FileError = ({
   message,
@@ -52,7 +52,7 @@ type FilePageLoadResult = {
 
 async function userCanAccessFolder(
   folderId: string,
-  session: Session | null,
+  session: AppSession | null,
 ): Promise<boolean> {
   const userEmail = session?.user?.email;
   const hasExplicitAccess =
@@ -67,7 +67,7 @@ async function userCanAccessFolder(
 async function getAccessDeniedResponse(
   shareToken: string | undefined,
   folderId: string,
-  session: Session | null,
+  session: AppSession | null,
 ) {
   if (shareToken) {
     const isValidShare = await verifyShareTokenString(shareToken);

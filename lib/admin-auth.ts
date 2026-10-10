@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 
-export type AdminSession = Session & {
-  user: NonNullable<Session["user"]> & { role: "ADMIN" };
+export type AdminSession = AppSession & {
+  user: NonNullable<AppSession["user"]> & { role: "ADMIN" };
 };
 
 export async function requireAdminSession(): Promise<AdminSession> {

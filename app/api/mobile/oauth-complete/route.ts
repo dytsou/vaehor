@@ -7,6 +7,7 @@ import {
   consumeMobileOAuthState,
   mintMobileExchangeToken,
   mintSessionBootstrapToken,
+  readMobileSessionCookieValue,
   redeemMobileExchangeToken,
 } from "@/lib/services/mobile-oauth";
 
@@ -34,7 +35,7 @@ export const GET = createUserRoute(
       );
     }
 
-    const sessionToken = request.cookies.get(MOBILE_SESSION_COOKIE_NAME)?.value;
+    const sessionToken = readMobileSessionCookieValue(request.cookies);
     if (!sessionToken) {
       return NextResponse.json({ error: "Missing session" }, { status: 401 });
     }

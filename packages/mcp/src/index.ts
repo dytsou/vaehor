@@ -9,7 +9,7 @@ import {
 } from "./messages-loader.js";
 
 const DEFAULT_BASE = "http://127.0.0.1:3000";
-const SESSION_COOKIE_NAME = "authjs.session-token";
+const SESSION_COOKIE_NAME = "better-auth.session_token";
 
 const msgs: McpMessages = loadMcpMessages(
   resolveMcpLocale(process.env.VAEHOR_LOCALE),
@@ -21,7 +21,7 @@ function getBaseUrl(): string {
   return raw.replace(/\/$/, "");
 }
 
-/** Cookie header value for NextAuth session (never log this). */
+/** Cookie header value for Better Auth session (never log this). */
 function getSessionCookieHeader(): string | null {
   const full = process.env.VAEHOR_SESSION_COOKIE?.trim();
   if (full) return full;

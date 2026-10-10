@@ -4469,7 +4469,7 @@ components:
     ApiKeyAuth:
       type: apiKey
       in: cookie
-      name: next-auth.session-token
+      name: better-auth.session_token
     BearerAuth:
       type: http
       scheme: Bearer
