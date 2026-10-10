@@ -14,7 +14,6 @@ Thumbs.db
 /dist
 /docs/api/website/
 *.tsbuildinfo
-next-env.d.ts
 
 # Logs
 npm-debug.log*
