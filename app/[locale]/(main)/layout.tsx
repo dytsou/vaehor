@@ -7,7 +7,7 @@ import { BulkActionBar } from "@/components/file-browser/BulkActionBar";
 import Toast from "@/components/common/Toast";
 import { AnimatePresence } from "framer-motion";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import CommandPalette from "@/components/features/CommandPalette";
 import GlobalAudioPlayer from "@/components/features/GlobalAudioPlayer";
 import KeyboardShortcutsModal from "@/components/modals/KeyboardShortcutsModal";

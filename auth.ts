@@ -1,82 +1,48 @@
-import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { db } from "@/lib/db";
-import type { NextAuthConfig } from "next-auth";
-import { authorizeCredentials } from "@/lib/services/credential-auth";
-import { handleJwtCallback } from "@/lib/services/auth-jwt";
+import { headers } from "next/headers";
+import { toNextJsHandler } from "better-auth/next-js";
+import { authServer } from "@/lib/auth-server";
 
-const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(db as any),
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-    }),
-    Credentials({
-      id: "guest",
-      name: "Guest",
-      credentials: {},
-      async authorize() {
-        const { getAppConfig } = await import("@/lib/app-config");
-        const config = await getAppConfig();
-        if (config.disableGuestLogin) {
-          return null;
-        }
+export { authServer };
 
-        return {
-          id: "guest",
-          name: "Guest",
-          email: undefined,
-          role: "GUEST",
-        };
-      },
-    }),
-    Credentials({
-      id: "credentials",
-      name: "Email & Password",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: authorizeCredentials,
-    }),
-  ],
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  callbacks: {
-    jwt: handleJwtCallback,
-    session({ session, token }) {
-      if (session.user) {
-        const role = (token.role as any) || "USER";
-        session.user.role = role;
-        session.user.email = token.email as string;
-        session.user.isGuest =
-          token.isGuest ?? (role ? role === "GUEST" : false);
-      }
-      return session;
-    },
-  },
-  session: {
-    strategy: "jwt",
-  },
-  cookies: {
-    sessionToken: {
-      name: `authjs.session-token`,
-      options: {
-        httpOnly: true,
-        // Capacitor WebView loads NEXTAUTH_URL as first-party; lax + secure-on-HTTPS is sufficient.
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NEXTAUTH_URL?.startsWith("https://") ?? false,
-      },
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
+/** NextAuth-shaped session for gradual call-site migration. */
+export type AppSession = {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+    role?: string;
+    isGuest?: boolean;
+  };
+  expires: string;
 };
 
-export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+/**
+ * Drop-in for NextAuth `auth()` — reads Better Auth session from request headers.
+ */
+export async function auth(): Promise<AppSession | null> {
+  const session = await authServer.api.getSession({
+    headers: await headers(),
+  });
+  if (!session) return null;
+
+  const role =
+    (session.user as { role?: string }).role ??
+    ((session.session as { isGuest?: boolean }).isGuest ? "GUEST" : "USER");
+
+  return {
+    user: {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      image: session.user.image,
+      role,
+      isGuest:
+        (session.session as { isGuest?: boolean }).isGuest === true ||
+        role === "GUEST",
+    },
+    expires: new Date(session.session.expiresAt).toISOString(),
+  };
+}
+
+export const handlers = toNextJsHandler(authServer);

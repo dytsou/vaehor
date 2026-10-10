@@ -3,6 +3,8 @@ packages:
   - "apps/*"
 
 overrides:
+  # @better-auth/cli@1.4 pins better-call@1.1; better-auth@1.7 needs 1.4 (kAPIErrorHeaderSymbol)
+  better-call: 1.4.0
   vite: 8.3.0
   "@auth/core": 0.41.3
   "@babel/core": 7.29.7
@@ -55,8 +57,10 @@ overrides:
 
 allowBuilds:
   "@parcel/watcher": true
+  "@prisma/client": true
   "@prisma/engines": true
   "@swc/core": true
+  better-sqlite3: false
   canvas: true
   core-js: true
   esbuild: true
@@ -64,3 +68,4 @@ allowBuilds:
   protobufjs: true
   sharp: true
   unrs-resolver: true
+  workerd: true

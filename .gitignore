@@ -97,3 +97,6 @@ public/swe-worker-*.js
 # Local Storage Cloud
 /storage/
 /.private-data/
+.vinext/
+.cloudflare/
+.wrangler/

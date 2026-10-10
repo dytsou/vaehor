@@ -7,7 +7,6 @@ import PageViewTracker from "@/components/features/PageViewTracker";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
-import NextTopLoader from "nextjs-toploader";
 import { Inter } from "next/font/google";
 import { isLocale } from "@/lib/i18n-config";
 
@@ -95,18 +94,8 @@ export default async function RootLayout({
       <body className={inter.className}>
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            <NextTopLoader
-              color="#3b82f6"
-              initialPosition={0.08}
-              crawlSpeed={200}
-              height={3}
-              crawl={false}
-              showSpinner={false}
-              easing="ease"
-              speed={200}
-              shadow="0 0 10px #3b82f6,0 0 5px #3b82f6"
-              zIndex={9999}
-            />
+            {/* ponytail: nextjs-toploader CJS default is undefined under vinext RSC;
+                skip until a client-only wrapper or ESM build lands. */}
             <GlobalBranding />
             <PageViewTracker />
             {children}

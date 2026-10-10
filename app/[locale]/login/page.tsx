@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { User, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";

@@ -8,7 +8,7 @@ import Toast from "@/components/common/Toast";
 import { AnimatePresence } from "framer-motion";
 import { HardDrive } from "lucide-react";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 
 const Header = dynamic(() => import("@/components/layout/Header"), {

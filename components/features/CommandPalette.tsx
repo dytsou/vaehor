@@ -22,7 +22,7 @@ import {
   Folder,
   Loader2,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut } from "@/lib/auth-client";
 import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTranslations } from "next-intl";
 

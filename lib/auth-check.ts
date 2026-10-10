@@ -1,26 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-import type { JWT } from "next-auth/jwt";
+import { authServer } from "@/lib/auth-server";
 
 export interface MiddlewareAuthResult {
   isAuthenticated: boolean;
   isGuest: boolean;
   is2FARequired: boolean;
-  token: JWT | null;
+  token: {
+    role?: string;
+    email?: string | null;
+    twoFactorRequired?: boolean;
+    isGuest?: boolean;
+    sub?: string;
+  } | null;
 }
 
 export async function checkAuth(
   request: NextRequest,
-  secret: string | undefined,
+  _secret?: string | undefined,
 ): Promise<MiddlewareAuthResult> {
-  const token = await getToken({
-    req: request,
-    secret,
-    cookieName: "authjs.session-token",
-    secureCookie: process.env.NODE_ENV === "production",
+  const session = await authServer.api.getSession({
+    headers: request.headers,
   });
 
-  if (!token) {
+  if (!session) {
     return {
       isAuthenticated: false,
       isGuest: false,
@@ -29,11 +31,27 @@ export async function checkAuth(
     };
   }
 
+  const role =
+    (session.user as { role?: string }).role ??
+    ((session.session as { isGuest?: boolean }).isGuest ? "GUEST" : "USER");
+  const twoFactorRequired = !!(
+    session.session as { twoFactorRequired?: boolean }
+  ).twoFactorRequired;
+  const isGuest =
+    (session.session as { isGuest?: boolean }).isGuest === true ||
+    role === "GUEST";
+
   return {
     isAuthenticated: true,
-    isGuest: token.role === "GUEST",
-    is2FARequired: !!token.twoFactorRequired,
-    token,
+    isGuest,
+    is2FARequired: twoFactorRequired,
+    token: {
+      role,
+      email: session.user.email,
+      twoFactorRequired,
+      isGuest,
+      sub: session.user.id,
+    },
   };
 }
 

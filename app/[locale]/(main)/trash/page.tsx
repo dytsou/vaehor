@@ -6,7 +6,7 @@ import { useConfirm } from "@/components/providers/ModalProvider";
 import { motion } from "framer-motion";
 import { Trash2, Loader2, FileX, ArrowDownUp } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTranslations } from "next-intl";

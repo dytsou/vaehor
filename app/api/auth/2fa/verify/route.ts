@@ -6,6 +6,8 @@ import { verify } from "otplib";
 import { kv } from "@/lib/kv";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { z } from "zod";
+import { authServer } from "@/lib/auth-server";
+import { clearSessionTwoFactorRequired } from "@/lib/auth-2fa-session";
 
 const verifyTwoFactorSchema = z.object({
   token: z.string().min(1, "Kode verifikasi tidak valid."),
@@ -23,11 +25,15 @@ export const POST = createUserRoute(
 
     try {
       const { token } = body;
-      const userEmail = session.user.email;
+      const userEmail = session.user.email!;
 
-      const secret: string | null = await kv.get(
+      const tempSecret: string | null = await kv.get(
         `2fa:secret:temp:${userEmail}`,
       );
+      const permanentSecret: string | null = tempSecret
+        ? null
+        : await kv.get(`2fa:secret:${userEmail}`);
+      const secret = tempSecret ?? permanentSecret;
       if (!secret) {
         return NextResponse.json(
           { error: "Sesi pembuatan 2FA telah kedaluwarsa." },
@@ -43,13 +49,24 @@ export const POST = createUserRoute(
         );
       }
 
-      await kv.set(`2fa:secret:${userEmail}`, secret);
-      await kv.set(`2fa:enabled:${userEmail}`, true);
-      await kv.del(`2fa:secret:temp:${userEmail}`);
+      if (tempSecret) {
+        await kv.set(`2fa:secret:${userEmail}`, secret);
+        await kv.set(`2fa:enabled:${userEmail}`, true);
+        await kv.del(`2fa:secret:temp:${userEmail}`);
+      }
+
+      const baSession = await authServer.api.getSession({
+        headers: request.headers,
+      });
+      if (baSession?.session.token) {
+        await clearSessionTwoFactorRequired(baSession.session.token);
+      }
 
       return NextResponse.json({
         success: true,
-        message: "2FA berhasil diaktifkan.",
+        message: tempSecret
+          ? "2FA berhasil diaktifkan."
+          : "2FA berhasil diverifikasi.",
       });
     } catch (error) {
       console.error("2FA Verify Error:", error);

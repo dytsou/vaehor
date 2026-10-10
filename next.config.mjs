@@ -108,7 +108,8 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
-  serverExternalPackages: ["ioredis"],
+  // pino-pretty uses worker transport resolution that breaks when Vite bundles pino
+  serverExternalPackages: ["ioredis", "pino", "pino-pretty"],
 
   experimental: {
     useTypeScriptCli: false,
