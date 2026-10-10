@@ -3,8 +3,7 @@ import vinext from "vinext";
 
 export default defineConfig({
   plugins: [vinext()],
-  // nextjs-toploader (and similar CJS default exports) break under Vite 8's
-  // stricter interop → "Element type is invalid … got: undefined" on SSR.
+  // Some CJS default exports still break under Vite 8's stricter interop.
   legacy: {
     inconsistentCjsInterop: true,
   },

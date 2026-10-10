@@ -95,8 +95,6 @@ export default async function RootLayout({
       <body className={inter.className}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            {/* ponytail: nextjs-toploader CJS default is undefined under vinext RSC;
-                skip until a client-only wrapper or ESM build lands. */}
             <GlobalBranding />
             <PageViewTracker />
             {children}
