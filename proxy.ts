@@ -163,6 +163,35 @@ function isExplicitPublicRoute(pathnameWithoutLocale: string): boolean {
   );
 }
 
+function isPending2FAAllowedPath(pathnameWithoutLocale: string): boolean {
+  return (
+    pathnameWithoutLocale === "/verify-2fa" ||
+    pathnameWithoutLocale.startsWith("/api/auth/2fa/") ||
+    pathnameWithoutLocale.startsWith("/api/auth/get-session") ||
+    pathnameWithoutLocale === "/api/auth/me"
+  );
+}
+
+function enforcePending2FA(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  auth: AuthState,
+): NextResponse | null {
+  if (!auth.isAuthenticated || !auth.is2FARequired) return null;
+  if (isPending2FAAllowedPath(context.pathnameWithoutLocale)) return null;
+
+  if (context.isApi) {
+    return NextResponse.json(
+      { error: "Two-factor authentication required." },
+      { status: 403 },
+    );
+  }
+
+  const verifyUrl = new URL("/verify-2fa", request.url);
+  verifyUrl.searchParams.set("callbackUrl", context.pathname);
+  return NextResponse.redirect(verifyUrl);
+}
+
 function enforceAuthenticationRules(
   request: NextRequest,
   context: ProxyRouteContext,
@@ -180,17 +209,7 @@ function enforceAuthenticationRules(
     return handleAuthRedirect(request, context.pathname, "GuestAccessDenied");
   }
 
-  if (
-    auth.isAuthenticated &&
-    auth.is2FARequired &&
-    context.pathnameWithoutLocale !== "/verify-2fa"
-  ) {
-    const verifyUrl = new URL("/verify-2fa", request.url);
-    verifyUrl.searchParams.set("callbackUrl", context.pathname);
-    return NextResponse.redirect(verifyUrl);
-  }
-
-  return null;
+  return enforcePending2FA(request, context, auth);
 }
 
 function resolveCurrentFolderId(
@@ -255,7 +274,13 @@ export async function proxy(request: NextRequest) {
     return configurationResponse;
   }
 
+  // Public prefixes skip login, but pending-2FA must still be gated (e.g. /api/files).
   if (isExplicitPublicRoute(context.pathnameWithoutLocale)) {
+    const publicAuth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
+    const pending2FAResponse = enforcePending2FA(request, context, publicAuth);
+    if (pending2FAResponse) {
+      return pending2FAResponse;
+    }
     return context.isApi
       ? continueApiRoute()
       : continuePageRoute(request, intlMiddleware);

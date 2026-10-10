@@ -82,6 +82,7 @@ export const vaehorCredentialsPlugin = (): BetterAuthPlugin => ({
         return ctx.json({
           token: session.token,
           user: fullUser,
+          twoFactorRequired,
         });
       },
     ),

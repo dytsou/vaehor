@@ -23,8 +23,11 @@ export async function readMobileBearerSession(
   const role =
     (session.user as { role?: string }).role ??
     ((session.session as { isGuest?: boolean }).isGuest ? "GUEST" : "USER");
+  const twoFactorRequired = !!(
+    session.session as { twoFactorRequired?: boolean }
+  ).twoFactorRequired;
 
-  if ((session.session as { twoFactorRequired?: boolean }).twoFactorRequired) {
+  if (twoFactorRequired) {
     return null;
   }
 
@@ -36,7 +39,9 @@ export async function readMobileBearerSession(
       image: session.user.image,
       role,
       isGuest:
-        (session.session as { isGuest?: boolean }).isGuest ?? role === "GUEST",
+        (session.session as { isGuest?: boolean }).isGuest === true ||
+        role === "GUEST",
+      twoFactorRequired: false,
     },
     expires: new Date(session.session.expiresAt).toISOString(),
   };

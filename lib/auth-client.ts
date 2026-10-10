@@ -76,7 +76,9 @@ export async function signIn(
   }
 
   if (provider === "credentials") {
-    const res = await authClient.$fetch("/vaehor/sign-in/credentials", {
+    const res = await authClient.$fetch<{
+      twoFactorRequired?: boolean;
+    }>("/vaehor/sign-in/credentials", {
       method: "POST",
       body: {
         email: options.email,
@@ -86,10 +88,13 @@ export async function signIn(
     if (res.error) {
       return { error: res.error.message ?? "Invalid credentials", ok: false };
     }
+    const nextUrl = res.data?.twoFactorRequired
+      ? `/verify-2fa?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : callbackUrl;
     if (options.redirect !== false && typeof window !== "undefined") {
-      window.location.href = callbackUrl;
+      window.location.href = nextUrl;
     }
-    return { ok: true, url: callbackUrl };
+    return { ok: true, url: nextUrl };
   }
 
   if (provider === "guest") {

@@ -273,6 +273,18 @@
     "download": "下載此版本",
     "unknownUser": "未知"
   },
+  "Verify2FAPage": {
+    "title": "雙因素驗證",
+    "subtitle": "請輸入驗證器應用程式中的代碼以繼續。",
+    "codeLabel": "驗證碼",
+    "codePlaceholder": "123456",
+    "submit": "驗證",
+    "processing": "驗證中...",
+    "errors": {
+      "invalid": "驗證碼無效。",
+      "generic": "無法驗證，請再試一次。"
+    }
+  },
   "LoginPage": {
     "title": "vaehor",
     "subtitle": "安全且快速地存取你的檔案。",

@@ -76,5 +76,10 @@ export const POST = createUserRoute(
       );
     }
   },
-  { requireEmail: true, rateLimit: false, bodySchema: verifyTwoFactorSchema },
+  {
+    requireEmail: true,
+    rateLimit: false,
+    allowPending2FA: true,
+    bodySchema: verifyTwoFactorSchema,
+  },
 );

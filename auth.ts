@@ -13,6 +13,7 @@ export type AppSession = {
     image?: string | null;
     role?: string;
     isGuest?: boolean;
+    twoFactorRequired?: boolean;
   };
   expires: string;
 };
@@ -29,6 +30,9 @@ export async function auth(): Promise<AppSession | null> {
   const role =
     (session.user as { role?: string }).role ??
     ((session.session as { isGuest?: boolean }).isGuest ? "GUEST" : "USER");
+  const twoFactorRequired = !!(
+    session.session as { twoFactorRequired?: boolean }
+  ).twoFactorRequired;
 
   return {
     user: {
@@ -40,6 +44,7 @@ export async function auth(): Promise<AppSession | null> {
       isGuest:
         (session.session as { isGuest?: boolean }).isGuest === true ||
         role === "GUEST",
+      twoFactorRequired,
     },
     expires: new Date(session.session.expiresAt).toISOString(),
   };

@@ -1,11 +1,15 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { bearer } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import { vaehorCredentialsPlugin } from "@/lib/auth-credentials-plugin";
+import { isTwoFactorEnabled } from "@/lib/auth-2fa-session";
+import { resolveAndSyncRole } from "@/lib/services/auth-jwt";
+import { logger } from "@/lib/logger";
 
 /**
  * Better Auth server (vinext sole-default). Credential/guest via plugin;
- * Google via socialProviders.
+ * Google via socialProviders; mobile via bearer plugin.
  */
 export const authServer = betterAuth({
   database: prismaAdapter(db, { provider: "postgresql" }),
@@ -46,7 +50,43 @@ export const authServer = betterAuth({
       },
     },
   },
-  plugins: [vaehorCredentialsPlugin()],
+  databaseHooks: {
+    session: {
+      create: {
+        async before(session) {
+          try {
+            const user = await db.user.findUnique({
+              where: { id: session.userId },
+              select: { email: true, role: true },
+            });
+            if (!user?.email) return;
+
+            const isGuest =
+              user.role === "GUEST" ||
+              !!(session as { isGuest?: boolean }).isGuest;
+            if (!isGuest) {
+              await resolveAndSyncRole(user.email, user);
+            }
+
+            const twoFactorRequired = isGuest
+              ? false
+              : await isTwoFactorEnabled(user.email);
+            return {
+              data: {
+                ...session,
+                twoFactorRequired:
+                  (session as { twoFactorRequired?: boolean })
+                    .twoFactorRequired ?? twoFactorRequired,
+              },
+            };
+          } catch (err) {
+            logger.error({ err }, "[Auth] session.create role/2FA hook failed");
+          }
+        },
+      },
+    },
+  },
+  plugins: [bearer(), vaehorCredentialsPlugin()],
 });
 
 export type AuthSession = typeof authServer.$Infer.Session;

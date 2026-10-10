@@ -65,7 +65,8 @@ async function syncDbUserRole(
   }
 }
 
-async function resolveAndSyncRole(
+/** Sync ADMIN_EMAILS / Redis / DB role onto the User row (Google + credential login). */
+export async function resolveAndSyncRole(
   email: string,
   dbUser?: { role: string } | null,
 ): Promise<AppRole> {

@@ -273,6 +273,18 @@
     "download": "Unduh Versi Ini",
     "unknownUser": "Tidak diketahui"
   },
+  "Verify2FAPage": {
+    "title": "Verifikasi dua faktor",
+    "subtitle": "Masukkan kode dari aplikasi autentikator Anda untuk melanjutkan.",
+    "codeLabel": "Kode verifikasi",
+    "codePlaceholder": "123456",
+    "submit": "Verifikasi",
+    "processing": "Memverifikasi...",
+    "errors": {
+      "invalid": "Kode verifikasi tidak valid.",
+      "generic": "Gagal memverifikasi kode. Silakan coba lagi."
+    }
+  },
   "LoginPage": {
     "title": "vaehor",
     "subtitle": "Akses file Anda dengan aman dan cepat.",

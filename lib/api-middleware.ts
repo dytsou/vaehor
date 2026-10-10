@@ -52,6 +52,8 @@ interface CreateRouteOptions<
   role?: ApiRole;
   includeSession?: boolean;
   requireEmail?: boolean;
+  /** Allow callers that still must finish login TOTP (e.g. /api/auth/2fa/verify). */
+  allowPending2FA?: boolean;
   rateLimit?: RateLimitType | false;
   bodySchema?: TBodySchema;
   querySchema?: TQuerySchema;
@@ -230,10 +232,25 @@ export function createRouteHandler<
     const requestId = crypto.randomUUID();
 
     try {
-      const session =
+      let session =
         role !== "public" || options.includeSession
           ? await loadRequestSession(request)
           : null;
+
+      const pending2FA = !!session?.user?.twoFactorRequired;
+      if (pending2FA && !options.allowPending2FA) {
+        if (role !== "public") {
+          return withRequestId(
+            NextResponse.json(
+              { error: "Two-factor authentication required." },
+              { status: 403 },
+            ),
+            requestId,
+          );
+        }
+        // Public routes: drop elevated session until TOTP completes.
+        session = null;
+      }
 
       if (role !== "public" && !session?.user) {
         return withRequestId(
