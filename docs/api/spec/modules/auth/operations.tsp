@@ -79,10 +79,10 @@ namespace VaehorApi {
   @useAuth(SessionAuth)
   op disable2fa(): OkResponse<unknown> | UnauthorizedErrorResponse;
 
-  // NextAuth handler documented as a placeholder (catch-all routes are not modeled precisely)
+  // Better Auth catch-all (path segments are not modeled precisely)
   @tag("Auth")
-  @route("/auth/{nextauth}")
-  op nextAuthHandler(@path nextauth: string): OkResponse<unknown>;
+  @route("/auth/{authPath}")
+  op betterAuthHandler(@path authPath: string): OkResponse<unknown>;
 
   @tag("Auth")
   @post

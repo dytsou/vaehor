@@ -5,13 +5,17 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import type { DriveFile } from "@/lib/drive";
 import {
   ErrorResponsePayload,
   RequestError,
   getErrorMessage,
 } from "@/lib/errors";
+
+/** Subset of App Router used here (avoid next/dist internals). */
+type AppRouterInstance = {
+  push: (href: string) => void;
+};
 
 interface FolderPathItem {
   id: string;

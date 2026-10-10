@@ -3416,38 +3416,37 @@ export const getAuthStatus = async (
   } as getAuthStatusResponse;
 };
 
-export type nextAuthHandlerResponse200 = {
+export type betterAuthHandlerResponse200 = {
   data: unknown;
   status: 200;
 };
 
-export type nextAuthHandlerResponseSuccess = nextAuthHandlerResponse200 & {
+export type betterAuthHandlerResponseSuccess = betterAuthHandlerResponse200 & {
   headers: Headers;
 };
+export type betterAuthHandlerResponse = betterAuthHandlerResponseSuccess;
 
-export type nextAuthHandlerResponse = nextAuthHandlerResponseSuccess;
-
-export const getNextAuthHandlerUrl = (nextauth: string) => {
-  return `/api/auth/${nextauth}`;
+export const getBetterAuthHandlerUrl = (authPath: string) => {
+  return `/api/auth/${authPath}`;
 };
 
-export const nextAuthHandler = async (
-  nextauth: string,
+export const betterAuthHandler = async (
+  authPath: string,
   options?: RequestInit,
-): Promise<nextAuthHandlerResponse> => {
-  const res = await fetch(getNextAuthHandlerUrl(nextauth), {
+): Promise<betterAuthHandlerResponse> => {
+  const res = await fetch(getBetterAuthHandlerUrl(authPath), {
     ...options,
     method: "GET",
   });
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
 
-  const data: nextAuthHandlerResponse["data"] = body ? JSON.parse(body) : {};
+  const data: betterAuthHandlerResponse["data"] = body ? JSON.parse(body) : {};
   return {
     data,
     status: res.status,
     headers: res.headers,
-  } as nextAuthHandlerResponse;
+  } as betterAuthHandlerResponse;
 };
 
 export type bulkDownloadResponse200 = {

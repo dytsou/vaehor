@@ -91,8 +91,8 @@ jobs:
           SKIP_ENV_VALIDATION: "1"
           GOOGLE_CLIENT_ID: "mock_client_id"
           GOOGLE_CLIENT_SECRET: "mock_client_secret"
-          NEXTAUTH_SECRET: "super_secret_mock_key_at_least_32_chars_long"
-          NEXTAUTH_URL: "http://localhost:3000"
+          BETTER_AUTH_SECRET: "super_secret_mock_key_at_least_32_chars_long"
+          BETTER_AUTH_URL: "http://localhost:3000"
           KV_REST_API_URL: "https://mock.upstash.io"
           KV_REST_API_TOKEN: "mock_token"
 

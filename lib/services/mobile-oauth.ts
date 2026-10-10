@@ -34,7 +34,7 @@ export function mobileSessionCookieName(secure: boolean): string {
 function signingSecret(): Uint8Array {
   const secret = getLocalStorageAuthSecret();
   if (!secret) {
-    throw new Error("NEXTAUTH_SECRET is not configured for mobile OAuth");
+    throw new Error("BETTER_AUTH_SECRET is not configured for mobile OAuth");
   }
   return secret;
 }

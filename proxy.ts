@@ -24,11 +24,12 @@ import {
   stripLocaleFromPathname,
 } from "@/lib/i18n-config";
 
+// next-intl types NextRequest from nested `next`; vinext ships its own.
 const intlMiddleware = createMiddleware({
   locales: [...LOCALES],
   defaultLocale: DEFAULT_LOCALE,
   localePrefix: "always",
-});
+}) as unknown as (request: NextRequest) => NextResponse | Promise<NextResponse>;
 
 const PUBLIC_PATHS = new Set(["/login", "/verify-2fa", "/setup", "/request"]);
 const PUBLIC_API_PREFIXES = [
@@ -276,7 +277,7 @@ export async function proxy(request: NextRequest) {
 
   // Public prefixes skip login, but pending-2FA must still be gated (e.g. /api/files).
   if (isExplicitPublicRoute(context.pathnameWithoutLocale)) {
-    const publicAuth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
+    const publicAuth = await checkAuth(request);
     const pending2FAResponse = enforcePending2FA(request, context, publicAuth);
     if (pending2FAResponse) {
       return pending2FAResponse;
@@ -298,7 +299,7 @@ export async function proxy(request: NextRequest) {
         );
   }
 
-  const auth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
+  const auth = await checkAuth(request);
 
   const authResponse = enforceAuthenticationRules(request, context, auth);
   if (authResponse) {

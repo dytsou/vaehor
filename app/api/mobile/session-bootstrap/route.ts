@@ -28,8 +28,7 @@ async function isValidSessionToken(sessionToken: string): Promise<boolean> {
 function sessionCookieOptions(requestUrl: URL) {
   const isSecure =
     requestUrl.protocol === "https:" ||
-    (process.env.BETTER_AUTH_URL?.startsWith("https://") ?? false) ||
-    (process.env.NEXTAUTH_URL?.startsWith("https://") ?? false);
+    (process.env.BETTER_AUTH_URL?.startsWith("https://") ?? false);
   return {
     name: mobileSessionCookieName(isSecure),
     httpOnly: true,

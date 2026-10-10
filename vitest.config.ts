@@ -1,6 +1,24 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+/** vinext owns next/* at runtime; vitest does not load the vinext plugin. */
+const nextShimAliases = Object.fromEntries(
+  (
+    [
+      ["next/server", "vinext/shims/server"],
+      ["next/headers", "vinext/shims/headers"],
+      ["next/navigation", "vinext/shims/navigation"],
+      ["next/cache", "vinext/shims/cache"],
+      ["next/og", "vinext/shims/og"],
+      ["next/image", "vinext/shims/image"],
+      ["next/link", "vinext/shims/link"],
+      ["next/dynamic", "vinext/shims/dynamic"],
+      ["next/font/google", "vinext/shims/font-google"],
+    ] as const
+  ).map(([id, shim]) => [id, fileURLToPath(import.meta.resolve(shim))]),
+);
 
 export default defineConfig({
   plugins: [react()],
@@ -9,12 +27,16 @@ export default defineConfig({
     globals: true,
     setupFiles: "./test/setup.ts",
     alias: {
-      "@": path.resolve(__dirname, "./"),
-      "@vaehor/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
+      "@": path.resolve(import.meta.dirname, "./"),
+      "@vaehor/sdk": path.resolve(
+        import.meta.dirname,
+        "./packages/sdk/src/index.ts",
+      ),
       "@vaehor/mobile-bridge-protocol": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "./lib/mobile-bridge-protocol.ts",
       ),
+      ...nextShimAliases,
     },
     exclude: [
       "node_modules",

@@ -1045,17 +1045,17 @@ paths:
               schema: {}
       tags:
         - Auth
-  /api/auth/{nextauth}:
+  /api/auth/{authPath}:
     get:
-      operationId: nextAuthHandler
+      operationId: betterAuthHandler
       parameters:
-        - name: nextauth
+        - name: authPath
           in: path
           required: true
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: The request has succeeded.
           content:
             application/json:

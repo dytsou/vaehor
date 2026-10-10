@@ -7,14 +7,14 @@ import {
 } from "@/lib/mobile-origins";
 
 describe("lib/mobile-origins", () => {
-  const originalNextAuthUrl = process.env.NEXTAUTH_URL;
+  const originalAuthUrl = process.env.BETTER_AUTH_URL;
 
   beforeEach(() => {
-    process.env.NEXTAUTH_URL = "https://files.example.com";
+    process.env.BETTER_AUTH_URL = "https://files.example.com";
   });
 
   afterEach(() => {
-    process.env.NEXTAUTH_URL = originalNextAuthUrl;
+    process.env.BETTER_AUTH_URL = originalAuthUrl;
   });
 
   it("allows Capacitor and dev origins", () => {
@@ -50,7 +50,7 @@ describe("lib/mobile-origins", () => {
     );
   });
 
-  it("falls back to NEXTAUTH_URL when Origin is absent", () => {
+  it("falls back to BETTER_AUTH_URL when Origin is absent", () => {
     const headers = new Headers();
     applyDownloadCorsHeaders(headers, null);
 

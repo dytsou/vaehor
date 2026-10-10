@@ -39,10 +39,7 @@ async function assertShareTokenAccess(
   const { payload } = await jwtVerify(shareToken, secret);
 
   if (payload.loginRequired) {
-    const { isAuthenticated } = await checkAuth(
-      request,
-      process.env.NEXTAUTH_SECRET,
-    );
+    const { isAuthenticated } = await checkAuth(request);
     if (!isAuthenticated) {
       return handleAuthRedirect(request, pathname, "GuestAccessDenied");
     }

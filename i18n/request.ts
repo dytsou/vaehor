@@ -8,7 +8,7 @@ import { DEFAULT_LOCALE, isLocale } from "@/lib/i18n-config";
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;
   // vinext may leave requestLocale undefined; fall back instead of notFound().
-  const locale = isLocale(requested ?? "") ? requested : DEFAULT_LOCALE;
+  const locale = requested && isLocale(requested) ? requested : DEFAULT_LOCALE;
 
   return {
     locale,

@@ -8,7 +8,7 @@ const MOBILE_STATIC_ORIGINS = new Set([
 ]);
 
 function appOrigin(): string | null {
-  const configured = process.env.NEXTAUTH_URL?.trim();
+  const configured = process.env.BETTER_AUTH_URL?.trim();
   if (!configured) return null;
   try {
     return new URL(configured).origin;
@@ -54,7 +54,7 @@ export function applyDownloadCorsHeaders(
   }
 
   if (!requestOrigin) {
-    const fallback = appOrigin() ?? process.env.NEXTAUTH_URL ?? "";
+    const fallback = appOrigin() ?? process.env.BETTER_AUTH_URL?.trim() ?? "";
     if (fallback) {
       headers.set("Access-Control-Allow-Origin", fallback);
     }
