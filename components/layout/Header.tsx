@@ -237,7 +237,7 @@ export default function Header() {
   const publicShareLinkItems = ["theme", "refresh", "github"];
 
   const handleLoginClick = () => {
-    signIn("google", { callbackUrl: window.location.href });
+    void signIn("google", { callbackUrl: window.location.href });
   };
 
   useEffect(() => {

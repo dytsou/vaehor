@@ -9,7 +9,7 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP(3) NOT NULL DE
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailVerified_bool" BOOLEAN NOT NULL DEFAULT false;
-UPDATE "User" SET "emailVerified_bool" = ("emailVerified" IS NOT NULL);
+UPDATE "User" SET "emailVerified_bool" = ("emailVerified" IS NOT NULL) WHERE TRUE;
 ALTER TABLE "User" DROP COLUMN IF EXISTS "emailVerified";
 ALTER TABLE "User" RENAME COLUMN "emailVerified_bool" TO "emailVerified";
 
@@ -53,7 +53,8 @@ UPDATE "Account" SET
   "accessTokenExpiresAt" = COALESCE(
     "accessTokenExpiresAt",
     CASE WHEN "expires_at" IS NOT NULL THEN to_timestamp("expires_at") ELSE NULL END
-  );
+  )
+WHERE TRUE;
 
 ALTER TABLE "Account" ALTER COLUMN "accountId" SET NOT NULL;
 ALTER TABLE "Account" ALTER COLUMN "providerId" SET NOT NULL;

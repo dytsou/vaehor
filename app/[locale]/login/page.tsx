@@ -135,7 +135,7 @@ function CustomLoginPage() {
 
   const handleGoogleSignIn = () => {
     const callbackUrl = searchParams.get("callbackUrl") || "/";
-    signIn("google", { callbackUrl });
+    void signIn("google", { callbackUrl });
   };
 
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
@@ -338,7 +338,7 @@ function CustomLoginPage() {
             <button
               type="button"
               onClick={() =>
-                signIn("guest", {
+                void signIn("guest", {
                   callbackUrl: searchParams.get("callbackUrl") || "/",
                 })
               }

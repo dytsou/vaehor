@@ -16,6 +16,15 @@ type CompatSession = {
   expires: string;
 };
 
+type SignInResult = { error?: string; ok?: boolean; url?: string };
+
+type SignInOptions = {
+  email?: string;
+  password?: string;
+  callbackUrl?: string;
+  redirect?: boolean;
+};
+
 /** NextAuth-shaped useSession for gradual UI migration. */
 export function useSession() {
   const { data, isPending, error, refetch } = authClient.useSession();
@@ -49,12 +58,60 @@ export function useSession() {
   };
 }
 
-type SignInOptions = {
-  email?: string;
-  password?: string;
-  callbackUrl?: string;
-  redirect?: boolean;
-};
+function maybeRedirect(url: string, redirect: boolean | undefined) {
+  if (redirect !== false && typeof window !== "undefined") {
+    window.location.href = url;
+  }
+}
+
+async function signInGoogle(callbackUrl: string): Promise<SignInResult> {
+  const { error } = await authClient.signIn.social({
+    provider: "google",
+    callbackURL: callbackUrl,
+  });
+  if (error) {
+    return { error: error.message ?? "Google sign-in failed", ok: false };
+  }
+  return { ok: true, url: callbackUrl };
+}
+
+async function signInCredentials(
+  options: SignInOptions,
+  callbackUrl: string,
+): Promise<SignInResult> {
+  const res = await authClient.$fetch<{
+    twoFactorRequired?: boolean;
+  }>("/vaehor/sign-in/credentials", {
+    method: "POST",
+    body: {
+      email: options.email,
+      password: options.password,
+    },
+  });
+  if (res.error) {
+    return { error: res.error.message ?? "Invalid credentials", ok: false };
+  }
+  const nextUrl = res.data?.twoFactorRequired
+    ? `/verify-2fa?callbackUrl=${encodeURIComponent(callbackUrl)}`
+    : callbackUrl;
+  maybeRedirect(nextUrl, options.redirect);
+  return { ok: true, url: nextUrl };
+}
+
+async function signInGuest(
+  options: SignInOptions,
+  callbackUrl: string,
+): Promise<SignInResult> {
+  const res = await authClient.$fetch("/vaehor/sign-in/guest", {
+    method: "POST",
+    body: {},
+  });
+  if (res.error) {
+    return { error: res.error.message ?? "Guest sign-in failed", ok: false };
+  }
+  maybeRedirect(callbackUrl, options.redirect);
+  return { ok: true, url: callbackUrl };
+}
 
 /**
  * NextAuth-shaped signIn: google | credentials | guest.
@@ -62,54 +119,14 @@ type SignInOptions = {
 export async function signIn(
   provider: string,
   options: SignInOptions = {},
-): Promise<{ error?: string; ok?: boolean; url?: string } | undefined> {
+): Promise<SignInResult | undefined> {
   const callbackUrl = options.callbackUrl ?? "/";
 
-  if (provider === "google") {
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL: callbackUrl,
-    });
-    if (error)
-      return { error: error.message ?? "Google sign-in failed", ok: false };
-    return { ok: true, url: callbackUrl };
-  }
-
+  if (provider === "google") return signInGoogle(callbackUrl);
   if (provider === "credentials") {
-    const res = await authClient.$fetch<{
-      twoFactorRequired?: boolean;
-    }>("/vaehor/sign-in/credentials", {
-      method: "POST",
-      body: {
-        email: options.email,
-        password: options.password,
-      },
-    });
-    if (res.error) {
-      return { error: res.error.message ?? "Invalid credentials", ok: false };
-    }
-    const nextUrl = res.data?.twoFactorRequired
-      ? `/verify-2fa?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      : callbackUrl;
-    if (options.redirect !== false && typeof window !== "undefined") {
-      window.location.href = nextUrl;
-    }
-    return { ok: true, url: nextUrl };
+    return signInCredentials(options, callbackUrl);
   }
-
-  if (provider === "guest") {
-    const res = await authClient.$fetch("/vaehor/sign-in/guest", {
-      method: "POST",
-      body: {},
-    });
-    if (res.error) {
-      return { error: res.error.message ?? "Guest sign-in failed", ok: false };
-    }
-    if (options.redirect !== false && typeof window !== "undefined") {
-      window.location.href = callbackUrl;
-    }
-    return { ok: true, url: callbackUrl };
-  }
+  if (provider === "guest") return signInGuest(options, callbackUrl);
 
   return { error: `Unknown provider: ${provider}`, ok: false };
 }

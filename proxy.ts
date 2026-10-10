@@ -255,6 +255,47 @@ function enforceFinalAuthCheck(
   return null;
 }
 
+async function handleExplicitPublicRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): Promise<Response> {
+  const publicAuth = await checkAuth(request);
+  const pending2FAResponse = enforcePending2FA(request, context, publicAuth);
+  if (pending2FAResponse) {
+    return pending2FAResponse;
+  }
+  return context.isApi
+    ? continueApiRoute()
+    : continuePageRoute(request, intlMiddleware);
+}
+
+function handleShareTokenRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  shareToken: string,
+): Response | Promise<Response> {
+  return context.isApi
+    ? validateShareTokenForApi(request, shareToken, context.pathname)
+    : validateShareTokenForPage(
+        request,
+        shareToken,
+        context.pathname,
+        intlMiddleware,
+      );
+}
+
+function finishProxyRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): Response | Promise<Response> {
+  if (context.pathname.startsWith("/findpath")) {
+    return handleFindPath(request);
+  }
+  return context.isApi
+    ? continueApiRoute()
+    : continuePageRoute(request, intlMiddleware);
+}
+
 export async function proxy(request: NextRequest) {
   const context = buildRouteContext(request);
 
@@ -277,26 +318,12 @@ export async function proxy(request: NextRequest) {
 
   // Public prefixes skip login, but pending-2FA must still be gated (e.g. /api/files).
   if (isExplicitPublicRoute(context.pathnameWithoutLocale)) {
-    const publicAuth = await checkAuth(request);
-    const pending2FAResponse = enforcePending2FA(request, context, publicAuth);
-    if (pending2FAResponse) {
-      return pending2FAResponse;
-    }
-    return context.isApi
-      ? continueApiRoute()
-      : continuePageRoute(request, intlMiddleware);
+    return handleExplicitPublicRoute(request, context);
   }
 
   const shareToken = request.nextUrl.searchParams.get("share_token");
   if (shareToken) {
-    return context.isApi
-      ? validateShareTokenForApi(request, shareToken, context.pathname)
-      : validateShareTokenForPage(
-          request,
-          shareToken,
-          context.pathname,
-          intlMiddleware,
-        );
+    return handleShareTokenRoute(request, context, shareToken);
   }
 
   const auth = await checkAuth(request);
@@ -320,13 +347,7 @@ export async function proxy(request: NextRequest) {
     return finalAuthResponse;
   }
 
-  if (context.pathname.startsWith("/findpath")) {
-    return handleFindPath(request);
-  }
-
-  return context.isApi
-    ? continueApiRoute()
-    : continuePageRoute(request, intlMiddleware);
+  return finishProxyRoute(request, context);
 }
 
 export const config = {
