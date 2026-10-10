@@ -99,7 +99,7 @@ RUN addgroup --system --gid 1001 nodejs && \
   npm install bcryptjs@3.0.2 --omit=dev --no-package-lock --ignore-scripts && \
   chmod -R a-w /app/hash-tool && \
   mkdir -p /app/.private-data/scheduled-uploads && \
-  chown nextjs:nodejs /app/.private-data/scheduled-uploads && \
+  chown vinext:nodejs /app/.private-data/scheduled-uploads && \
   chmod 700 /app/.private-data/scheduled-uploads
 
 # vinext standalone: server.js + dist/{client,server} + runtime node_modules
