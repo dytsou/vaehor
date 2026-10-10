@@ -59,7 +59,7 @@ COPY types ./types
 COPY messages ./messages
 COPY i18n ./i18n
 COPY public ./public
-COPY auth.ts proxy.ts next.config.mjs vite.config.ts tsconfig.json ./
+COPY auth.ts proxy.ts next.config.mjs vite.config.ts tsconfig.json next-env.d.ts ./
 COPY postcss.config.mjs tailwind.config.ts components.json prisma.config.ts ./
 ENV NODE_ENV=production
 ENV SKIP_ENV_VALIDATION=1
