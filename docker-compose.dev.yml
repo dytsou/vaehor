@@ -56,7 +56,7 @@ services:
         pnpm install &&
         pnpm exec prisma generate &&
         pnpm exec prisma db push &&
-        pnpm run dev:webpack
+        pnpm run dev
       "
     depends_on:
       postgres:

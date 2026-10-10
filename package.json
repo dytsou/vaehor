@@ -8,20 +8,16 @@
   },
   "scripts": {
     "dev": "dotenv run -- vite dev --port 3000",
-    "dev:next": "dotenv run -- next dev --turbopack",
-    "dev:webpack": "dotenv run -- next dev --webpack",
-    "dev:clean": "rm -rf .next",
+    "dev:clean": "rm -rf .next dist .vinext",
     "dev:fresh": "pnpm run dev:clean && pnpm run dev",
     "deps:up": "docker compose -f docker-compose.dev.yml up -d postgres redis",
     "deps:down": "docker compose -f docker-compose.dev.yml stop postgres redis",
     "deps:logs": "docker compose -f docker-compose.dev.yml logs -f postgres redis",
     "build": "vite build",
-    "build:next": "next build",
     "docker:dev": "docker compose -f docker-compose.dev.yml up",
     "docker:prod": "docker compose up --build",
     "docker:stop": "docker compose down",
-    "start": "vite preview --port 3000",
-    "start:next": "dotenv run -- next start",
+    "start": "dotenv run -- vinext start --port 3000",
     "lint": "biome lint .",
     "lint:fix": "biome lint --write .",
     "typecheck": "pnpm compile:sdk && tsc --noEmit && tsc -p apps/mobile/tsconfig.json --noEmit",
@@ -54,7 +50,6 @@
     "api:docs:redoc": "pnpm build:redocly && open ./docs/api/website/index.html",
     "api:sdk": "pnpm build:sdk && pnpm compile:sdk",
     "prepush": "pnpm typecheck",
-    "analyze": "cross-env ANALYZE=true next build",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -66,7 +61,6 @@
     ]
   },
   "dependencies": {
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@monaco-editor/react": "^4.7.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
@@ -127,7 +121,6 @@
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
     "@biomejs/biome": "2.5.15",
-    "@next/bundle-analyzer": "^16.3.8",
     "@playwright/test": "^1.63.0",
     "@redocly/cli": "^2.58.1",
     "@testing-library/dom": "^10.4.2",
@@ -148,7 +141,6 @@
     "@vitest/coverage-v8": "^5.0.3",
     "autoprefixer": "^10.6.1",
     "baseline-browser-mapping": "^2.11.27",
-    "cross-env": "^10.1.0",
     "dotenv": "^18.0.5",
     "dotenv-cli": "^11.0.0",
     "husky": "^9.1.7",

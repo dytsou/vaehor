@@ -38,9 +38,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: process.env.CI
-      ? "./node_modules/.bin/next dev --turbopack"
-      : "pnpm dev",
+    command: "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
   },

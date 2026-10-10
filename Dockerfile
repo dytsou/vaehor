@@ -40,17 +40,16 @@ console.log(
 EOF
 EOT
 
-# Stage 3: Builder
+# Stage 3: Builder (vinext / Vite)
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 
-# Optimization: Copy prisma and package.json first to cache generation if schema hasn't changed
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY prisma ./prisma
 RUN pnpm prisma generate
 
-# Explicit source copy for Next.js build (avoids COPY . . — S6470; see .dockerignore)
+# Explicit source copy for Vite/vinext build (avoids COPY . . — S6470; see .dockerignore)
 COPY app ./app
 COPY components ./components
 COPY hooks ./hooks
@@ -58,14 +57,13 @@ COPY lib ./lib
 COPY packages/sdk/src ./packages/sdk/src
 COPY types ./types
 COPY messages ./messages
+COPY i18n ./i18n
 COPY public ./public
-COPY auth.ts i18n.ts proxy.ts next.config.mjs tsconfig.json ./
+COPY auth.ts proxy.ts next.config.mjs vite.config.ts tsconfig.json ./
 COPY postcss.config.mjs tailwind.config.ts components.json prisma.config.ts ./
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 
-# Build application with Next.js cache mount
 ARG NEXT_PUBLIC_ROOT_FOLDER_ID
 ARG NEXT_PUBLIC_ROOT_FOLDER_NAME
 ARG NEXT_PUBLIC_ENABLE_LOCAL_STORAGE
@@ -75,17 +73,16 @@ ENV NEXT_PUBLIC_ROOT_FOLDER_NAME=$NEXT_PUBLIC_ROOT_FOLDER_NAME
 ENV NEXT_PUBLIC_ENABLE_LOCAL_STORAGE=$NEXT_PUBLIC_ENABLE_LOCAL_STORAGE
 ENV NEXT_PUBLIC_LOCAL_STORAGE_NAME=$NEXT_PUBLIC_LOCAL_STORAGE_NAME
 
-RUN --mount=type=cache,target=/app/.next/cache pnpm run build
+RUN --mount=type=cache,target=/app/node_modules/.vite pnpm run build
 
 # Stage 4: Runner
 FROM node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs && \
-  adduser --system --uid 1001 nextjs && \
+  adduser --system --uid 1001 vinext && \
   set -eux; \
   for i in 1 2 3 4 5; do \
   if apk add --no-cache curl dumb-init openssl postgresql-client; then \
@@ -105,19 +102,15 @@ RUN addgroup --system --gid 1001 nodejs && \
   chown nextjs:nodejs /app/.private-data/scheduled-uploads && \
   chmod 700 /app/.private-data/scheduled-uploads
 
-# Copy necessary files from builder (root-owned, no write bit — S6504)
+# vinext standalone: server.js + dist/{client,server} + runtime node_modules
+COPY --from=builder --chown=root:root --chmod=555 /app/dist/standalone ./
 COPY --from=builder --chown=root:root --chmod=555 /app/public ./public
-COPY --from=builder --chown=root:root --chmod=555 /app/.next/standalone ./
-COPY --from=builder --chown=root:root --chmod=555 /app/.next/static ./.next/static
 COPY --from=builder --chown=root:root --chmod=555 /app/prisma ./prisma
 COPY --from=builder --chown=root:root --chmod=444 /app/prisma.config.ts ./prisma.config.ts
 COPY --chown=root:root --chmod=555 scripts ./scripts
 COPY --chown=root:root --chmod=755 scripts/entrypoint.sh /app/entrypoint.sh
 
-# Note: Standalone mode already includes necessary node_modules in .next/standalone/node_modules
-# We no longer need to copy the entire /app/node_modules from builder.
-
-USER nextjs
+USER vinext
 
 EXPOSE 3000
 ENV PORT=3000
