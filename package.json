@@ -87,6 +87,7 @@
     "framer-motion": "^14.0.0",
     "google-auth-library": "^11.1.0",
     "ioredis": "^6.0.0",
+    "ipaddr.js": "^2.5.0",
     "jose": "^6.2.12",
     "jszip": "^3.10.2",
     "lucide-react": "^1.52.0",

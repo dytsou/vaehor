@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -24,5 +25,13 @@ describe("sole vinext scripts", () => {
 
   it("keeps vinext as the app runtime", () => {
     expect(packageJson.dependencies.vinext).toBeTruthy();
+  });
+
+  // vinext standalone copies externals via createRequire(root/package.json);
+  // pnpm does not hoist vinext's nested ipaddr.js, so it must be a direct dep.
+  it("exposes ipaddr.js at the project root for vinext standalone", () => {
+    expect(packageJson.dependencies["ipaddr.js"]).toBeTruthy();
+    const rootRequire = createRequire(resolve(root, "package.json"));
+    expect(() => rootRequire.resolve("ipaddr.js")).not.toThrow();
   });
 });
