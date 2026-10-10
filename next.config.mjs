@@ -1,5 +1,9 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import withPWAInit from "@ducanh2912/next-pwa";
 import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -212,7 +216,13 @@ const nextConfig = {
   },
 
   webpack: (config) => {
-    config.resolve.alias.canvas = false;
+    // Manual alias: createNextIntlPlugin crashes under vinext (needs real `next`
+    // package.json). vinext auto-detects i18n/request.ts; Next builds need this.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+      "next-intl/config": path.resolve(__dirname, "i18n/request.ts"),
+    };
 
     config.ignoreWarnings = [
       { module: /node_modules\/require-in-the-middle/ },
@@ -223,7 +233,4 @@ const nextConfig = {
   },
 };
 
-import createNextIntlPlugin from "next-intl/plugin";
-const withNextIntl = createNextIntlPlugin("./i18n.ts");
-
-export default withAnalyzer(withPWA(withNextIntl(nextConfig)));
+export default withAnalyzer(withPWA(nextConfig));

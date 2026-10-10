@@ -5,7 +5,7 @@ import "./(main)/globals.css";
 import GlobalBranding from "@/components/layout/GlobalBranding";
 import PageViewTracker from "@/components/features/PageViewTracker";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Inter } from "next/font/google";
 import { isLocale } from "@/lib/i18n-config";
@@ -86,13 +86,14 @@ export default async function RootLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  setRequestLocale(locale);
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head />
       <body className={inter.className}>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             {/* ponytail: nextjs-toploader CJS default is undefined under vinext RSC;
                 skip until a client-only wrapper or ESM build lands. */}
