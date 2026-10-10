@@ -1,8 +1,6 @@
 import { defineConfig } from "vite";
 import vinext from "vinext";
 
-// ponytail: local Node verify only. Cloudflare Workers setup lives in cloudflare.config.ts —
-// re-add @cloudflare/vite-plugin + imagesOptimizer when deploying (see migrate-to-vinext Phase 4).
 export default defineConfig({
   plugins: [vinext()],
   // nextjs-toploader (and similar CJS default exports) break under Vite 8's

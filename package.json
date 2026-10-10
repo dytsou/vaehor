@@ -55,12 +55,7 @@
     "api:sdk": "pnpm build:sdk && pnpm compile:sdk",
     "prepush": "pnpm typecheck",
     "analyze": "cross-env ANALYZE=true next build",
-    "prepare": "husky",
-    "dev:vinext": "vite dev --port 3001",
-    "build:vinext": "vite build",
-    "start:vinext": "vite preview",
-    "deploy:vinext": "vinext-cloudflare deploy",
-    "test:vinext:fullsite": "node scripts/vinext-fullsite-check.mjs"
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx,mts,cts,css,json,jsonc}": [
@@ -133,7 +128,6 @@
   "devDependencies": {
     "@better-auth/cli": "^1.4.21",
     "@biomejs/biome": "2.5.15",
-    "@cloudflare/vite-plugin": "^1.63.1",
     "@next/bundle-analyzer": "^16.3.8",
     "@playwright/test": "^1.63.0",
     "@redocly/cli": "^2.58.1",
@@ -150,7 +144,6 @@
     "@typespec/http": "^1.16.0",
     "@typespec/openapi": "^1.16.0",
     "@typespec/openapi3": "^1.16.0",
-    "@vinext/cloudflare": "^1.1.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitejs/plugin-rsc": "^0.5.36",
     "@vitest/coverage-v8": "^5.0.3",
