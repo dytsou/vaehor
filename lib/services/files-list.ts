@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { listAllFiles } from "@/lib/storage";
 import { ZeeFile } from "@/types/storage";
 import { isPrivateFolder } from "@/lib/auth";
@@ -157,7 +157,7 @@ async function ensureProtectedFolderAccess(
 export async function ensureRestrictedFolderAccess(
   request: NextRequest,
   folderId: string,
-  session: Session | null,
+  session: AppSession | null,
   shareScoped: boolean,
 ): Promise<NextResponse | null> {
   const userRole = session?.user?.role;

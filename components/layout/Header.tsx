@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, FC } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut, signIn } from "next-auth/react";
+import { useSession, signOut, signIn } from "@/lib/auth-client";
 import { notifyZeeMobileLogout } from "@/lib/mobile-bridge";
 import { useTheme } from "next-themes";
 import Image from "next/image";
@@ -237,7 +237,7 @@ export default function Header() {
   const publicShareLinkItems = ["theme", "refresh", "github"];
 
   const handleLoginClick = () => {
-    signIn("google", { callbackUrl: window.location.href });
+    void signIn("google", { callbackUrl: window.location.href });
   };
 
   useEffect(() => {

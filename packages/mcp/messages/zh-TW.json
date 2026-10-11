@@ -1,5 +1,5 @@
 {
-  "missingSession": "需要登入：請設定環境變數 VAEHOR_SESSION_COOKIE（完整 Cookie 字串，例如 authjs.session-token=…）或 VAEHOR_SESSION_TOKEN（僅 session 值）。在瀏覽器登入 vaehor 後從開發者工具複製。",
+  "missingSession": "需要登入：請設定環境變數 VAEHOR_SESSION_COOKIE（完整 Cookie 字串，例如 better-auth.session_token=…）或 VAEHOR_SESSION_TOKEN（僅 session 值）。在瀏覽器登入 vaehor 後從開發者工具複製。",
   "searchNeedOneCriterion": "至少需要 q、mimeType、modifiedTime 或 minSize 其中之一",
   "tools": {
     "zee_health": {

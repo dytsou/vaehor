@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/lib/store";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 import { getErrorMessage } from "@/lib/errors";
 

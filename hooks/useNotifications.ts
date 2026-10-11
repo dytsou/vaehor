@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { useAppStore, NotificationItem } from "@/lib/store";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface UseNotificationsOptions {

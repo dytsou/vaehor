@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { SignJWT, decodeJwt } from "jose";
 import crypto from "node:crypto";
 import { getTranslations } from "next-intl/server";
@@ -260,7 +260,7 @@ async function persistShareLinkRecord(
 
 async function notifyAdminsOfShare(
   body: ShareCreateRequest,
-  session: Session | null,
+  session: AppSession | null,
   locale: string,
   t: ShareTranslator,
   sharePath: string,
@@ -303,7 +303,7 @@ async function notifyAdminsOfShare(
 
 export async function createShareLink(
   body: ShareCreateRequest,
-  session: Session | null,
+  session: AppSession | null,
   locale: string,
   t: ShareTranslator,
 ) {

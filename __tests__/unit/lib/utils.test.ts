@@ -442,21 +442,21 @@ describe("lib/utils", () => {
       process.env = originalEnv;
     });
 
-    it("returns NEXTAUTH_URL when set (server-side)", () => {
-      process.env.NEXTAUTH_URL = "https://example.com/";
+    it("returns BETTER_AUTH_URL when set (server-side)", () => {
+      process.env.BETTER_AUTH_URL = "https://example.com/";
       const result = getBaseUrl();
       expect(typeof result).toBe("string");
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it("strips trailing slash from NEXTAUTH_URL (server-side)", () => {
-      process.env.NEXTAUTH_URL = "https://example.com/";
+    it("strips trailing slash from BETTER_AUTH_URL (server-side)", () => {
+      process.env.BETTER_AUTH_URL = "https://example.com/";
       const result = getBaseUrl();
       expect(result.endsWith("/")).toBe(false);
     });
 
     it("returns localhost when no env var is set", () => {
-      delete process.env.NEXTAUTH_URL;
+      delete process.env.BETTER_AUTH_URL;
       expect(getBaseUrl()).toBe("http://localhost:3000");
     });
   });

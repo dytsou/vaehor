@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { getAccessToken } from "@/lib/drive";
 import {
   authenticateShareRequest,
@@ -109,7 +109,7 @@ export function isPrivateFolderId(rawFolderId: string): boolean {
 
 export function ensurePrivateFolderAccess(
   rawFolderId: string,
-  session: Session | null,
+  session: AppSession | null,
   shareScoped: boolean,
 ): NextResponse | null {
   if (isPrivateFolderId(rawFolderId) && !session && !shareScoped) {

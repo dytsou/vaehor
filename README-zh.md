@@ -23,7 +23,7 @@
   <br />
 
   <div align="center">
-    <img src="https://img.shields.io/badge/Next.js_16-App_Router-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/vinext-Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="vinext" />
     <img src="https://img.shields.io/badge/React_19-Concurrent-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
     <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
@@ -102,14 +102,14 @@
 
 ### ⚡ 效能與介面
 
-| 功能           | 說明                                                               |
-| -------------- | ------------------------------------------------------------------ |
-| **虛擬化清單** | 以 `@tanstack/react-virtual` 順暢捲動 **上萬個檔案**               |
-| **智慧預取**   | 滑過資料夾時預載內容，導覽更即時                                   |
-| **多層快取**   | Redis + 記憶體快取加速 API                                         |
-| **Turbopack**  | Next.js 16 Turbopack 加速開發建置                                  |
-| **PWA**        | 可安裝的 Progressive Web App（殼層／資源快取；Drive 內容仍需網路） |
-| **深色／淺色** | 自動偵測主題，亦可手動切換                                         |
+| 功能              | 說明                                                               |
+| ----------------- | ------------------------------------------------------------------ |
+| **虛擬化清單**    | 以 `@tanstack/react-virtual` 順暢捲動 **上萬個檔案**               |
+| **智慧預取**      | 滑過資料夾時預載內容，導覽更即時                                   |
+| **多層快取**      | Redis + 記憶體快取加速 API                                         |
+| **Vite / vinext** | Vite 為底的 vinext 工具鏈（本機與正式建置）                        |
+| **PWA**           | 可安裝的 Progressive Web App（殼層／資源快取；Drive 內容仍需網路） |
+| **深色／淺色**    | 自動偵測主題，亦可手動切換                                         |
 
 ### 🎬 媒體與預覽
 
@@ -159,14 +159,14 @@
 
 ## 🛠️ 技術堆疊
 
-| 層級     | 技術                                                        | 用途                                                   |
-| -------- | ----------------------------------------------------------- | ------------------------------------------------------ |
-| 前端     | Next.js 16 + React 19                                       | App Router、Server Components、串流 SSR                |
-| 前端     | Tailwind + Framer Motion／Zustand + TanStack Query          | 樣式與狀態                                             |
-| 後端     | Next.js API + `proxy.ts`                                    | REST、auth／i18n／速率限制（Next.js 16 request proxy） |
-| 後端     | NextAuth.js v5、Google Drive API v3、Prisma + PostgreSQL 16 | 登入、檔案、資料庫                                     |
-| 基礎建設 | Redis 7、Docker + Traefik                                   | 快取、容器、自動 HTTPS                                 |
-| 開發     | TypeScript、Vitest、Playwright、Capacitor 7                 | 型別、測試、行動殼層                                   |
+| 層級     | 技術                                                     | 用途                                             |
+| -------- | -------------------------------------------------------- | ------------------------------------------------ |
+| 前端     | vinext (Vite) + React 19                                 | App Router 相容路由、Server Components、串流 SSR |
+| 前端     | Tailwind + Framer Motion／Zustand + TanStack Query       | 樣式與狀態                                       |
+| 後端     | vinext API + `proxy.ts`                                  | REST、auth／i18n／速率限制                       |
+| 後端     | Better Auth、Google Drive API v3、Prisma + PostgreSQL 16 | 登入、檔案、資料庫                               |
+| 基礎建設 | Redis 7、Docker + Traefik                                | 快取、容器、自動 HTTPS                           |
+| 開發     | TypeScript、Vitest、Playwright、Capacitor 7              | 型別、測試、行動殼層                             |
 
 ---
 
@@ -175,7 +175,7 @@
 ```mermaid
 flowchart TB
     subgraph CLIENT["🌐 瀏覽器 + Capacitor 行動殼層"]
-        A["React 19 + Next.js 16 (WebView)\nApp Router · Zustand · TanStack Query"]
+        A["React 19 + vinext (Vite / WebView)\nApp Router · Zustand · TanStack Query"]
     end
 
     subgraph TRAEFIK["🔒 Traefik 反向代理"]
@@ -261,19 +261,19 @@ pnpm dev
 # http://localhost:3000
 ```
 
-若 Turbopack 出現 **Read-only file system**（或 `.next` 損壞導致編譯卡住），清快取或改用 Webpack：
+若 Vite/vinext 快取卡住，清快取後重開：
 
 ```bash
-pnpm dev:clean     # 刪除 .next
-pnpm dev:fresh     # 清快取後再開 Turbopack
-pnpm dev:webpack   # Webpack 後備（ROFS／Turbopack panic）
+pnpm dev:clean     # 刪除 .next / dist / .vinext
+pnpm dev:fresh     # 清快取後再開 vite dev
 ```
-
-本專案預設關閉 Turbopack 磁碟 FS cache（避免 restore panic）。若機器正常、想加速重複冷啟動，可設 `TURBOPACK_FS_CACHE=1`。
 
 ```bash
 pnpm deps:up     # 啟動本機 Postgres + Redis
 pnpm deps:down   # 停止
+pnpm dev         # Vite / vinext（唯一預設）
+pnpm build       # 正式建置
+pnpm start       # vinext start
 pnpm check:all   # 全部檢查
 pnpm test        # 單元測試
 pnpm test:e2e    # E2E
@@ -306,7 +306,7 @@ pnpm test:e2e    # E2E
 1. **Credentials** → **Create Credentials** → **OAuth client ID** → **Web application**
 2. **Authorized redirect URIs**（須完全一致，勿加尾隨斜線）：
    - `http://localhost:3000/setup` — `/setup` 取得 refresh token（開發）
-   - `http://localhost:3000/api/auth/callback/google` — NextAuth「以 Google 登入」（開發）
+   - `http://localhost:3000/api/auth/callback/google` — Better Auth「以 Google 登入」（開發）
    - `https://yourdomain.com/setup` 與 `https://yourdomain.com/api/auth/callback/google`（正式）
    - `vaehor://auth/callback` — Capacitor 行動 Google 登入（見 [行動 App](#行動-appcapacitor)、[docs/mobile/artifact-release.md](docs/mobile/artifact-release.md)）
 3. 儲存 **Client ID**／**Client Secret**
@@ -340,9 +340,9 @@ Drive API 使用 **服務帳戶 JWT**（穩定、不需瀏覽器 refresh token�
 
 | 變數                                       | 說明                                              | 範例                       |
 | ------------------------------------------ | ------------------------------------------------- | -------------------------- |
-| `NEXTAUTH_URL`                             | 應用程式 URL                                      | `https://yourdomain.com`   |
-| `NEXTAUTH_SECRET`                          | 加密金鑰（至少 32 字元）                          | `openssl rand -base64 32`  |
-| `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` | Google OAuth（NextAuth＋可選 `/setup`）           | —                          |
+| `BETTER_AUTH_URL`                          | 應用程式 URL                                      | `https://yourdomain.com`   |
+| `BETTER_AUTH_SECRET`                       | 加密金鑰（至少 32 字元）                          | `openssl rand -base64 32`  |
+| `GOOGLE_CLIENT_ID`／`GOOGLE_CLIENT_SECRET` | Google OAuth（Better Auth＋可選 `/setup`）        | —                          |
 | `NEXT_PUBLIC_ROOT_FOLDER_ID`               | 根資料夾 ID（使用 SA 時請與 SA 共用此資料夾）     | —                          |
 | `ADMIN_EMAILS`                             | 管理員信箱（逗號分隔）                            | `admin@example.com`        |
 | `ADMIN_PASSWORD_HASH`                      | 管理員密碼 bcrypt（**正式環境憑證登入必要**）     | `scripts/hash-password.sh` |
@@ -410,7 +410,7 @@ DOMAIN="your-subdomain.duckdns.org"
 ACME_EMAIL="you@example.com"
 DUCKDNS_DOMAIN="your-subdomain"
 DUCKDNS_TOKEN="your-duckdns-token"
-NEXTAUTH_URL="https://your-subdomain.duckdns.org"
+BETTER_AUTH_URL="https://your-subdomain.duckdns.org"
 ```
 
 ```bash
@@ -423,7 +423,7 @@ docker compose up -d --build
 
 **自架＋行動營運檢查清單：**
 
-1. 以公開 HTTPS 提供服務（`DOMAIN` + Traefik；`NEXTAUTH_URL=https://${DOMAIN}`）
+1. 以公開 HTTPS 提供服務（`DOMAIN` + Traefik；`BETTER_AUTH_URL=https://${DOMAIN}`）
 2. 在 Google OAuth client 註冊 `vaehor://auth/callback`
 3. 首次啟動在 App 內書籤該 origin
 4. Universal／App Links：託管 `.well-known` — [docs/mobile/operator-universal-links.md](docs/mobile/operator-universal-links.md)
@@ -492,7 +492,7 @@ docker compose exec vaehor sh /app/scripts/hash-password.sh "your-password"
 原生 Google 登入**不**使用內嵌 WebView 登入頁：
 
 1. 註冊 `vaehor://auth/callback`
-2. `NEXTAUTH_URL` 與 App 書籤的公開 HTTPS origin 一致
+2. `BETTER_AUTH_URL` 與 App 書籤的公開 HTTPS origin 一致
 3. 相關路由見 OpenAPI **Mobile** 標籤（[`docs/api/openapi.yaml`](docs/api/openapi.yaml)）
 4. CORS 允許 `capacitor://localhost`、`ionic://localhost`；WebView 主流量為同源
 

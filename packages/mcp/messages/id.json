@@ -1,5 +1,5 @@
 {
-  "missingSession": "Perlu login: atur VAEHOR_SESSION_COOKIE (string cookie lengkap, mis. authjs.session-token=…) atau VAEHOR_SESSION_TOKEN (hanya nilai session). Setelah masuk ke vaehor di browser, salin cookie dari alat pengembang.",
+  "missingSession": "Perlu login: atur VAEHOR_SESSION_COOKIE (string cookie lengkap, mis. better-auth.session_token=…) atau VAEHOR_SESSION_TOKEN (hanya nilai session). Setelah masuk ke vaehor di browser, salin cookie dari alat pengembang.",
   "searchNeedOneCriterion": "Minimal salah satu dari q, mimeType, modifiedTime, atau minSize wajib diisi.",
   "tools": {
     "zee_health": {

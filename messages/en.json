@@ -273,6 +273,18 @@
     "download": "Download This Version",
     "unknownUser": "Unknown"
   },
+  "Verify2FAPage": {
+    "title": "Two-factor verification",
+    "subtitle": "Enter the code from your authenticator app to continue.",
+    "codeLabel": "Verification code",
+    "codePlaceholder": "123456",
+    "submit": "Verify",
+    "processing": "Verifying...",
+    "errors": {
+      "invalid": "Invalid verification code.",
+      "generic": "Could not verify the code. Please try again."
+    }
+  },
   "LoginPage": {
     "title": "vaehor",
     "subtitle": "Access your files securely and quickly.",

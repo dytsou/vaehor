@@ -26,7 +26,12 @@ vi.mock("@/lib/ratelimit", () => ({
 }));
 
 vi.mock("@/lib/services/mobile-oauth", () => ({
-  MOBILE_SESSION_COOKIE_NAME: "authjs.session-token",
+  MOBILE_SESSION_COOKIE_NAME: "better-auth.session_token",
+  readMobileSessionCookieValue: (cookies: {
+    get: (name: string) => { value: string } | undefined;
+  }) =>
+    cookies.get("better-auth.session_token")?.value ??
+    cookies.get("__Secure-better-auth.session_token")?.value,
   consumeMobileOAuthState: mockConsumeMobileOAuthState,
   mintMobileExchangeToken: mockMintMobileExchangeToken,
   mintSessionBootstrapToken: mockMintSessionBootstrapToken,
@@ -66,7 +71,7 @@ describe("app/api/mobile/oauth-complete route", () => {
       new NextRequest(
         "http://localhost:3000/api/mobile/oauth-complete?state=valid-state",
         {
-          headers: { cookie: "authjs.session-token=session-jwt" },
+          headers: { cookie: "better-auth.session_token=session-jwt" },
         },
       ),
     );
@@ -111,7 +116,7 @@ describe("app/api/mobile/oauth-complete route", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      cookieName: "authjs.session-token",
+      cookieName: "better-auth.session_token",
       bootstrapToken: "bootstrap-token",
     });
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(

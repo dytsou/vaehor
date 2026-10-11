@@ -1,19 +1,10 @@
 import pino from "pino";
 
-const isDev = process.env.NODE_ENV === "development";
-
+// ponytail: no pino transport workers — Next/Turbopack and Vite both mangle
+// the target path (createRequire.resolve still becomes an [externals] string).
+// Ceiling: JSON logs in dev; upgrade with `pino | pino-pretty` at the process edge.
 export const logger = pino({
   level: process.env.LOG_LEVEL || "info",
-  transport: isDev
-    ? {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          ignore: "pid,hostname",
-          translateTime: "SYS:standard",
-        },
-      }
-    : undefined,
   base: {
     env: process.env.NODE_ENV,
   },

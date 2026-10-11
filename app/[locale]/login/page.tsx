@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { User, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -135,7 +135,7 @@ function CustomLoginPage() {
 
   const handleGoogleSignIn = () => {
     const callbackUrl = searchParams.get("callbackUrl") || "/";
-    signIn("google", { callbackUrl });
+    void signIn("google", { callbackUrl });
   };
 
   const handleEmailPasswordSignIn = async (e: React.FormEvent) => {
@@ -338,7 +338,7 @@ function CustomLoginPage() {
             <button
               type="button"
               onClick={() =>
-                signIn("guest", {
+                void signIn("guest", {
                   callbackUrl: searchParams.get("callbackUrl") || "/",
                 })
               }

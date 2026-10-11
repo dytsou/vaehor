@@ -14,7 +14,6 @@ Thumbs.db
 /dist
 /docs/api/website/
 *.tsbuildinfo
-next-env.d.ts
 
 # Logs
 npm-debug.log*
@@ -97,3 +96,6 @@ public/swe-worker-*.js
 # Local Storage Cloud
 /storage/
 /.private-data/
+.vinext/
+.cloudflare/
+.wrangler/

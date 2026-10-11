@@ -5,9 +5,8 @@ import "./(main)/globals.css";
 import GlobalBranding from "@/components/layout/GlobalBranding";
 import PageViewTracker from "@/components/features/PageViewTracker";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import NextTopLoader from "nextjs-toploader";
 import { Inter } from "next/font/google";
 import { isLocale } from "@/lib/i18n-config";
 
@@ -24,7 +23,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.BETTER_AUTH_URL || "http://localhost:3000"),
   title: {
     default: "vaehor - Google Drive Index",
     template: "%s | vaehor",
@@ -87,26 +86,15 @@ export default async function RootLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  setRequestLocale(locale);
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head />
       <body className={inter.className}>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
-            <NextTopLoader
-              color="#3b82f6"
-              initialPosition={0.08}
-              crawlSpeed={200}
-              height={3}
-              crawl={false}
-              showSpinner={false}
-              easing="ease"
-              speed={200}
-              shadow="0 0 10px #3b82f6,0 0 5px #3b82f6"
-              zIndex={9999}
-            />
             <GlobalBranding />
             <PageViewTracker />
             {children}

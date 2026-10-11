@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ShieldCheck, ShieldOff } from "lucide-react";
 import Image from "next/image";

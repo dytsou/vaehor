@@ -13,12 +13,28 @@ const JTI_TTL_SECONDS = {
   bootstrap: 120,
 } as const;
 
-export const MOBILE_SESSION_COOKIE_NAME = "authjs.session-token";
+/** Logical Better Auth session cookie (HTTPS may use `__Secure-` prefix). */
+export const MOBILE_SESSION_COOKIE_NAME = "better-auth.session_token";
+
+export function readMobileSessionCookieValue(cookies: {
+  get: (name: string) => { value: string } | undefined;
+}): string | undefined {
+  return (
+    cookies.get(MOBILE_SESSION_COOKIE_NAME)?.value ??
+    cookies.get(`__Secure-${MOBILE_SESSION_COOKIE_NAME}`)?.value
+  );
+}
+
+export function mobileSessionCookieName(secure: boolean): string {
+  return secure
+    ? `__Secure-${MOBILE_SESSION_COOKIE_NAME}`
+    : MOBILE_SESSION_COOKIE_NAME;
+}
 
 function signingSecret(): Uint8Array {
   const secret = getLocalStorageAuthSecret();
   if (!secret) {
-    throw new Error("NEXTAUTH_SECRET is not configured for mobile OAuth");
+    throw new Error("BETTER_AUTH_SECRET is not configured for mobile OAuth");
   }
   return secret;
 }

@@ -109,8 +109,8 @@ describe("app/api/setup/finish route", () => {
   });
 
   it("strips dangerous line breaks from env values", () => {
-    expect(escapeEnvValue('abc"\nNEXTAUTH_SECRET=hijack')).toBe(
-      'abc"NEXTAUTH_SECRET=hijack',
+    expect(escapeEnvValue('abc"\nBETTER_AUTH_SECRET=hijack')).toBe(
+      'abc"BETTER_AUTH_SECRET=hijack',
     );
   });
 

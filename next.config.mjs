@@ -1,21 +1,7 @@
-import withPWAInit from "@ducanh2912/next-pwa";
-import withBundleAnalyzer from "@next/bundle-analyzer";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const withAnalyzer = withBundleAnalyzer({
-  enabled: process.env.ANALYZE === "true",
-});
-
-const withPWA = withPWAInit({
-  dest: "public",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  swcMinify: true,
-  disable: process.env.NODE_ENV === "development",
-  workboxOptions: {
-    disableDevLogs: true,
-  },
-});
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const securityHeaders = [
   {
@@ -67,7 +53,9 @@ const securityHeaders = [
   },
 ];
 
+/** vinext reads this config; Next CLI scripts are gone (sole Vite/vinext). */
 const nextConfig = {
+  // vinext: emit dist/standalone/server.js for Docker/prod
   output: "standalone",
 
   typescript: {
@@ -108,7 +96,8 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
   },
 
-  serverExternalPackages: ["ioredis"],
+  // pino-pretty uses worker transport resolution that breaks when Vite bundles pino
+  serverExternalPackages: ["ioredis", "pino", "pino-pretty"],
 
   experimental: {
     useTypeScriptCli: false,
@@ -123,11 +112,6 @@ const nextConfig = {
       "date-fns",
       "recharts",
     ],
-    // ponytail: Next 16.1+ enables Turbopack FS cache by default; restore can
-    // panic with "Read-only file system" / corrupt .next. Off unless opted in.
-    // Ceiling: slower repeat `next dev` cold starts. Upgrade: drop when Next
-    // hardens restore, or set TURBOPACK_FS_CACHE=1 on healthy machines.
-    turbopackFileSystemCacheForDev: process.env.TURBOPACK_FS_CACHE === "1",
   },
 
   compress: true,
@@ -211,7 +195,13 @@ const nextConfig = {
   },
 
   webpack: (config) => {
-    config.resolve.alias.canvas = false;
+    // vinext preserves resolve.alias from next.config; also documents Next-era
+    // next-intl wiring if anyone reloads this config under webpack.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+      "next-intl/config": path.resolve(__dirname, "i18n/request.ts"),
+    };
 
     config.ignoreWarnings = [
       { module: /node_modules\/require-in-the-middle/ },
@@ -222,7 +212,4 @@ const nextConfig = {
   },
 };
 
-import createNextIntlPlugin from "next-intl/plugin";
-const withNextIntl = createNextIntlPlugin("./i18n.ts");
-
-export default withAnalyzer(withPWA(withNextIntl(nextConfig)));
+export default nextConfig;

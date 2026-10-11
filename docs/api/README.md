@@ -43,15 +43,15 @@ pnpm compile:openapi
 
 ### Authentication
 
-| Method | Endpoint                  | Description                           |
-| ------ | ------------------------- | ------------------------------------- |
-| GET    | `/api/auth/me`            | Return the current authenticated user |
-| POST   | `/api/auth/folder`        | Unlock a protected folder             |
-| GET    | `/api/auth/2fa/status`    | Read 2FA status for the current user  |
-| POST   | `/api/auth/2fa/generate`  | Generate a new 2FA secret             |
-| POST   | `/api/auth/2fa/verify`    | Verify a 2FA code                     |
-| POST   | `/api/auth/2fa/disable`   | Disable 2FA for the current user      |
-| `*`    | `/api/auth/[...nextauth]` | NextAuth handler route                |
+| Method | Endpoint                 | Description                           |
+| ------ | ------------------------ | ------------------------------------- |
+| GET    | `/api/auth/me`           | Return the current authenticated user |
+| POST   | `/api/auth/folder`       | Unlock a protected folder             |
+| GET    | `/api/auth/2fa/status`   | Read 2FA status for the current user  |
+| POST   | `/api/auth/2fa/generate` | Generate a new 2FA secret             |
+| POST   | `/api/auth/2fa/verify`   | Verify a 2FA code                     |
+| POST   | `/api/auth/2fa/disable`  | Disable 2FA for the current user      |
+| `*`    | `/api/auth/[...all]`     | Better Auth handler route             |
 
 ### Mobile (React Native / Expo)
 
@@ -172,7 +172,7 @@ Canonical definitions: TypeSpec `docs/api/spec/modules/mobile/` → `docs/api/op
 
 Most endpoints use one of these mechanisms:
 
-- NextAuth session cookie
+- Better Auth session cookie
 - `share_token` query string for shared links
 - `access_token` query string or `Authorization: Bearer <token>` for protected folders
 
@@ -223,7 +223,7 @@ curl -X GET "http://localhost:3000/api/files?folderId=<folder-id>"
 ```bash
 curl -X POST "http://localhost:3000/api/share" \
   -H "Content-Type: application/json" \
-  -H "Cookie: next-auth.session-token=<token>" \
+  -H "Cookie: better-auth.session_token=<token>" \
   -d '{
     "path": "/folder/<folder-id>",
     "itemName": "My Folder",

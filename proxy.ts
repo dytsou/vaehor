@@ -24,11 +24,12 @@ import {
   stripLocaleFromPathname,
 } from "@/lib/i18n-config";
 
+// next-intl types NextRequest from nested `next`; vinext ships its own.
 const intlMiddleware = createMiddleware({
   locales: [...LOCALES],
   defaultLocale: DEFAULT_LOCALE,
   localePrefix: "always",
-});
+}) as unknown as (request: NextRequest) => NextResponse | Promise<NextResponse>;
 
 const PUBLIC_PATHS = new Set(["/login", "/verify-2fa", "/setup", "/request"]);
 const PUBLIC_API_PREFIXES = [
@@ -163,6 +164,35 @@ function isExplicitPublicRoute(pathnameWithoutLocale: string): boolean {
   );
 }
 
+function isPending2FAAllowedPath(pathnameWithoutLocale: string): boolean {
+  return (
+    pathnameWithoutLocale === "/verify-2fa" ||
+    pathnameWithoutLocale.startsWith("/api/auth/2fa/") ||
+    pathnameWithoutLocale.startsWith("/api/auth/get-session") ||
+    pathnameWithoutLocale === "/api/auth/me"
+  );
+}
+
+function enforcePending2FA(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  auth: AuthState,
+): NextResponse | null {
+  if (!auth.isAuthenticated || !auth.is2FARequired) return null;
+  if (isPending2FAAllowedPath(context.pathnameWithoutLocale)) return null;
+
+  if (context.isApi) {
+    return NextResponse.json(
+      { error: "Two-factor authentication required." },
+      { status: 403 },
+    );
+  }
+
+  const verifyUrl = new URL("/verify-2fa", request.url);
+  verifyUrl.searchParams.set("callbackUrl", context.pathname);
+  return NextResponse.redirect(verifyUrl);
+}
+
 function enforceAuthenticationRules(
   request: NextRequest,
   context: ProxyRouteContext,
@@ -180,17 +210,7 @@ function enforceAuthenticationRules(
     return handleAuthRedirect(request, context.pathname, "GuestAccessDenied");
   }
 
-  if (
-    auth.isAuthenticated &&
-    auth.is2FARequired &&
-    context.pathnameWithoutLocale !== "/verify-2fa"
-  ) {
-    const verifyUrl = new URL("/verify-2fa", request.url);
-    verifyUrl.searchParams.set("callbackUrl", context.pathname);
-    return NextResponse.redirect(verifyUrl);
-  }
-
-  return null;
+  return enforcePending2FA(request, context, auth);
 }
 
 function resolveCurrentFolderId(
@@ -235,6 +255,47 @@ function enforceFinalAuthCheck(
   return null;
 }
 
+async function handleExplicitPublicRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): Promise<Response> {
+  const publicAuth = await checkAuth(request);
+  const pending2FAResponse = enforcePending2FA(request, context, publicAuth);
+  if (pending2FAResponse) {
+    return pending2FAResponse;
+  }
+  return context.isApi
+    ? continueApiRoute()
+    : continuePageRoute(request, intlMiddleware);
+}
+
+function handleShareTokenRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+  shareToken: string,
+): Response | Promise<Response> {
+  return context.isApi
+    ? validateShareTokenForApi(request, shareToken, context.pathname)
+    : validateShareTokenForPage(
+        request,
+        shareToken,
+        context.pathname,
+        intlMiddleware,
+      );
+}
+
+function finishProxyRoute(
+  request: NextRequest,
+  context: ProxyRouteContext,
+): Response | Promise<Response> {
+  if (context.pathname.startsWith("/findpath")) {
+    return handleFindPath(request);
+  }
+  return context.isApi
+    ? continueApiRoute()
+    : continuePageRoute(request, intlMiddleware);
+}
+
 export async function proxy(request: NextRequest) {
   const context = buildRouteContext(request);
 
@@ -255,25 +316,17 @@ export async function proxy(request: NextRequest) {
     return configurationResponse;
   }
 
+  // Public prefixes skip login, but pending-2FA must still be gated (e.g. /api/files).
   if (isExplicitPublicRoute(context.pathnameWithoutLocale)) {
-    return context.isApi
-      ? continueApiRoute()
-      : continuePageRoute(request, intlMiddleware);
+    return handleExplicitPublicRoute(request, context);
   }
 
   const shareToken = request.nextUrl.searchParams.get("share_token");
   if (shareToken) {
-    return context.isApi
-      ? validateShareTokenForApi(request, shareToken, context.pathname)
-      : validateShareTokenForPage(
-          request,
-          shareToken,
-          context.pathname,
-          intlMiddleware,
-        );
+    return handleShareTokenRoute(request, context, shareToken);
   }
 
-  const auth = await checkAuth(request, process.env.NEXTAUTH_SECRET);
+  const auth = await checkAuth(request);
 
   const authResponse = enforceAuthenticationRules(request, context, auth);
   if (authResponse) {
@@ -294,13 +347,7 @@ export async function proxy(request: NextRequest) {
     return finalAuthResponse;
   }
 
-  if (context.pathname.startsWith("/findpath")) {
-    return handleFindPath(request);
-  }
-
-  return context.isApi
-    ? continueApiRoute()
-    : continuePageRoute(request, intlMiddleware);
+  return finishProxyRoute(request, context);
 }
 
 export const config = {

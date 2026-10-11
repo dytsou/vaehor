@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { decode } from "next-auth/jwt";
 import { z } from "zod";
 import { createPublicRoute } from "@/lib/api-middleware";
+import { authServer } from "@/lib/auth-server";
 import {
   mobileApiCorsHeaders,
   safeMobileRedirectPath,
 } from "@/lib/mobile-origins";
 import {
-  MOBILE_SESSION_COOKIE_NAME,
+  mobileSessionCookieName,
   mintSessionBootstrapToken,
   redeemSessionBootstrapToken,
 } from "@/lib/services/mobile-oauth";
@@ -15,15 +15,11 @@ import {
 export const dynamic = "force-dynamic";
 
 async function isValidSessionToken(sessionToken: string): Promise<boolean> {
-  const secret = process.env.NEXTAUTH_SECRET?.trim();
-  if (!secret) return false;
   try {
-    const payload = await decode({
-      token: sessionToken,
-      secret,
-      salt: MOBILE_SESSION_COOKIE_NAME,
-    });
-    return payload != null;
+    const headers = new Headers();
+    headers.set("authorization", `Bearer ${sessionToken}`);
+    const session = await authServer.api.getSession({ headers });
+    return session != null;
   } catch {
     return false;
   }
@@ -32,8 +28,9 @@ async function isValidSessionToken(sessionToken: string): Promise<boolean> {
 function sessionCookieOptions(requestUrl: URL) {
   const isSecure =
     requestUrl.protocol === "https:" ||
-    (process.env.NEXTAUTH_URL?.startsWith("https://") ?? false);
+    (process.env.BETTER_AUTH_URL?.startsWith("https://") ?? false);
   return {
+    name: mobileSessionCookieName(isSecure),
     httpOnly: true,
     sameSite: "lax" as const,
     secure: isSecure,
@@ -67,11 +64,13 @@ export const GET = createPublicRoute(
     const response = NextResponse.redirect(
       new URL(redirectTo ?? "/", request.url),
     );
-    response.cookies.set(
-      MOBILE_SESSION_COOKIE_NAME,
-      sessionToken,
-      sessionCookieOptions(request.nextUrl),
-    );
+    const cookie = sessionCookieOptions(request.nextUrl);
+    response.cookies.set(cookie.name, sessionToken, {
+      httpOnly: cookie.httpOnly,
+      sameSite: cookie.sameSite,
+      secure: cookie.secure,
+      path: cookie.path,
+    });
     return response;
   },
   { rateLimit: false },

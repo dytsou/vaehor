@@ -1,18 +1,53 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import react from "@vitejs/plugin-react";
+import type { Plugin } from "vite";
+import { defineConfig } from "vitest/config";
+
+type PublicShimMap = Record<string, { shim: string }>;
+
+/**
+ * Vitest does not load `vinext()` (too heavy for unit tests). Mirror its
+ * next/* → vinext/shims/* resolution from vinext's own public-shim-map.
+ */
+async function vinextNextShimsPlugin(): Promise<Plugin> {
+  const serverShimUrl = import.meta.resolve("vinext/shims/server");
+  const mapUrl = new URL("./public-shim-map.json.js", serverShimUrl);
+  const { default: shimMap } = (await import(mapUrl.href)) as {
+    default: PublicShimMap;
+  };
+
+  const resolved = new Map<string, string>();
+  for (const [id, { shim }] of Object.entries(shimMap)) {
+    resolved.set(
+      id,
+      fileURLToPath(import.meta.resolve(`vinext/shims/${shim}`)),
+    );
+  }
+
+  return {
+    name: "vinext-next-shims-for-vitest",
+    enforce: "pre",
+    resolveId(id) {
+      return resolved.get(id) ?? null;
+    },
+  };
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), await vinextNextShimsPlugin()],
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: "./test/setup.ts",
     alias: {
-      "@": path.resolve(__dirname, "./"),
-      "@vaehor/sdk": path.resolve(__dirname, "./packages/sdk/src/index.ts"),
+      "@": path.resolve(import.meta.dirname, "./"),
+      "@vaehor/sdk": path.resolve(
+        import.meta.dirname,
+        "./packages/sdk/src/index.ts",
+      ),
       "@vaehor/mobile-bridge-protocol": path.resolve(
-        __dirname,
+        import.meta.dirname,
         "./lib/mobile-bridge-protocol.ts",
       ),
     },

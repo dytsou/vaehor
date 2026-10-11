@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import path from "node:path";
 import type { ShareLink as DbShareLink } from "@/generated/prisma/client";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { auth } from "@/auth";
 import { logActivity } from "@/lib/activityLogger";
 import { trackBandwidth } from "@/lib/analyticsTracker";
@@ -63,7 +63,7 @@ function createEmptyDownloadContext(): DownloadContext {
 
 type DownloadValidationResult = {
   context: DownloadContext;
-  session: Session | null;
+  session: AppSession | null;
   error?: DownloadErrorType;
 };
 
@@ -72,7 +72,7 @@ type ShareValidationResult =
   | { shareAuthOk: ShareAuthOk; shareRecord: DbShareLink };
 
 function downloadValidationError(
-  session: Session | null,
+  session: AppSession | null,
   error: DownloadErrorType,
 ): DownloadValidationResult {
   return {
@@ -184,7 +184,7 @@ async function tryGrantRestrictedAccessViaToken(
   request: NextRequest,
   fileId: string,
   accessTokenParam: string | null,
-  session: Session | null,
+  session: AppSession | null,
 ): Promise<boolean> {
   return hasFolderAccessTokenAccess(
     request,
@@ -212,7 +212,7 @@ async function validateRestrictedDownloadAccess(
   request: NextRequest,
   fileId: string,
   accessTokenParam: string | null,
-  session: Session | null,
+  session: AppSession | null,
 ): Promise<DownloadErrorType | null> {
   const isRestricted = await isAccessRestricted(
     fileId,
@@ -242,7 +242,7 @@ async function validateNonAdminDownloadAccess(
   request: NextRequest,
   fileId: string,
   accessTokenParam: string | null,
-  session: Session | null,
+  session: AppSession | null,
   userRole: string | undefined,
 ): Promise<DownloadErrorType | null> {
   if (userRole === "ADMIN") {
@@ -263,7 +263,7 @@ async function validateNonAdminDownloadAccess(
 
 export async function validateDownloadRequest(request: NextRequest): Promise<{
   context: DownloadContext;
-  session: Session | null;
+  session: AppSession | null;
   error?: DownloadErrorType;
 }> {
   const { searchParams } = new URL(request.url);
@@ -562,7 +562,7 @@ export async function googleDriveErrorResponse(
 
 function getDownloadUserIdentifier(
   request: NextRequest,
-  session: Session | null,
+  session: AppSession | null,
 ): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
@@ -574,7 +574,7 @@ function getDownloadUserIdentifier(
 
 export async function recordDownloadMetrics(
   request: NextRequest,
-  session: Session | null,
+  session: AppSession | null,
   context: DownloadContext,
   fileDetails: Pick<DriveFile, "name" | "size">,
   fileId: string,

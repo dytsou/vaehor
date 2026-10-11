@@ -1,56 +1,48 @@
-import type { Session } from "next-auth";
 import type { NextRequest } from "next/server";
-import { checkAuth } from "@/lib/auth-check";
+import type { AppSession } from "@/auth";
+import { authServer } from "@/lib/auth-server";
 
 /**
- * Resolve the same encrypted Auth.js session used by web requests from a
- * native client's Authorization header. The header takes precedence over a
- * cookie so an unrelated browser session can never mask a mobile credential.
+ * Resolve Better Auth session from a native client's Authorization bearer.
+ * Cookie is stripped so an unrelated browser session cannot mask mobile creds.
  */
 export async function readMobileBearerSession(
   request: NextRequest,
-): Promise<Session | null> {
+): Promise<AppSession | null> {
   const authorization = request.headers.get("authorization");
   if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) return null;
 
-  const secret = process.env.NEXTAUTH_SECRET?.trim();
-  if (!secret) return null;
-
-  // Auth.js checks its session cookie before the Authorization header. A
-  // mobile bearer must be authoritative on its own, so validate it without
-  // allowing a browser cookie on the same request to replace it.
   const bearerHeaders = new Headers(request.headers);
   bearerHeaders.delete("cookie");
-  const authState = await checkAuth(
-    { headers: bearerHeaders } as NextRequest,
-    secret,
-  );
-  if (
-    !authState.isAuthenticated ||
-    authState.is2FARequired ||
-    !authState.token
-  ) {
+
+  const session = await authServer.api.getSession({
+    headers: bearerHeaders,
+  });
+  if (!session) return null;
+
+  const role =
+    (session.user as { role?: string }).role ??
+    ((session.session as { isGuest?: boolean }).isGuest ? "GUEST" : "USER");
+  const twoFactorRequired = !!(
+    session.session as { twoFactorRequired?: boolean }
+  ).twoFactorRequired;
+
+  if (twoFactorRequired) {
     return null;
   }
 
-  const token = authState.token;
-  let id: string | null = null;
-  if (typeof token.id === "string") id = token.id;
-  else if (typeof token.sub === "string") id = token.sub;
-  const expiresAt = typeof token.exp === "number" ? token.exp : null;
-  if (!id || expiresAt === null || expiresAt * 1000 <= Date.now()) return null;
-
-  const role = typeof token.role === "string" ? token.role : "USER";
   return {
     user: {
-      id,
-      name: typeof token.name === "string" ? token.name : null,
-      email: typeof token.email === "string" ? token.email : null,
-      image: typeof token.picture === "string" ? token.picture : null,
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+      image: session.user.image,
       role,
       isGuest:
-        typeof token.isGuest === "boolean" ? token.isGuest : role === "GUEST",
+        (session.session as { isGuest?: boolean }).isGuest === true ||
+        role === "GUEST",
+      twoFactorRequired: false,
     },
-    expires: new Date(expiresAt * 1000).toISOString(),
-  } as Session;
+    expires: new Date(session.session.expiresAt).toISOString(),
+  };
 }

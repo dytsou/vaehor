@@ -338,8 +338,9 @@ export function getBaseUrl(): string {
     return window.location.origin;
   }
 
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL.replace(/\/$/, "");
+  const authUrl = process.env.BETTER_AUTH_URL?.trim();
+  if (authUrl) {
+    return authUrl.replace(/\/$/, "");
   }
 
   return "http://localhost:3000";

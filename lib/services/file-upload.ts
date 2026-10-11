@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { Session } from "next-auth";
+import type { AppSession } from "@/auth";
 import { z } from "zod";
 import { getAccessToken } from "@/lib/drive";
 import { logActivity } from "@/lib/activityLogger";
@@ -64,7 +64,7 @@ function invalidChunkParamsResponse() {
 }
 
 async function recordChunkUploadActivity(
-  session: Session,
+  session: AppSession,
   parentId: string | undefined,
   file: { name: string; id: string; size?: string | number; mimeType?: string },
 ) {
@@ -88,7 +88,10 @@ async function recordChunkUploadActivity(
   });
 }
 
-export async function handleUploadInit(request: NextRequest, session: Session) {
+export async function handleUploadInit(
+  request: NextRequest,
+  session: AppSession,
+) {
   const body = await request.json();
   const parsedBody = uploadInitBodySchema.safeParse(body);
   if (!parsedBody.success) {
@@ -160,7 +163,7 @@ async function handleLocalStorageChunk(
   request: NextRequest,
   uploadUrl: string,
   parentId: string | undefined,
-  session: Session,
+  session: AppSession,
 ) {
   const { saveLocalChunk } = await import("@/lib/storage/local");
   const chunkBuffer = await request.arrayBuffer();
@@ -178,7 +181,7 @@ async function handleGoogleDriveChunk(
   request: NextRequest,
   uploadUrl: string,
   parentId: string | undefined,
-  session: Session,
+  session: AppSession,
 ) {
   const contentRange = request.headers.get("Content-Range");
   const contentLength = request.headers.get("Content-Length");
@@ -223,7 +226,7 @@ export async function handleUploadChunk(
   request: NextRequest,
   uploadUrl: string,
   parentId: string | undefined,
-  session: Session,
+  session: AppSession,
 ) {
   if (!parentId) return invalidChunkParamsResponse();
   const accessDenied = await ensureRestrictedFolderAccess(

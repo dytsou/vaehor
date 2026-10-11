@@ -38,10 +38,14 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: process.env.CI
-      ? "./node_modules/.bin/next dev --turbopack"
-      : "pnpm dev",
+    // ponytail: pnpm 11.27+ runs scripts in their own process group. Playwright's
+    // default SIGKILL only kills pnpm and orphans vite, so CI hangs until the
+    // step timeout. SIGTERM lets pnpm relay and close the pipes. Ceiling: if a
+    // future pnpm still orphans on SIGKILL escalation, point command at vite
+    // directly (or upgrade pnpm once its process-group watchdog lands).
+    command: "pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
   },
 });

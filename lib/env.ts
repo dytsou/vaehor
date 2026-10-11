@@ -9,10 +9,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_ROOT_FOLDER_ID: z.string().optional().or(z.literal("")),
   NEXT_PUBLIC_ROOT_FOLDER_NAME: z.string().default("Home"),
 
-  NEXTAUTH_SECRET: z
+  BETTER_AUTH_SECRET: z
     .string()
-    .min(32, "NEXTAUTH_SECRET must be at least 32 characters"),
-  NEXTAUTH_URL: z.string().url("NEXTAUTH_URL must be a valid URL"),
+    .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
+  BETTER_AUTH_URL: z.string().url("BETTER_AUTH_URL must be a valid URL"),
   SHARE_SECRET_KEY: z
     .string()
     .min(32, "SHARE_SECRET_KEY must be at least 32 characters"),
@@ -42,7 +42,6 @@ const envSchema = z.object({
 
   STORAGE_PROVIDER: z.string().optional().default("google-drive"),
   TMDB_API_KEY: z.string().optional(),
-  ANALYZE: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -228,8 +227,8 @@ export const config = {
   rootFolderId: env.NEXT_PUBLIC_ROOT_FOLDER_ID,
   rootFolderName: env.NEXT_PUBLIC_ROOT_FOLDER_NAME,
 
-  nextAuthSecret: env.NEXTAUTH_SECRET,
-  nextAuthUrl: env.NEXTAUTH_URL,
+  authSecret: env.BETTER_AUTH_SECRET,
+  authUrl: env.BETTER_AUTH_URL,
   shareSecretKey: env.SHARE_SECRET_KEY,
   adminEmails: (env.ADMIN_EMAILS || "").split(",").filter(Boolean),
   adminPassword: env.ADMIN_PASSWORD ?? "",

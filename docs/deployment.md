@@ -9,7 +9,7 @@ Production vaehor runs via Docker Compose with **Traefik v3** as the reverse pro
 | `DOMAIN`     | Public hostname users and the mobile app connect to (e.g. `files.example.com` or `vaehor.duckdns.org`) |
 | `ACME_EMAIL` | Email for Let's Encrypt certificate registration and expiry notices                                    |
 
-Set these in `.env` alongside existing app variables (`NEXTAUTH_URL` should use `https://${DOMAIN}`).
+Set these in `.env` alongside existing app variables (`BETTER_AUTH_URL` should use `https://${DOMAIN}`).
 
 Optional DuckDNS (dynamic DNS):
 
@@ -22,7 +22,7 @@ Optional DuckDNS (dynamic DNS):
 
 ```bash
 cp .env.example .env
-# Edit .env: DOMAIN, ACME_EMAIL, NEXTAUTH_URL=https://your-domain, secrets, etc.
+# Edit .env: DOMAIN, ACME_EMAIL, BETTER_AUTH_URL=https://your-domain, secrets, etc.
 
 docker compose up -d --build
 ```
@@ -52,7 +52,7 @@ If you previously ran the stack with Caddy:
 
 1. Pull the latest compose files (Caddy service removed).
 2. Set `DOMAIN` and `ACME_EMAIL` in `.env`.
-3. Update `NEXTAUTH_URL` to `https://${DOMAIN}` if it still points at an old host.
+3. Update `BETTER_AUTH_URL` to `https://${DOMAIN}` if it still points at an old host.
 4. Stop the stack and remove Caddy volumes (optional, reclaims disk):
 
    ```bash

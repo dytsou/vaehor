@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { createPublicRoute } from "@/lib/api-middleware";
-import sharp from "sharp";
+// ponytail: sharp dual-package types resolve as unknown under bundler; cast at boundary
+import sharpFactory from "sharp";
+const sharp = sharpFactory as (input: Buffer) => {
+  resize: (options: {
+    width?: number;
+    height?: number;
+    fit?: string;
+  }) => ReturnType<typeof sharp>;
+  webp: (options: { quality: number }) => {
+    toBuffer: () => Promise<Buffer>;
+  };
+};
 
 export const runtime = "nodejs";
 

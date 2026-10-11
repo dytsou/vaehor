@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const secret = getLocalStorageAuthSecret();
     if (!secret) {
       console.error(
-        "[LocalAuth] NEXTAUTH_SECRET tidak valid untuk local storage auth",
+        "[LocalAuth] BETTER_AUTH_SECRET tidak valid untuk local storage auth",
       );
       return NextResponse.json(
         { error: "Server authentication secret is not configured." },

@@ -23,7 +23,7 @@
   <br />
 
   <div align="center">
-    <img src="https://img.shields.io/badge/Next.js_16-App_Router-000000?style=flat-square&logo=next.js&logoColor=white" alt="Next.js" />
+    <img src="https://img.shields.io/badge/vinext-Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="vinext" />
     <img src="https://img.shields.io/badge/React_19-Concurrent-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
     <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
@@ -110,7 +110,7 @@
 | **Virtualized Rendering** | Smooth scrolling through **10,000+ files** with `@tanstack/react-virtual`          |
 | **Smart Prefetching**     | Preloads folder contents on hover for instant navigation                           |
 | **Multi-Layer Caching**   | Redis + in-memory cache for blazing-fast API responses                             |
-| **Turbopack**             | Next.js 16 Turbopack for ultra-fast development builds                             |
+| **Vite / vinext**         | Vite-based vinext toolchain for local and production web builds                    |
 | **PWA Support**           | Installable Progressive Web App (shell/asset caching; Drive content needs network) |
 | **Dark/Light Mode**       | Automatic theme detection with manual toggle                                       |
 
@@ -180,11 +180,11 @@ See [Deployment → Mobile app](#mobile-app-react-native) and [docs/mobile/](doc
 
 <table>
 <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
-<tr><td rowspan="3"><strong>Frontend</strong></td><td>Next.js 16 + React 19</td><td>App Router, Server Components, Streaming SSR</td></tr>
+<tr><td rowspan="3"><strong>Frontend</strong></td><td>vinext (Vite) + React 19</td><td>App Router-compatible routes, Server Components, Streaming SSR</td></tr>
 <tr><td>Tailwind CSS + Framer Motion</td><td>Styling, glassmorphism, micro-animations</td></tr>
 <tr><td>Zustand + TanStack Query</td><td>Global state + server state management</td></tr>
-<tr><td rowspan="4"><strong>Backend</strong></td><td>Next.js API Routes</td><td>REST API with Next.js 16 request proxy (`proxy.ts`)</td></tr>
-<tr><td>NextAuth.js v5 (Beta)</td><td>OAuth, credentials, JWT sessions</td></tr>
+<tr><td rowspan="4"><strong>Backend</strong></td><td>vinext API Routes</td><td>REST API with request proxy (`proxy.ts`)</td></tr>
+<tr><td>Better Auth</td><td>OAuth, credentials, server sessions</td></tr>
 <tr><td>Google Drive API v3</td><td>File storage, streaming, metadata</td></tr>
 <tr><td>Prisma + PostgreSQL 16</td><td>Database ORM with migration support</td></tr>
 <tr><td rowspan="2"><strong>Infrastructure</strong></td><td>Redis 7</td><td>Caching, rate limiting, session data</td></tr>
@@ -202,7 +202,7 @@ See [Deployment → Mobile app](#mobile-app-react-native) and [docs/mobile/](doc
 ```mermaid
 flowchart TB
     subgraph CLIENT["🌐 Web Browser"]
-        A["React 19 + Next.js 16\nApp Router · Zustand · TanStack Query"]
+        A["React 19 + vinext (Vite)\nApp Router · Zustand · TanStack Query"]
     end
 
     subgraph MOBILE["📱 React Native Mobile App"]
@@ -321,26 +321,23 @@ pnpm dev
 # 6. Open http://localhost:3000
 ```
 
-If Turbopack panics with **Read-only file system** (or a wedged compile after a bad `.next`), clear the cache and/or use Webpack:
+If the Vite/vinext cache is wedged, clear it and restart:
 
 ```bash
-pnpm dev:clean        # rm -rf .next
-pnpm dev:fresh        # clean + Turbopack
-pnpm dev:webpack      # Webpack fallback (ROFS / Turbopack panic)
+pnpm dev:clean        # rm -rf .next dist .vinext
+pnpm dev:fresh        # clean + vite dev
 ```
-
-Turbopack’s on-disk FS cache is **off by default** here (avoids restore panics). Re-enable with `TURBOPACK_FS_CACHE=1` if you want faster repeat cold starts on a healthy machine.
 
 **Development commands:**
 
 ```bash
 pnpm deps:up          # Start local Postgres + Redis (Docker)
 pnpm deps:down        # Stop them
-pnpm dev              # Start with Turbopack (fast)
-pnpm dev:webpack      # Start with Webpack (ROFS / Turbopack fallback)
-pnpm dev:clean        # Delete .next cache
-pnpm dev:fresh        # Clean cache, then Turbopack
-pnpm build            # Production build
+pnpm dev              # Vite / vinext (sole default)
+pnpm dev:clean        # Delete .next / dist / .vinext caches
+pnpm dev:fresh        # Clean caches, then vite dev
+pnpm build            # Production Vite build
+pnpm start            # vinext start (serves dist/)
 pnpm typecheck        # TypeScript type checking
 pnpm lint             # Biome
 pnpm format:check     # Biome + Prettier for Markdown/YAML/HTML
@@ -386,7 +383,7 @@ pnpm test:e2e         # E2E tests (Playwright)
 3. Select **Web application**
 4. Add **Authorized redirect URIs** (must match exactly—scheme, host, port, and path; no trailing slash):
    - `http://localhost:3000/setup` — Google Drive refresh-token flow on `/setup` (development)
-   - `http://localhost:3000/api/auth/callback/google` — NextAuth “Sign in with Google” (development)
+   - `http://localhost:3000/api/auth/callback/google` — Better Auth “Sign in with Google” (development)
    - `https://yourdomain.com/setup` and `https://yourdomain.com/api/auth/callback/google` (production)
    - `vaehor://auth/callback` — reserved callback scheme for mobile Google sign-in (system-browser flow; client callback work is pending; see [docs/mobile/artifact-release.md](docs/mobile/artifact-release.md))
 5. Save the **Client ID** and **Client Secret**
@@ -400,7 +397,7 @@ Drive API calls use a **service account JWT** (stable, no browser refresh token)
 1. In Google Cloud: **IAM & Admin** → **Service Accounts** → create one → **Keys** → add JSON key (or copy `client_email` and `private_key`).
 2. Set `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_KEY` (full PEM, newlines can be `\n` in `.env`), and `NEXT_PUBLIC_ROOT_FOLDER_ID` in `.env`, or use **`/setup`** → **Service account** to write them.
 3. In **Google Drive**, open the root folder → **Share** → add the **service account email** with **Editor** (or Content manager) access.
-4. Keep `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for NextAuth if you use Google login; leave `GOOGLE_REFRESH_TOKEN` empty when using only a service account for Drive.
+4. Keep `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Better Auth if you use Google login; leave `GOOGLE_REFRESH_TOKEN` empty when using only a service account for Drive.
 
 #### Option B — OAuth refresh token (legacy)
 
@@ -423,9 +420,9 @@ If both a service account **and** `GOOGLE_REFRESH_TOKEN` are set, the app **pref
 
 | Variable                     | Description                                                                            | Example                          |
 | ---------------------------- | -------------------------------------------------------------------------------------- | -------------------------------- |
-| `NEXTAUTH_URL`               | Your application URL                                                                   | `https://yourdomain.com`         |
-| `NEXTAUTH_SECRET`            | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`        |
-| `GOOGLE_CLIENT_ID`           | Google OAuth Client ID (NextAuth + optional `/setup`)                                  | `xxx.apps.googleusercontent.com` |
+| `BETTER_AUTH_URL`            | Your application URL                                                                   | `https://yourdomain.com`         |
+| `BETTER_AUTH_SECRET`         | Encryption key (min 32 chars)                                                          | `openssl rand -base64 32`        |
+| `GOOGLE_CLIENT_ID`           | Google OAuth Client ID (Better Auth + optional `/setup`)                               | `xxx.apps.googleusercontent.com` |
 | `GOOGLE_CLIENT_SECRET`       | Google OAuth Client Secret                                                             | `GOCSPX-xxx`                     |
 | `NEXT_PUBLIC_ROOT_FOLDER_ID` | Root Google Drive folder ID (share this folder with the service account when using SA) | `1ABcDeFgHiJkLmNoPqRsT`          |
 | `ADMIN_EMAILS`               | Comma-separated admin emails                                                           | `admin@example.com`              |
@@ -534,7 +531,7 @@ Production `docker-compose.yml` uses **Traefik v3** for TLS on ports 80 and 443.
    ACME_EMAIL="you@example.com"
    DUCKDNS_DOMAIN="your-subdomain"
    DUCKDNS_TOKEN="your-duckdns-token"
-   NEXTAUTH_URL="https://your-subdomain.duckdns.org"
+   BETTER_AUTH_URL="https://your-subdomain.duckdns.org"
    ```
 3. **Deploy** — Traefik provisions Let's Encrypt certificates automatically:
    ```bash
@@ -547,7 +544,7 @@ The Expo React Native app in `apps/mobile/` targets iOS and Android. Product scr
 
 **Operator checklist (self-hosted + mobile):**
 
-1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `NEXTAUTH_URL=https://${DOMAIN}`).
+1. Serve the app on public HTTPS (`DOMAIN` + Traefik; `BETTER_AUTH_URL=https://${DOMAIN}`).
 2. Keep the backend reachable over HTTPS. OAuth callback and custom share-link routing exist in source; verify them on devices before relying on them. HTTPS links for arbitrary operator domains still need native domain association.
 
 ```bash
@@ -635,7 +632,7 @@ ADMIN_PASSWORD_HASH=$2a$10$...your-hash-here...
 The planned native Google sign-in uses the system browser and returns through a custom scheme. The client callback is not implemented in the U1 foundation:
 
 1. Register `vaehor://auth/callback` on the Google OAuth client ([Google Cloud Setup](#google-cloud-setup)).
-2. Set `NEXTAUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
+2. Set `BETTER_AUTH_URL` to the same public HTTPS origin the app bookmarks (`https://${DOMAIN}`).
 3. Server routes: see OpenAPI tag **Mobile** in [`docs/api/openapi.yaml`](docs/api/openapi.yaml) (`/api/mobile/oauth-state`, `oauth-complete`, `session-bootstrap`).
 4. The React Native client uses native networking. Mobile endpoint authentication and real-device callback verification are still pending.
 
@@ -710,7 +707,7 @@ vaehor supports multiple languages via `next-intl`:
 2. Translate all strings
 3. Add `"xx"` to the supported locales list in `lib/i18n-config.ts` (`LOCALES`)
 4. Ensure the language file exists in `messages/xx.json`
-5. Add `"xx"` to the locales array in `proxy.ts` (Next.js 16 request proxy; see [Proxy](https://nextjs.org/docs/app/getting-started/proxy)):
+5. Add `"xx"` to the locales array in `proxy.ts` (request proxy for auth/i18n):
    ```typescript
    const intlMiddleware = createMiddleware({
      locales: ["en", "id", "xx"],
@@ -724,7 +721,7 @@ vaehor supports multiple languages via `next-intl`:
 
 ```
 vaehor/
-├── app/                          # Next.js App Router
+├── app/                          # vinext App Router routes
 │   ├── [locale]/                 # Internationalized routes
 │   │   ├── (main)/               # Main layout (sidebar + content)
 │   │   ├── admin/                # Admin dashboard
@@ -732,7 +729,7 @@ vaehor/
 │   │   └── setup/                # Setup wizard
 │   └── api/                      # API Routes
 │       ├── admin/                # Admin-only APIs
-│       ├── auth/                 # NextAuth handlers
+│       ├── auth/                 # Better Auth handlers
 │       ├── download/             # File download & streaming
 │       ├── files/                # File listing
 │       ├── share/                # Share link APIs
@@ -777,8 +774,8 @@ vaehor/
 ├── docker-compose.yml            # Production stack
 ├── Dockerfile                    # Multi-stage optimized build
 ├── Caddyfile                     # Legacy (deprecated; see docs/deployment.md)
-├── proxy.ts                       # Auth, i18n, rate limiting (Next.js 16 proxy)
-└── next.config.mjs               # Next.js + security headers
+├── proxy.ts                       # Auth, i18n, rate limiting
+└── next.config.mjs               # Shared config + security headers
 ```
 
 ---
@@ -854,7 +851,7 @@ Also check API quota at [Google Cloud Console](https://console.cloud.google.com/
 <details>
 <summary><strong>🟡 Prisma client missing (`.prisma/client/default`)</strong></summary>
 
-If you see **`Cannot find module '.prisma/client/default'`** during `next dev` / Turbopack startup (common with pnpm layouts), regenerate the client:
+If you see **`Cannot find module '.prisma/client/default'`** during `pnpm dev` / Vite startup (common with pnpm layouts), regenerate the client:
 
 ```bash
 pnpm exec prisma generate
@@ -964,7 +961,8 @@ See the [LICENSE](LICENSE) file for full details.
 
 **vaehor** is based on [Zee-Index](https://github.com/ifauzeee/Zee-Index) by [Muhammad Ibnu Fauzi](https://github.com/ifauzeee). Built with these open-source projects:
 
-- [Next.js](https://nextjs.org/) — The React framework
+- [vinext](https://github.com/cloudflare/vinext) — Vite-based App Router toolchain
+- [Better Auth](https://www.better-auth.com/) — Authentication
 - [VidStack](https://www.vidstack.io/) — Video player components
 - [Radix UI](https://www.radix-ui.com/) — Accessible UI primitives
 - [TanStack](https://tanstack.com/) — React Query & Virtual

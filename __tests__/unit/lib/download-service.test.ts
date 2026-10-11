@@ -56,7 +56,7 @@ describe("lib/services/download", () => {
     vi.clearAllMocks();
     process.env.SHARE_SECRET_KEY =
       "test-share-secret-key-with-at-least-32-chars";
-    process.env.NEXTAUTH_URL = "http://localhost:3000";
+    process.env.BETTER_AUTH_URL = "http://localhost:3000";
     mockAuth.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({ success: true });
     mockAuthenticateShareRequest.mockResolvedValue(null);
@@ -204,14 +204,14 @@ describe("lib/services/download", () => {
   });
 
   describe("prepareResponseHeaders", () => {
-    const originalNextAuthUrl = process.env.NEXTAUTH_URL;
+    const originalAuthUrl = process.env.BETTER_AUTH_URL;
 
     beforeEach(() => {
-      process.env.NEXTAUTH_URL = "https://files.example.com";
+      process.env.BETTER_AUTH_URL = "https://files.example.com";
     });
 
     afterEach(() => {
-      process.env.NEXTAUTH_URL = originalNextAuthUrl;
+      process.env.BETTER_AUTH_URL = originalAuthUrl;
     });
 
     it("sets inline streaming headers for ranged media", () => {
@@ -268,7 +268,7 @@ describe("lib/services/download", () => {
       expect(headers.get("Access-Control-Allow-Origin")).toBeNull();
     });
 
-    it("keeps NEXTAUTH_URL fallback when Origin is absent", () => {
+    it("keeps BETTER_AUTH_URL fallback when Origin is absent", () => {
       const headers = prepareResponseHeaders(
         "video/mp4",
         "movie.mp4",
