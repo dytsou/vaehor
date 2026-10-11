@@ -120,7 +120,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@better-auth/cli": "^1.4.21",
     "@biomejs/biome": "2.5.15",
     "@playwright/test": "^1.63.0",
     "@redocly/cli": "^2.58.1",
