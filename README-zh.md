@@ -1,9 +1,7 @@
 <div align="center">
   <a href="https://github.com/dytsou/vaehor">
-    <img src="app/icon.svg" alt="vaehor Logo" width="130" height="130">
+    <img src="design/vaehor-lockup.svg" alt="vaehor" width="130">
   </a>
-
-  <h1 align="center">⚡ vaehor</h1>
 
   <p align="center">
     <strong>自架 Google Drive 瀏覽器、媒體庫與串流服務</strong>

@@ -1,9 +1,7 @@
 <div align="center">
   <a href="https://github.com/dytsou/vaehor">
-    <img src="app/icon.svg" alt="vaehor Logo" width="130" height="130">
+    <img src="design/vaehor-lockup.svg" alt="vaehor" width="130">
   </a>
-
-  <h1 align="center">⚡ vaehor</h1>
 
   <p align="center">
     <strong>Self-Hosted Google Drive Explorer, Media Gallery & Streaming Server</strong>
